@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
@@ -72,10 +72,10 @@
       position: absolute;
       top: 0;
       left: 0;
-      stroke: rgba(255, 255, 255, 0.45);
-      stroke-width: 1.2;
+      stroke: rgba(255, 255, 255, 0.5);
+      stroke-width: 1.5;
       fill: none;
-      filter: drop-shadow(0 0 1px rgba(0,0,0,0.8));
+      filter: drop-shadow(0 0 1px rgba(0,0,0,0.9));
     }
 
     /* Центральне перехрестя */
@@ -309,7 +309,7 @@
     };
     let currentGridIdx = 0;
 
-    // Відображення поточної сітки
+    // Відображення сіток
     function renderGrid() {
       const mode = gridModes[currentGridIdx];
       gridBtn.textContent = gridLabels[mode];
@@ -330,17 +330,19 @@
           <div class="grid-line-h" style="top: 61.8%;"></div>
         `;
       } else if (mode === 'fibonacci') {
-        // Точна гармонійна спіраль Фібоначчі та золоті прямокутники
+        // Правильна гармонійна спіраль Фібоначчі із золотими дугами
         gridOverlay.innerHTML = `
-          <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-            <path d="M 0,1000 C 552,1000 1000,552 1000,0 C 1000,382 764,618 618,618 C 527,618 454,545 454,454 C 454,398 498,354 554,354 C 588,354 618,382 618,416" />
-            <line x1="618" y1="0" x2="618" y2="1000" stroke="rgba(255,255,255,0.25)" />
-            <line x1="0" y1="618" x2="618" y2="618" stroke="rgba(255,255,255,0.25)" />
-            <line x1="454" y1="354" x2="454" y2="618" stroke="rgba(255,255,255,0.25)" />
+          <svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none">
+            <!-- Золоті лінії та квадрати -->
+            <line x1="618" y1="0" x2="618" y2="618" stroke="rgba(255,255,255,0.25)" />
+            <line x1="618" y1="382" x2="1000" y2="382" stroke="rgba(255,255,255,0.25)" />
+            <line x1="764" y1="382" x2="764" y2="618" stroke="rgba(255,255,255,0.25)" />
+            <line x1="618" y1="472" x2="764" y2="472" stroke="rgba(255,255,255,0.25)" />
+            <!-- Точна дуга спіралі -->
+            <path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" />
           </svg>
         `;
       } else if (mode === 'diagonals') {
-        // Сітка правила діагоналей (Diagonal Method & Harmonic Armature)
         gridOverlay.innerHTML = `
           <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
             <line x1="0" y1="0" x2="1000" y2="1000" />
