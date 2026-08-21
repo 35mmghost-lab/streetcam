@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>StreetCam</title>
+
+  <!-- Вбудований Web App Manifest -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"StreetCam","short_name":"StreetCam","start_url":".","display":"standalone","background_color":"%23000000","theme_color":"%23000000","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111%22/><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%228%22/><circle cx=%2250%22 cy=%2250%22 r=%2215%22 fill=%22%23fff%22/></svg>","sizes":"192x192 512x512","type":"image/svg+xml"}]}'>
+
   <style>
     * {
       box-sizing: border-box;
@@ -47,6 +55,18 @@
       z-index: 1;
     }
 
+    /* Шар віньєтування у видошукачі */
+    #vignette-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(circle, transparent 65%, rgba(0,0,0,0.55) 100%);
+    }
+
     /* Шар сіток */
     #grid-overlay {
       position: absolute;
@@ -77,7 +97,6 @@
       filter: drop-shadow(0 0 1px rgba(0,0,0,0.9));
     }
 
-    /* Центральне перехрестя */
     .center-cross {
       position: absolute;
       top: 50%;
@@ -95,7 +114,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Ірисова діафрагма затвора */
+    /* Ірисова механічна діафрагма */
     #iris-shutter {
       position: absolute;
       top: 0;
@@ -121,24 +140,11 @@
       animation: irisMech 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
     @keyframes irisMech {
-      0% {
-        opacity: 0;
-        transform: scale(2.8) rotate(0deg);
-      }
-      20% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 1;
-        transform: scale(0.28) rotate(60deg);
-      }
-      80% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-        transform: scale(2.8) rotate(120deg);
-      }
+      0% { opacity: 0; transform: scale(2.8) rotate(0deg); }
+      20% { opacity: 1; }
+      50% { opacity: 1; transform: scale(0.28) rotate(60deg); }
+      80% { opacity: 1; }
+      100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
     /* Верхній HUD */
@@ -253,9 +259,9 @@
   <div id="app-container">
     <div id="viewfinder-container">
       <video id="camera-stream" autoplay playsinline muted></video>
+      <div id="vignette-layer"></div>
       <div id="grid-overlay"></div>
       
-      <!-- Ірисова механічна діафрагма -->
       <div id="iris-shutter">
         <div class="iris-blade-container"></div>
       </div>
@@ -313,6 +319,26 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
+    // Реєстрація офлайн Service Worker для PWA
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'streetcam-v1';
+        self.addEventListener('install', (e) => {
+          self.skipWaiting();
+        });
+        self.addEventListener('activate', (e) => {
+          e.waitUntil(clients.claim());
+        });
+        self.addEventListener('fetch', (e) => {
+          e.respondWith(
+            fetch(e.request).catch(() => caches.match(e.request))
+          );
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -328,7 +354,18 @@
     let currentStream = null;
     let currentEV = 0.0;
 
-    // Оптичні коефіцієнти фокусних відстаней
+    // Пресети плівок із параметрами зерна
+    const filmPresets = [
+      { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(155%)', grain: 18 },
+      { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(120%)', grain: 12 },
+      { name: 'T-Max 3200', filter: 'grayscale(100%) contrast(190%)', grain: 32 },
+      { name: 'Neopan 100', filter: 'grayscale(100%) contrast(135%)', grain: 8 },
+      { name: 'Portra 400', filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 14 },
+      { name: 'Cinestill 800T', filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 22 }
+    ];
+    let currentFilmIdx = 0;
+
+    // Зум
     const zoomLevels = [
       { label: '📷 1.0x (28mm)', zoom: 1.0 },
       { label: '📷 2.0x (50mm)', zoom: 2.0 },
@@ -337,18 +374,7 @@
     ];
     let currentZoomIdx = 0;
 
-    // Емуляції плівок
-    const filmPresets = [
-      { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(155%)' },
-      { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(120%)' },
-      { name: 'T-Max 3200', filter: 'grayscale(100%) contrast(190%)' },
-      { name: 'Neopan 100', filter: 'grayscale(100%) contrast(135%)' },
-      { name: 'Portra 400', filter: 'saturate(85%) contrast(110%) sepia(10%)' },
-      { name: 'Cinestill 800T', filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)' }
-    ];
-    let currentFilmIdx = 0;
-
-    // Режими сіток
+    // Сітки
     const gridModes = ['thirds', 'golden', 'fibonacci', 'diagonals', 'center', 'off'];
     const gridLabels = {
       'thirds': '🌐 Третини',
@@ -360,7 +386,6 @@
     };
     let currentGridIdx = 0;
 
-    // Відображення сіток
     function renderGrid() {
       const mode = gridModes[currentGridIdx];
       gridBtn.textContent = gridLabels[mode];
@@ -410,7 +435,7 @@
       }
     }
 
-    // Запуск задньої камери
+    // Запуск камери
     async function initCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -432,11 +457,10 @@
       }
     }
 
-    // Застосування апаратного оптичного наближення
     function applyOpticalZoom() {
       if (!videoTrack) return;
       const targetZoom = zoomLevels[currentZoomIdx].zoom;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label.split(' ')[1]; // Короткий підпис
+      lensBtn.textContent = zoomLevels[currentZoomIdx].label.split(' ')[1];
 
       if (typeof videoTrack.applyConstraints === 'function') {
         const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
@@ -449,14 +473,12 @@
       }
     }
 
-    // Перемикання оптики
     lensBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
       applyOpticalZoom();
     });
 
-    // Фільтри видошукача
     function getCombinedFilter() {
       const brightnessFactor = Math.pow(2, currentEV);
       const baseFilter = filmPresets[currentFilmIdx].filter;
@@ -467,7 +489,6 @@
       video.style.filter = getCombinedFilter();
     }
 
-    // Перемикання емуляцій плівок
     filmBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
@@ -475,14 +496,12 @@
       updateFilters();
     });
 
-    // Перемикання сіток
     gridBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       currentGridIdx = (currentGridIdx + 1) % gridModes.length;
       renderGrid();
     });
 
-    // Зміна EV
     evSlider.addEventListener('input', (e) => {
       currentEV = parseFloat(e.target.value);
       evVal.textContent = `${currentEV > 0 ? '+' : ''}${currentEV.toFixed(1)} EV`;
@@ -498,7 +517,7 @@
       }
     });
 
-    // Зональне фокусування (Leica M Scale)
+    // Leica Zone Focus
     document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
@@ -509,14 +528,9 @@
           const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
           if (caps.focusMode) {
             if (dist === 'auto') {
-              videoTrack.applyConstraints({
-                advanced: [{ focusMode: 'continuous' }]
-              }).catch(() => {});
+              videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
             } else {
-              const distanceVal = parseFloat(dist);
-              videoTrack.applyConstraints({
-                advanced: [{ focusMode: 'manual', focusDistance: distanceVal }]
-              }).catch(() => {});
+              videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
             }
           }
         }
@@ -543,77 +557,37 @@
       });
     });
 
+    // Накладання автентичного плівкового зерна та віньєтки на полотно кадру
+    function applyFilmGrainAndVignette(ctx, width, height, grainIntensity) {
+      // 1. Процедурне зерно (Film Grain)
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+      const len = data.length;
+
+      for (let i = 0; i < len; i += 4) {
+        const noise = (Math.random() - 0.5) * grainIntensity * 2.2;
+        data[i] = Math.min(255, Math.max(0, data[i] + noise));
+        data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+        data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // 2. М'яка оптична віньєтка (Vignette)
+      const gradient = ctx.createRadialGradient(
+        width / 2, height / 2, Math.min(width, height) * 0.45,
+        width / 2, height / 2, Math.max(width, height) * 0.75
+      );
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(1, 'rgba(0,0,0,0.42)');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+
     // Спуск затвора
     async function triggerShutter() {
-      // Анімація механічної ірисової діафрагми (0.35s)
       irisShutter.classList.remove('iris-anim');
       void irisShutter.offsetWidth;
       irisShutter.classList.add('iris-anim');
 
-      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
-
-      const width = video.videoWidth || 1920;
-      const height = video.videoHeight || 1080;
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      ctx.filter = getCombinedFilter();
-      ctx.drawImage(video, 0, 0, width, height);
-
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `STREET_${filmPresets[currentFilmIdx].name.replace(/\s+/g, '')}_${Date.now()}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-      }, 'image/jpeg', 0.95);
-    }
-
-    // Спуск кліком по екрану
-    document.getElementById('viewfinder-container').addEventListener('click', () => {
-      if (settingsModal.style.display === 'flex') return;
-      // Запит повноекранного режиму для максимального захоплення системних кнопок
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-      triggerShutter();
-    });
-
-    // Медіа-кнопки та клавіатурні події
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.setActionHandler('play', () => triggerShutter());
-      navigator.mediaSession.setActionHandler('pause', () => triggerShutter());
-      navigator.mediaSession.setActionHandler('nexttrack', () => triggerShutter());
-      navigator.mediaSession.setActionHandler('previoustrack', () => triggerShutter());
-    }
-
-    window.addEventListener('keydown', (e) => {
-      const k = e.key || e.code;
-      if (k === 'VolumeDown' || k === 'VolumeUp' || k === 'Camera' || k === ' ' || e.keyCode === 24 || e.keyCode === 25) {
-        e.preventDefault();
-        triggerShutter();
-      }
-    }, { passive: false });
-
-    // Меню налаштувань
-    document.getElementById('open-settings-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      settingsModal.style.display = 'flex';
-    });
-    document.getElementById('close-settings-btn').addEventListener('click', () => {
-      settingsModal.style.display = 'none';
-    });
-
-    // Старт
-    window.addEventListener('load', initCamera);
-  </script>
-</body>
-</html>
+      if (navigator.vibrate) navigator.vibrate([40, 3
