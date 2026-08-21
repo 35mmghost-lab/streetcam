@@ -9,9 +9,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>StreetCam</title>
 
-  <!-- Вбудований Web App Manifest -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"StreetCam","short_name":"StreetCam","start_url":".","display":"standalone","background_color":"%23000000","theme_color":"%23000000","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111%22/><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%228%22/><circle cx=%2250%22 cy=%2250%22 r=%2215%22 fill=%22%23fff%22/></svg>","sizes":"192x192 512x512","type":"image/svg+xml"}]}'>
-
   <style>
     * {
       box-sizing: border-box;
@@ -55,7 +52,7 @@
       z-index: 1;
     }
 
-    /* Шар віньєтування у видошукачі */
+    /* Шар віньєтування */
     #vignette-layer {
       position: absolute;
       top: 0;
@@ -114,7 +111,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Ірисова механічна діафрагма */
+    /* Ірисова діафрагма затвора */
     #iris-shutter {
       position: absolute;
       top: 0;
@@ -319,26 +316,6 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
-    // Реєстрація офлайн Service Worker для PWA
-    if ('serviceWorker' in navigator) {
-      const swCode = `
-        const CACHE_NAME = 'streetcam-v1';
-        self.addEventListener('install', (e) => {
-          self.skipWaiting();
-        });
-        self.addEventListener('activate', (e) => {
-          e.waitUntil(clients.claim());
-        });
-        self.addEventListener('fetch', (e) => {
-          e.respondWith(
-            fetch(e.request).catch(() => caches.match(e.request))
-          );
-        });
-      `;
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
-    }
-
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -354,14 +331,14 @@
     let currentStream = null;
     let currentEV = 0.0;
 
-    // Пресети плівок із параметрами зерна
+    // Пресети плівок із зерном
     const filmPresets = [
-      { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(155%)', grain: 18 },
-      { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(120%)', grain: 12 },
-      { name: 'T-Max 3200', filter: 'grayscale(100%) contrast(190%)', grain: 32 },
-      { name: 'Neopan 100', filter: 'grayscale(100%) contrast(135%)', grain: 8 },
-      { name: 'Portra 400', filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 14 },
-      { name: 'Cinestill 800T', filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 22 }
+      { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(155%)', grain: 16 },
+      { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(120%)', grain: 10 },
+      { name: 'T-Max 3200', filter: 'grayscale(100%) contrast(190%)', grain: 28 },
+      { name: 'Neopan 100', filter: 'grayscale(100%) contrast(135%)', grain: 6 },
+      { name: 'Portra 400', filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
+      { name: 'Cinestill 800T', filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
     ];
     let currentFilmIdx = 0;
 
@@ -435,7 +412,7 @@
       }
     }
 
-    // Запуск камери
+    // Безпечний запуск камери
     async function initCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -448,10 +425,10 @@
         });
         currentStream = stream;
         video.srcObject = stream;
+        await video.play().catch(() => {});
         videoTrack = stream.getVideoTracks()[0];
         updateFilters();
         renderGrid();
-        applyOpticalZoom();
       } catch (err) {
         console.error('Помилка доступу до камери:', err);
       }
@@ -462,9 +439,9 @@
       const targetZoom = zoomLevels[currentZoomIdx].zoom;
       lensBtn.textContent = zoomLevels[currentZoomIdx].label.split(' ')[1];
 
-      if (typeof videoTrack.applyConstraints === 'function') {
-        const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-        if (caps.zoom) {
+      if (typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
+        const caps = videoTrack.getCapabilities();
+        if (caps && caps.zoom && typeof caps.zoom.min === 'number') {
           const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
           videoTrack.applyConstraints({
             advanced: [{ zoom: clampedZoom }]
@@ -509,7 +486,7 @@
 
       if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
         const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-        if (caps.exposureCompensation) {
+        if (caps && caps.exposureCompensation) {
           videoTrack.applyConstraints({
             advanced: [{ exposureCompensation: currentEV }]
           }).catch(() => {});
@@ -526,7 +503,7 @@
         const dist = btn.getAttribute('data-dist');
         if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
           const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-          if (caps.focusMode) {
+          if (caps && caps.focusMode) {
             if (dist === 'auto') {
               videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
             } else {
@@ -546,7 +523,7 @@
         const val = btn.getAttribute('data-val');
         if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
           const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-          if (caps.iso) {
+          if (caps && caps.iso) {
             if (val === 'auto') {
               videoTrack.applyConstraints({ advanced: [{ iso: caps.iso.min }] }).catch(() => {});
             } else {
@@ -557,9 +534,8 @@
       });
     });
 
-    // Накладання автентичного плівкового зерна та віньєтки на полотно кадру
+    // Плівкове зерно та віньєтка
     function applyFilmGrainAndVignette(ctx, width, height, grainIntensity) {
-      // 1. Процедурне зерно (Film Grain)
       const imgData = ctx.getImageData(0, 0, width, height);
       const data = imgData.data;
       const len = data.length;
@@ -572,7 +548,6 @@
       }
       ctx.putImageData(imgData, 0, 0);
 
-      // 2. М'яка оптична віньєтка (Vignette)
       const gradient = ctx.createRadialGradient(
         width / 2, height / 2, Math.min(width, height) * 0.45,
         width / 2, height / 2, Math.max(width, height) * 0.75
@@ -590,4 +565,44 @@
       void irisShutter.offsetWidth;
       irisShutter.classList.add('iris-anim');
 
-      if (navigator.vibrate) navigator.vibrate([40, 3
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+
+      const width = video.videoWidth || 1920;
+      const height = video.videoHeight || 1080;
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.filter = getCombinedFilter();
+      ctx.drawImage(video, 0, 0, width, height);
+
+      const activePreset = filmPresets[currentFilmIdx];
+      applyFilmGrainAndVignette(ctx, width, height, activePreset.grain);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `STREET_${activePreset.name.replace(/\s+/g, '')}_${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }, 'image/jpeg', 0.95);
+    }
+
+    // Спуск або запуск при дотику
+    document.getElementById('viewfinder-container').addEventListener('click', () => {
+      if (settingsModal.style.display === 'flex') return;
+      if (!currentStream) {
+        initCamera();
+        return;
+      }
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    
