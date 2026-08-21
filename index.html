@@ -65,7 +65,6 @@
     .grid-line-v { top: 0; bottom: 0; width: 1px; }
     .grid-line-h { left: 0; right: 0; height: 1px; }
 
-    /* SVG для Спіралі та Діагоналей */
     .grid-svg {
       width: 100%;
       height: 100%;
@@ -96,7 +95,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Ірисова діафрагма */
+    /* Ірисова діафрагма затвора */
     #iris-shutter {
       position: absolute;
       top: 0;
@@ -110,27 +109,35 @@
       align-items: center;
       opacity: 0;
     }
-    .iris-mask {
-      width: 100vmax;
-      height: 100vmax;
-      background: radial-gradient(circle, transparent 20%, rgba(10,10,10,0.98) 22%);
-      transform: scale(3.5);
+    .iris-blade-container {
+      width: 140vmax;
+      height: 140vmax;
+      border-radius: 50%;
+      background: radial-gradient(circle, transparent 18%, rgba(12,12,12,0.98) 22%);
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+      transform: scale(2.8);
     }
     .iris-anim {
-      animation: irisAction 0.18s cubic-bezier(0.25, 1, 0.5, 1);
+      animation: irisMech 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    @keyframes irisAction {
+    @keyframes irisMech {
       0% {
-        opacity: 1;
-        transform: scale(3.5) rotate(0deg);
+        opacity: 0;
+        transform: scale(2.8) rotate(0deg);
       }
-      45% {
+      20% {
         opacity: 1;
-        transform: scale(0.18) rotate(45deg);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(0.28) rotate(60deg);
+      }
+      80% {
+        opacity: 1;
       }
       100% {
         opacity: 0;
-        transform: scale(3.5) rotate(90deg);
+        transform: scale(2.8) rotate(120deg);
       }
     }
 
@@ -248,15 +255,15 @@
       <video id="camera-stream" autoplay playsinline muted></video>
       <div id="grid-overlay"></div>
       
-      <!-- Ірисова діафрагма -->
+      <!-- Ірисова механічна діафрагма -->
       <div id="iris-shutter">
-        <div class="iris-mask"></div>
+        <div class="iris-blade-container"></div>
       </div>
     </div>
 
     <!-- HUD -->
     <div id="top-hud">
-      <button class="hud-btn" id="lens-btn">📷 1x</button>
+      <button class="hud-btn" id="lens-btn">📷 1.0x</button>
       <button class="hud-btn" id="aspect-btn">3:2</button>
       <button class="hud-btn" id="grid-btn">🌐 Третини</button>
       <button class="hud-btn" id="film-btn">🎞️ Tri-X 400</button>
@@ -320,10 +327,17 @@
     let videoTrack = null;
     let currentStream = null;
     let currentEV = 0.0;
-    let rearCameras = [];
-    let currentCameraIndex = 0;
 
-    // Пресети плівок
+    // Оптичні коефіцієнти фокусних відстаней
+    const zoomLevels = [
+      { label: '📷 1.0x (28mm)', zoom: 1.0 },
+      { label: '📷 2.0x (50mm)', zoom: 2.0 },
+      { label: '📷 3.0x (85mm)', zoom: 3.0 },
+      { label: '📷 0.5x (14mm)', zoom: 0.5 }
+    ];
+    let currentZoomIdx = 0;
+
+    // Емуляції плівок
     const filmPresets = [
       { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(155%)' },
       { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(120%)' },
@@ -396,85 +410,50 @@
       }
     }
 
-    // Пошук тільки задніх сенсорів/об'єктивів
-    async function detectRearCameras() {
+    // Запуск задньої камери
+    async function initCamera() {
       try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(d => d.kind === 'videoinput');
-        
-        // Відфільтровуємо фронтальні камери
-        rearCameras = videoDevices.filter(d => {
-          const label = (d.label || '').toLowerCase();
-          return !label.includes('front') && !label.includes('user') && !label.includes('selfie') && !label.includes('передн');
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
         });
-
-        if (rearCameras.length === 0) {
-          rearCameras = videoDevices; // Резерв
-        }
-        updateLensButtonLabel();
-      } catch (e) {
-        console.error('Помилка визначення камер:', e);
-      }
-    }
-
-    function updateLensButtonLabel() {
-      if (rearCameras.length <= 1) {
-        lensBtn.textContent = '📷 1x';
-      } else {
-        const currentCam = rearCameras[currentCameraIndex];
-        const label = (currentCam.label || '').toLowerCase();
-        if (label.includes('wide') || label.includes('0.5') || label.includes('ultra')) {
-          lensBtn.textContent = '📷 0.5x';
-        } else if (label.includes('tele') || label.includes('zoom') || label.includes('2x') || label.includes('3x')) {
-          lensBtn.textContent = '📷 2x+';
-        } else {
-          lensBtn.textContent = `📷 Об'єктив ${currentCameraIndex + 1}`;
-        }
-      }
-    }
-
-    // Запуск обраного об'єктива
-    async function startCamera(deviceId = null) {
-      if (currentStream) {
-        currentStream.getTracks().forEach(t => t.stop());
-      }
-
-      const constraints = {
-        video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        },
-        audio: false
-      };
-
-      if (deviceId) {
-        constraints.video.deviceId = { exact: deviceId };
-      } else {
-        constraints.video.facingMode = { ideal: 'environment' };
-      }
-
-      try {
-        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = currentStream;
-        videoTrack = currentStream.getVideoTracks()[0];
+        currentStream = stream;
+        video.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
         updateFilters();
         renderGrid();
+        applyOpticalZoom();
       } catch (err) {
-        console.error('Помилка відкриття камери:', err);
+        console.error('Помилка доступу до камери:', err);
       }
     }
 
-    // Перемикання об'єктивів
-    lensBtn.addEventListener('click', async (e) => {
+    // Застосування апаратного оптичного наближення
+    function applyOpticalZoom() {
+      if (!videoTrack) return;
+      const targetZoom = zoomLevels[currentZoomIdx].zoom;
+      lensBtn.textContent = zoomLevels[currentZoomIdx].label.split(' ')[1]; // Короткий підпис
+
+      if (typeof videoTrack.applyConstraints === 'function') {
+        const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
+        if (caps.zoom) {
+          const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
+          videoTrack.applyConstraints({
+            advanced: [{ zoom: clampedZoom }]
+          }).catch(() => {});
+        }
+      }
+    }
+
+    // Перемикання оптики
+    lensBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (rearCameras.length <= 1) {
-        await detectRearCameras();
-      }
-      if (rearCameras.length > 1) {
-        currentCameraIndex = (currentCameraIndex + 1) % rearCameras.length;
-        updateLensButtonLabel();
-        await startCamera(rearCameras[currentCameraIndex].deviceId);
-      }
+      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
+      applyOpticalZoom();
     });
 
     // Фільтри видошукача
@@ -564,14 +543,14 @@
       });
     });
 
-    // Спуск затвора з анімацією діафрагми та автозбереженням
+    // Спуск затвора
     async function triggerShutter() {
-      // Анімація ірисової діафрагми
+      // Анімація механічної ірисової діафрагми (0.35s)
       irisShutter.classList.remove('iris-anim');
       void irisShutter.offsetWidth;
       irisShutter.classList.add('iris-anim');
 
-      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
 
       const width = video.videoWidth || 1920;
       const height = video.videoHeight || 1080;
@@ -601,27 +580,26 @@
     // Спуск кліком по екрану
     document.getElementById('viewfinder-container').addEventListener('click', () => {
       if (settingsModal.style.display === 'flex') return;
+      // Запит повноекранного режиму для максимального захоплення системних кнопок
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
       triggerShutter();
     });
 
-    // Фізичні клавіші гучності та кнопки камери
-    function handleHardwareKeys(e) {
-      const code = e.code || e.key;
-      if (
-        code === 'VolumeDown' || code === 'VolumeUp' || 
-        code === 'AudioVolumeDown' || code === 'AudioVolumeUp' ||
-        code === 'Camera' || code === 'MediaPlayPause' || e.keyCode === 24 || e.keyCode === 25
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerShutter();
-      }
+    // Медіа-кнопки та клавіатурні події
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => triggerShutter());
+      navigator.mediaSession.setActionHandler('pause', () => triggerShutter());
+      navigator.mediaSession.setActionHandler('nexttrack', () => triggerShutter());
+      navigator.mediaSession.setActionHandler('previoustrack', () => triggerShutter());
     }
-    window.addEventListener('keydown', handleHardwareKeys, { passive: false });
-    window.addEventListener('keyup', (e) => {
-      const code = e.code || e.key;
-      if (code === 'VolumeDown' || code === 'VolumeUp' || e.keyCode === 24 || e.keyCode === 25) {
+
+    window.addEventListener('keydown', (e) => {
+      const k = e.key || e.code;
+      if (k === 'VolumeDown' || k === 'VolumeUp' || k === 'Camera' || k === ' ' || e.keyCode === 24 || e.keyCode === 25) {
         e.preventDefault();
+        triggerShutter();
       }
     }, { passive: false });
 
@@ -635,11 +613,7 @@
     });
 
     // Старт
-    window.addEventListener('load', async () => {
-      await startCamera();
-      await detectRearCameras();
-      document.body.focus();
-    });
+    window.addEventListener('load', initCamera);
   </script>
 </body>
 </html>
