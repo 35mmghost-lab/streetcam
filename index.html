@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Street Camera</title>
+  
+  <!-- PWA налаштування для повноекранного запуску -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiU3RyZWV0IENhbWVyYSIsInNob3J0X25hbWUiOiJTdHJlZXRDYW0iLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzAwMDAwMCIsInRoZW1lX2NvbG9yIjoiIzAwMDAwMCJ9">
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #camera-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #000;
+      cursor: pointer;
+    }
+
+    /* Рамка кадру */
+    #frame-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .ratio-full { width: 100%; height: 100%; }
+    .ratio-3-2 { width: 100%; aspect-ratio: 3 / 2; max-height: 100%; }
+    .ratio-1-1 { width: 100%; aspect-ratio: 1 / 1; max-height: 100%; }
+
+    #viewfinder {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Зерно */
+    #grain-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      mix-blend-mode: overlay;
+    }
+
+    /* SVG Сітки */
+    .grid-svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      display: none;
+    }
+    .grid-line {
+      stroke: rgba(255, 255, 255, 0.35);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+    .grid-spiral {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.55);
+      stroke-width: 1.5;
+      vector-effect: non-scaling-stroke;
+    }
+
+    /* HUD Панель */
+    #hud {
+      position: absolute;
+      top: 14px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      z-index: 10;
+      pointer-events: auto;
+    }
+    .hud-btn {
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Меню налаштувань (Шестірня) */
+    #settings-modal {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(15, 15, 15, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      color: #eee;
+      font-size: 13px;
+    }
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .setting-title {
+      font-weight: bold;
+      color: #aaa;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    .opt-btn {
+      flex: 1;
+      padding: 8px 4px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-size: 11px;
+      text-align: center;
+    }
+    .opt-btn.active {
+      background: #fff;
+      color: #000;
+      font-weight: bold;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    input[type=range] {
+      flex: 1;
+      accent-color: #fff;
+    }
+
+    /* Спалах затвора */
+    #shutter-flash {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: black;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.05s ease-out;
+      z-index: 25;
+    }
+    #shutter-flash.active { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div id="camera-container">
+    <!-- HUD -->
+    <div id="hud">
+      <button class="hud-btn" id="btn-lens">📷 1/1</button>
+      <button class="hud-btn" id="btn-ratio">📐 3:2</button>
+      <button class="hud-btn" id="btn-grid">🌐 Третини</button>
+      <button class="hud-btn" id="btn-film">🎞️ Tri-X 400</button>
+      <button class="hud-btn" id="btn-settings">⚙️</button>
+    </div>
+
+    <!-- Видошукач -->
+    <div id="frame-wrapper" class="ratio-3-2">
+      <video id="viewfinder" autoplay playsinline muted></video>
+      <canvas id="grain-canvas"></canvas>
+      
+      <!-- Сітки -->
+      <svg id="grid-thirds" class="grid-svg" style="display: block;" viewBox="0 0 300 300" preserveAspectRatio="none">
+        <line class="grid-line" x1="100" y1="0" x2="100" y2="300" />
+        <line class="grid-line" x1="200" y1="0" x2="200" y2="300" />
+        <line class="grid-line" x1="0" y1="100" x2="300" y2="100" />
+        <line class="grid-line" x1="0" y1="200" x2="300" y2="200" />
+      </svg>
+
+      <svg id="grid-golden" class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+        <line class="grid-line" x1="382" y1="0" x2="382" y2="1000" />
+        <line class="grid-line" x1="618" y1="0" x2="618" y2="1000" />
+        <line class="grid-line" x1="0" y1="382" x2="1000" y2="382" />
+        <line class="grid-line" x1="0" y1="618" x2="1000" y2="618" />
+      </svg>
+
+      <svg id="grid-diagonals" class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+        <line class="grid-line" x1="0" y1="0" x2="1000" y2="1000" />
+        <line class="grid-line" x1="1000" y1="0" x2="0" y2="1000" />
+        <line class="grid-line" x1="0" y1="1000" x2="500" y2="0" />
+        <line class="grid-line" x1="1000" y1="1000" x2="500" y2="0" />
+        <line class="grid-line" x1="0" y1="0" x2="500" y2="1000" />
+        <line class="grid-line" x1="1000" y1="0" x2="500" y2="1000" />
+      </svg>
+
+      <svg id="grid-fibonacci" class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none">
+        <line class="grid-line" x1="618" y1="0" x2="618" y2="618" />
+        <line class="grid-line" x1="618" y1="382" x2="1000" y2="382" />
+        <line class="grid-line" x1="764" y1="382" x2="764" y2="618" />
+        <line class="grid-line" x1="618" y1="472" x2="764" y2="472" />
+        <path class="grid-spiral" d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382" />
+      </svg>
+    </div>
+
+    <!-- Модальне вікно налаштувань -->
+    <div id="settings-modal">
+      <div class="setting-group">
+        <div class="setting-title">Фокусування (Focus Mode)</div>
+        <div class="btn-row">
+          <button class="opt-btn active" id="focus-auto">Auto (AF)</button>
+          <button class="opt-btn" id="focus-hyper">Гіперфокал (2-3м)</button>
+          <button class="opt-btn" id="focus-manual">Ручний</button>
+        </div>
+        <div class="slider-row" id="focus-slider-box" style="display: none;">
+          <span>0m</span>
+          <input type="range" id="focus-dist" min="0.1" max="10" step="0.1" value="2.5">
+          <span>∞</span>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-title">Світлочутливість (ISO)</div>
+        <div class="btn-row">
+          <button class="opt-btn active" id="iso-auto">Auto</button>
+          <button class="opt-btn" id="iso-400">400</button>
+          <button class="opt-btn" id="iso-800">800</button>
+          <button class="opt-btn" id="iso-1600">1600</button>
+        </div>
+      </div>
+
+      <button class="hud-btn" id="btn-close-settings" style="width: 100%; padding: 10px; margin-top: 5px;">Закрити налаштування</button>
+    </div>
+
+    <div id="shutter-flash"></div>
+  </div>
+
+  <script>
+    const viewfinder = document.getElementById('viewfinder');
+    const grainCanvas = document.getElementById('grain-canvas');
+    const shutterFlash = document.getElementById('shutter-flash');
+    const container = document.getElementById('camera-container');
+    const frameWrapper = document.getElementById('frame-wrapper');
+    const btnLens = document.getElementById('btn-lens');
+    const settingsModal = document.getElementById('settings-modal');
+
+    let rearCameras = [];
+    let currentCameraIdx = 0;
+    let currentStream = null;
+    let videoTrack = null;
+
+    const ratios = [
+      { name: "3:2", class: "ratio-3-2", val: 3/2 },
+      { name: "1:1", class: "ratio-1-1", val: 1/1 },
+      { name: "Full", class: "ratio-full", val: null }
+    ];
+    let currentRatioIdx = 0;
+
+    const gridElements = [
+      { name: "Третини", el: document.getElementById('grid-thirds') },
+      { name: "Золотий", el: document.getElementById('grid-golden') },
+      { name: "Діагоналі", el: document.getElementById('grid-diagonals') },
+      { name: "Фібоначчі", el: document.getElementById('grid-fibonacci') },
+      { name: "Без сітки", el: null }
+    ];
+    let currentGridIdx = 0;
+
+    const filmProfiles = [
+      { name: "Tri-X 400", filter: "grayscale(100%) contrast(150%) brightness(90%)", grainOpacity: 0.20 },
+      { name: "Tri-X Push", filter: "grayscale(100%) contrast(210%) brightness(85%)", grainOpacity: 0.35 },
+      { name: "Soft B&W", filter: "grayscale(100%) contrast(115%) brightness(100%)", grainOpacity: 0.12 }
+    ];
+    let currentFilmIdx = 0;
+
+    // 1. Ініціалізація камери
+    async function initCameraSystem() {
+      try {
+        const initialStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } },
+          audio: false
+        });
+        initialStream.getTracks().forEach(track => track.stop());
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+        rearCameras = videoDevices.filter(d => {
+          const label = d.label.toLowerCase();
+          return !label.includes('front') && !label.includes('selfie') && !label.includes('user');
+        });
+
+        if (rearCameras.length === 0) rearCameras = videoDevices;
+        await startCurrentCamera();
+      } catch (err) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: false
+          });
+          viewfinder.srcObject = stream;
+          videoTrack = stream.getVideoTracks()[0];
+          btnLens.innerText = "📷 1/1";
+        } catch (e) {
+          alert("Помилка доступу до камери: " + e.message);
+        }
+      }
+    }
+
+    async function startCurrentCamera() {
+      if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+      if (rearCameras.length === 0) return;
+
+      const deviceId = rearCameras[currentCameraIdx].deviceId;
+      currentStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: { exact: deviceId },
+          width: { ideal: 3840 },
+          height: { ideal: 2160 }
+        },
+        audio: false
+      });
+      viewfinder.srcObject = currentStream;
+      videoTrack = currentStream.getVideoTracks()[0];
+      btnLens.innerText = `📷 ${currentCameraIdx + 1}/${rearCameras.length}`;
+    }
+    initCameraSystem();
+
+    // 2. Апаратні налаштування (Фокус / ISO)
+    async function applyCameraSettings(advancedConstraints) {
+      if (!videoTrack || !videoTrack.applyConstraints) return;
+      try {
+        await videoTrack.applyConstraints({
+          advanced: [advancedConstraints]
+        });
+      } catch (e) {
+        console.warn("Параметр не підтримується цим браузером/сенсором:", e);
+      }
+    }
+
+    // Фокус
+    document.getElementById('focus-auto').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setFocusBtnActive(e.target);
+      document.getElementById('focus-slider-box').style.display = 'none';
+      applyCameraSettings({ focusMode: 'continuous' });
+    });
+
+    document.getElementById('focus-hyper').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setFocusBtnActive(e.target);
+      document.getElementById('focus-slider-box').style.display = 'none';
+      applyCameraSettings({ focusMode: 'manual', focusDistance: 2.5 });
+    });
+
+    document.getElementById('focus-manual').addEventListener('click', (e) => {
+      e.stopPropagation();
+      setFocusBtnActive(e.target);
+      document.getElementById('focus-slider-box').style.display = 'flex';
+      const val = parseFloat(document.getElementById('focus-dist').value);
+      applyCameraSettings({ focusMode: 'manual', focusDistance: val });
+    });
+
+    document.getElementById('focus-dist').addEventListener('input', (e) => {
+      e.stopPropagation();
+      const val = parseFloat(e.target.value);
+      applyCameraSettings({ focusMode: 'manual', focusDistance: val });
+    });
+
+    function setFocusBtnActive(btn) {
+      document.querySelectorAll('#settings-modal .setting-group:nth-child(1) .opt-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // ISO
+    ['iso-auto', 'iso-400', 'iso-800', 'iso-1600'].forEach(id => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('#settings-modal .setting-group:nth-child(2) .opt-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+
+        if (id === 'iso-auto') {
+          applyCameraSettings({ exposureMode: 'continuous' });
+        } else {
+          const isoVal = parseInt(id.replace('iso-', ''));
+          applyCameraSettings({ exposureMode: 'manual', iso: isoVal });
+        }
+      });
+    });
+
+    // 3. Зерно
+    const gCtx = grainCanvas.getContext('2d');
+    function resizeCanvas() {
+      grainCanvas.width = window.innerWidth / 2;
+      grainCanvas.height = window.innerHeight / 2;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function renderGrain() {
+      const w = grainCanvas.width;
+      const h = grainCanvas.height;
+      const imgData = gCtx.createImageData(w, h);
+      const buffer = new Uint32Array(imgData.data.buffer);
+      for (let i = 0; i < buffer.length; i++) {
+        const noise = (Math.random() * 255) | 0;
+        buffer[i] = (255 << 24) | (noise << 16) | (noise << 8) | noise;
+      }
+      gCtx.putImageData(imgData, 0, 0);
+      requestAnimationFrame(renderGrain);
+    }
+    renderGrain();
+
+    function applyFilmProfile() {
+      const profile = filmProfiles[currentFilmIdx];
+      viewfinder.style.filter = profile.filter;
+      grainCanvas.style.opacity = profile.grainOpacity;
+      document.getElementById('btn-film').innerText = "🎞️ " + profile.name;
+    }
+    applyFilmProfile();
+
+    // 4. Керування інтерфейсом
+    document.getElementById('btn-settings').addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsModal.style.display = settingsModal.style.display === 'flex' ? 'none' : 'flex';
+    });
+
+    document.getElementById('btn-close-settings').addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsModal.style.display = 'none';
+    });
+
+    settingsModal.addEventListener('click', (e) => e.stopPropagation());
+
+    btnLens.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (rearCameras.length > 1) {
+        currentCameraIdx = (currentCameraIdx + 1) % rearCameras.length;
+        await startCurrentCamera();
+      }
+    });
+
+    document.getElementById('btn-ratio').addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentRatioIdx = (currentRatioIdx + 1) % ratios.length;
+      frameWrapper.className = ratios[currentRatioIdx].class;
+      document.getElementById('btn-ratio').innerText = "📐 " + ratios[currentRatioIdx].name;
+    });
+
+    document.getElementById('btn-grid').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (gridElements[currentGridIdx].el) gridElements[currentGridIdx].el.style.display = 'none';
+      currentGridIdx = (currentGridIdx + 1) % gridElements.length;
+      if (gridElements[currentGridIdx].el) gridElements[currentGridIdx].el.style.display = 'block';
+      document.getElementById('btn-grid').innerText = "🌐 " + gridElements[currentGridIdx].name;
+    });
+
+    document.getElementById('btn-film').addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentFilmIdx = (currentFilmIdx + 1) % filmProfiles.length;
+      applyFilmProfile();
+    });
+
+    // 5. Спуск затвора
+    function triggerShutter() {
+      if (settingsModal.style.display === 'flex') return;
+
+      shutterFlash.classList.add('active');
+      setTimeout(() => shutterFlash.classList.remove('active'), 100);
+
+      const vW = viewfinder.videoWidth || window.innerWidth;
+      const vH = viewfinder.videoHeight || window.innerHeight;
+      const curRatio = ratios[currentRatioIdx].val;
+
+      let cropW = vW;
+      let cropH = vH;
+      if (curRatio) {
+        if (vW / vH > curRatio) cropW = vH * curRatio;
+        else cropH = vW / curRatio;
+      }
+
+      const startX = (vW - cropW) / 2;
+      const startY = (vH - cropH) / 2;
+
+      const photoCanvas = document.createElement('canvas');
+      photoCanvas.width = cropW;
+      photoCanvas.height = cropH;
+      const pCtx = photoCanvas.getContext('2d');
+
+      const profile = filmProfiles[currentFilmIdx];
+      pCtx.filter = profile.filter;
+      pCtx.drawImage(viewfinder, startX, startY, cropW, cropH, 0, 0, cropW, cropH);
+
+      const fullGrainCanvas = document.createElement('canvas');
+      fullGrainCanvas.width = cropW;
+      fullGrainCanvas.height = cropH;
+      const fgCtx = fullGrainCanvas.getContext('2d');
+      const imgData = fgCtx.createImageData(cropW, cropH);
+      const buffer = new Uint32Array(imgData.data.buffer);
+      for (let i = 0; i < buffer.length; i++) {
+        const noise = (Math.random() * 255) | 0;
+        buffer[i] = (255 << 24) | (noise << 16) | (noise << 8) | noise;
+      }
+      fgCtx.putImageData(imgData, 0, 0);
+
+      pCtx.filter = 'none';
+      pCtx.globalCompositeOperation = 'overlay';
+      pCtx.globalAlpha = profile.grainOpacity;
+      pCtx.drawImage(fullGrainCanvas, 0, 0);
+
+      const link = document.createElement('a');
+      link.download = `street_${ratios[currentRatioIdx].name}_${Date.now()}.jpg`;
+      link.href = photoCanvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+    }
+
+    container.addEventListener('click', triggerShutter);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'VolumeDown' || e.key === 'VolumeUp' || e.code === 'Space') {
+        e.preventDefault();
+        triggerShutter();
+      }
+    });
+  </script>
+</body>
+</html>
