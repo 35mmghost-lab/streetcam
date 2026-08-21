@@ -44,41 +44,6 @@
       height: 100%;
       object-fit: cover;
       z-index: 1;
-      background: #000;
-    }
-
-    /* Діагностичний екран при помилці або першому запуску */
-    #status-overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-      text-align: center;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      padding: 20px;
-      background: rgba(0, 0, 0, 0.85);
-      border-radius: 8px;
-      border: 1px solid #333;
-      max-width: 80%;
-    }
-    #status-text {
-      font-size: 13px;
-      color: #ccc;
-      line-height: 1.4;
-    }
-    #start-cam-btn {
-      padding: 10px 18px;
-      background: #fff;
-      color: #000;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 12px;
-      cursor: pointer;
     }
 
     /* Шар сіток */
@@ -275,12 +240,6 @@
       <video id="camera-stream" autoplay playsinline muted></video>
       <div id="grid-overlay"></div>
       
-      <!-- Діагностика/Кнопка старту -->
-      <div id="status-overlay">
-        <div id="status-text">Очікування дозволу на камеру...</div>
-        <button id="start-cam-btn">📷 Увімкнути камеру</button>
-      </div>
-
       <div id="iris-shutter">
         <div class="iris-blade-container"></div>
       </div>
@@ -288,8 +247,8 @@
 
     <!-- HUD -->
     <div id="top-hud">
-      <button class="hud-btn" id="lens-btn">📷 1.0x</button>
-      <button class="hud-btn" id="aspect-btn">3:2</button>
+      <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
+      <button class="hud-btn" id="lens-btn">🔍 1.0x</button>
       <button class="hud-btn" id="grid-btn">🌐 Третини</button>
       <button class="hud-btn" id="film-btn">🎞️ Tri-X 400</button>
       <button class="hud-btn" id="open-settings-btn">⚙️</button>
@@ -348,9 +307,7 @@
     const gridBtn = document.getElementById('grid-btn');
     const filmBtn = document.getElementById('film-btn');
     const lensBtn = document.getElementById('lens-btn');
-    const statusOverlay = document.getElementById('status-overlay');
-    const statusText = document.getElementById('status-text');
-    const startCamBtn = document.getElementById('start-cam-btn');
+    const shutterHudBtn = document.getElementById('shutter-hud-btn');
 
     let videoTrack = null;
     let currentStream = null;
@@ -367,10 +324,10 @@
     let currentFilmIdx = 0;
 
     const zoomLevels = [
-      { label: '📷 1.0x (28mm)', zoom: 1.0 },
-      { label: '📷 2.0x (50mm)', zoom: 2.0 },
-      { label: '📷 3.0x (85mm)', zoom: 3.0 },
-      { label: '📷 0.5x (14mm)', zoom: 0.5 }
+      { label: '🔍 1.0x', zoom: 1.0 },
+      { label: '🔍 2.0x', zoom: 2.0 },
+      { label: '🔍 3.0x', zoom: 3.0 },
+      { label: '🔍 0.5x', zoom: 0.5 }
     ];
     let currentZoomIdx = 0;
 
@@ -434,46 +391,31 @@
       }
     }
 
-    // Безвідмовний запуск камери
+    // Безвідмовний запуск потоку камери
     async function initCamera() {
       try {
         if (currentStream) {
           currentStream.getTracks().forEach(t => t.stop());
         }
 
-        let stream = null;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' } },
-            audio: false
-          });
-        } catch (e1) {
-          // Резервний запит
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-          });
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' }
+          },
+          audio: false
+        });
 
         currentStream = stream;
         video.srcObject = stream;
         videoTrack = stream.getVideoTracks()[0];
 
         await video.play();
-        statusOverlay.style.display = 'none';
         updateFilters();
         renderGrid();
       } catch (err) {
-        console.error('Camera Init Error:', err);
-        statusOverlay.style.display = 'flex';
-        statusText.textContent = 'Надайте браузеру дозвіл на використання камери.';
+        console.error('Помилка камери:', err);
       }
     }
-
-    startCamBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      initCamera();
-    });
 
     function getCombinedFilter() {
       const brightnessFactor = Math.pow(2, currentEV);
@@ -488,7 +430,7 @@
     lensBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label.split(' ')[1];
+      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
 
       if (videoTrack && typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
         const caps = videoTrack.getCapabilities();
@@ -559,7 +501,7 @@
       });
     });
 
-    // Зерно та віньєтка
+    // Плівкове зерно та віньєтка
     function applyFilmGrainAndVignette(ctx, width, height, grainIntensity) {
       const imgData = ctx.getImageData(0, 0, width, height);
       const data = imgData.data;
@@ -614,4 +556,39 @@
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
-          document.body.r
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }, 'image/jpeg', 0.95);
+    }
+
+    shutterHudBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerShutter();
+    });
+
+    document.getElementById('viewfinder-container').addEventListener('click', () => {
+      if (settingsModal.style.display === 'flex') return;
+      if (!currentStream || video.paused) {
+        initCamera();
+        return;
+      }
+      triggerShutter();
+    });
+
+    document.getElementById('open-settings-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsModal.style.display = 'flex';
+    });
+    document.getElementById('close-settings-btn').addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+
+    // Ініціалізація
+    initCamera();
+    document.addEventListener('touchstart', () => {
+      if (!currentStream || video.paused) initCamera();
+    }, { once: true });
+  </script>
+</body>
+</html>
