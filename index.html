@@ -43,23 +43,45 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: filter 0.1s ease;
       z-index: 1;
+      background: #000;
     }
 
-    /* Віньєтка видошукача */
-    #vignette-layer {
+    /* Діагностичний екран при помилці або першому запуску */
+    #status-overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 2;
-      background: radial-gradient(circle, transparent 65%, rgba(0,0,0,0.55) 100%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.85);
+      border-radius: 8px;
+      border: 1px solid #333;
+      max-width: 80%;
+    }
+    #status-text {
+      font-size: 13px;
+      color: #ccc;
+      line-height: 1.4;
+    }
+    #start-cam-btn {
+      padding: 10px 18px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
     }
 
-    /* Сітки */
+    /* Шар сіток */
     #grid-overlay {
       position: absolute;
       top: 0;
@@ -106,7 +128,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Ірисова діафрагма */
+    /* Ірисова діафрагма затвора */
     #iris-shutter {
       position: absolute;
       top: 0;
@@ -139,7 +161,7 @@
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
-    /* HUD */
+    /* Верхній HUD */
     #top-hud {
       position: absolute;
       top: 12px;
@@ -251,9 +273,14 @@
   <div id="app-container">
     <div id="viewfinder-container">
       <video id="camera-stream" autoplay playsinline muted></video>
-      <div id="vignette-layer"></div>
       <div id="grid-overlay"></div>
       
+      <!-- Діагностика/Кнопка старту -->
+      <div id="status-overlay">
+        <div id="status-text">Очікування дозволу на камеру...</div>
+        <button id="start-cam-btn">📷 Увімкнути камеру</button>
+      </div>
+
       <div id="iris-shutter">
         <div class="iris-blade-container"></div>
       </div>
@@ -311,13 +338,6 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
-    // Повне видалення будь-яких застряглих Service Worker-ів
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for (let r of registrations) r.unregister();
-      });
-    }
-
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -328,6 +348,9 @@
     const gridBtn = document.getElementById('grid-btn');
     const filmBtn = document.getElementById('film-btn');
     const lensBtn = document.getElementById('lens-btn');
+    const statusOverlay = document.getElementById('status-overlay');
+    const statusText = document.getElementById('status-text');
+    const startCamBtn = document.getElementById('start-cam-btn');
 
     let videoTrack = null;
     let currentStream = null;
@@ -411,38 +434,46 @@
       }
     }
 
-    // Безпечний запуск камери з гарантованим відображенням
+    // Безвідмовний запуск камери
     async function initCamera() {
       try {
         if (currentStream) {
           currentStream.getTracks().forEach(t => t.stop());
         }
 
-        const constraints = {
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          },
-          audio: false
-        };
+        let stream = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false
+          });
+        } catch (e1) {
+          // Резервний запит
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        }
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         currentStream = stream;
         video.srcObject = stream;
         videoTrack = stream.getVideoTracks()[0];
 
-        video.onloadedmetadata = () => {
-          video.play().catch(e => console.log('Autoplay issue:', e));
-        };
-
+        await video.play();
+        statusOverlay.style.display = 'none';
         updateFilters();
         renderGrid();
       } catch (err) {
-        console.error('Camera Error:', err);
-        alert('Будь ласка, надайте дозвіл на доступ до камери або торкніться екрана.');
+        console.error('Camera Init Error:', err);
+        statusOverlay.style.display = 'flex';
+        statusText.textContent = 'Надайте браузеру дозвіл на використання камери.';
       }
     }
+
+    startCamBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      initCamera();
+    });
 
     function getCombinedFilter() {
       const brightnessFactor = Math.pow(2, currentEV);
@@ -454,7 +485,6 @@
       video.style.filter = getCombinedFilter();
     }
 
-    // Зміна оптики / зуму
     lensBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
@@ -489,7 +519,7 @@
       updateFilters();
     });
 
-    // Фокусування Leica
+    // Leica Zone Focus
     document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
@@ -529,7 +559,7 @@
       });
     });
 
-    // Плівкове зерно та віньєтка
+    // Зерно та віньєтка
     function applyFilmGrainAndVignette(ctx, width, height, grainIntensity) {
       const imgData = ctx.getImageData(0, 0, width, height);
       const data = imgData.data;
@@ -584,28 +614,4 @@
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-      }, 'image/jpeg', 0.95);
-    }
-
-    // Торкання екрана для зйомки або перезапуску
-    document.getElementById('viewfinder-container').addEventListener('click', () => {
-      if (settingsModal.style.display === 'flex') return;
-      if (!currentStream || video.paused) {
-        initCamera();
-        return;
-      }
-      triggerShutter();
-    });
-
-    document.getElementById('open-settings-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      settingsModal.style.display = 'flex';
-    });
-    document.getElementById('close-settings-btn').addEventListener('click', () => {
-      settingsModal.style.display = 'none';
-    });
-
-    window.addEventListener('load', initCamera);
+          document.body.r
