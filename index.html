@@ -3,12 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#000000">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>StreetCam</title>
-
   <style>
     * {
       box-sizing: border-box;
@@ -52,7 +47,7 @@
       z-index: 1;
     }
 
-    /* Шар віньєтування */
+    /* Віньєтка видошукача */
     #vignette-layer {
       position: absolute;
       top: 0;
@@ -64,7 +59,7 @@
       background: radial-gradient(circle, transparent 65%, rgba(0,0,0,0.55) 100%);
     }
 
-    /* Шар сіток */
+    /* Сітки */
     #grid-overlay {
       position: absolute;
       top: 0;
@@ -111,7 +106,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Ірисова діафрагма затвора */
+    /* Ірисова діафрагма */
     #iris-shutter {
       position: absolute;
       top: 0;
@@ -144,7 +139,7 @@
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
-    /* Верхній HUD */
+    /* HUD */
     #top-hud {
       position: absolute;
       top: 12px;
@@ -252,7 +247,7 @@
     }
   </style>
 </head>
-<body tabindex="0">
+<body>
   <div id="app-container">
     <div id="viewfinder-container">
       <video id="camera-stream" autoplay playsinline muted></video>
@@ -316,6 +311,13 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
+    // Повне видалення будь-яких застряглих Service Worker-ів
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let r of registrations) r.unregister();
+      });
+    }
+
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -331,7 +333,6 @@
     let currentStream = null;
     let currentEV = 0.0;
 
-    // Пресети плівок із зерном
     const filmPresets = [
       { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(155%)', grain: 16 },
       { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(120%)', grain: 10 },
@@ -342,7 +343,6 @@
     ];
     let currentFilmIdx = 0;
 
-    // Зум
     const zoomLevels = [
       { label: '📷 1.0x (28mm)', zoom: 1.0 },
       { label: '📷 2.0x (50mm)', zoom: 2.0 },
@@ -351,7 +351,6 @@
     ];
     let currentZoomIdx = 0;
 
-    // Сітки
     const gridModes = ['thirds', 'golden', 'fibonacci', 'diagonals', 'center', 'off'];
     const gridLabels = {
       'thirds': '🌐 Третини',
@@ -412,49 +411,38 @@
       }
     }
 
-    // Безпечний запуск камери
+    // Безпечний запуск камери з гарантованим відображенням
     async function initCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        if (currentStream) {
+          currentStream.getTracks().forEach(t => t.stop());
+        }
+
+        const constraints = {
           video: {
             facingMode: { ideal: 'environment' },
             width: { ideal: 1920 },
             height: { ideal: 1080 }
           },
           audio: false
-        });
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         currentStream = stream;
         video.srcObject = stream;
-        await video.play().catch(() => {});
         videoTrack = stream.getVideoTracks()[0];
+
+        video.onloadedmetadata = () => {
+          video.play().catch(e => console.log('Autoplay issue:', e));
+        };
+
         updateFilters();
         renderGrid();
       } catch (err) {
-        console.error('Помилка доступу до камери:', err);
+        console.error('Camera Error:', err);
+        alert('Будь ласка, надайте дозвіл на доступ до камери або торкніться екрана.');
       }
     }
-
-    function applyOpticalZoom() {
-      if (!videoTrack) return;
-      const targetZoom = zoomLevels[currentZoomIdx].zoom;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label.split(' ')[1];
-
-      if (typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
-        const caps = videoTrack.getCapabilities();
-        if (caps && caps.zoom && typeof caps.zoom.min === 'number') {
-          const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
-          videoTrack.applyConstraints({
-            advanced: [{ zoom: clampedZoom }]
-          }).catch(() => {});
-        }
-      }
-    }
-
-    lensBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      applyOpticalZoom();
-    });
 
     function getCombinedFilter() {
       const brightnessFactor = Math.pow(2, currentEV);
@@ -465,6 +453,22 @@
     function updateFilters() {
       video.style.filter = getCombinedFilter();
     }
+
+    // Зміна оптики / зуму
+    lensBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
+      lensBtn.textContent = zoomLevels[currentZoomIdx].label.split(' ')[1];
+
+      if (videoTrack && typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
+        const caps = videoTrack.getCapabilities();
+        if (caps && caps.zoom) {
+          const targetZoom = zoomLevels[currentZoomIdx].zoom;
+          const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
+          videoTrack.applyConstraints({ advanced: [{ zoom: clampedZoom }] }).catch(() => {});
+        }
+      }
+    });
 
     filmBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -483,18 +487,9 @@
       currentEV = parseFloat(e.target.value);
       evVal.textContent = `${currentEV > 0 ? '+' : ''}${currentEV.toFixed(1)} EV`;
       updateFilters();
-
-      if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
-        const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-        if (caps && caps.exposureCompensation) {
-          videoTrack.applyConstraints({
-            advanced: [{ exposureCompensation: currentEV }]
-          }).catch(() => {});
-        }
-      }
     });
 
-    // Leica Zone Focus
+    // Фокусування Leica
     document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
@@ -503,7 +498,7 @@
         const dist = btn.getAttribute('data-dist');
         if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
           const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-          if (caps && caps.focusMode) {
+          if (caps.focusMode) {
             if (dist === 'auto') {
               videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
             } else {
@@ -523,7 +518,7 @@
         const val = btn.getAttribute('data-val');
         if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
           const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-          if (caps && caps.iso) {
+          if (caps.iso) {
             if (val === 'auto') {
               videoTrack.applyConstraints({ advanced: [{ iso: caps.iso.min }] }).catch(() => {});
             } else {
@@ -595,14 +590,22 @@
       }, 'image/jpeg', 0.95);
     }
 
-    // Спуск або запуск при дотику
+    // Торкання екрана для зйомки або перезапуску
     document.getElementById('viewfinder-container').addEventListener('click', () => {
       if (settingsModal.style.display === 'flex') return;
-      if (!currentStream) {
+      if (!currentStream || video.paused) {
         initCamera();
         return;
       }
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-    
+      triggerShutter();
+    });
+
+    document.getElementById('open-settings-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsModal.style.display = 'flex';
+    });
+    document.getElementById('close-settings-btn').addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+
+    window.addEventListener('load', initCamera);
