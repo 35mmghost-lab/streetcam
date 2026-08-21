@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
@@ -130,13 +130,15 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      background: rgba(12, 12, 12, 0.95);
+      background: rgba(12, 12, 12, 0.96);
       border-top: 1px solid #333;
       padding: 16px;
       display: none;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       z-index: 30;
+      max-height: 80vh;
+      overflow-y: auto;
     }
     .setting-title {
       font-size: 11px;
@@ -145,22 +147,23 @@
       color: #888;
       margin-bottom: 6px;
     }
-    .setting-row {
-      display: flex;
-      gap: 8px;
+    .setting-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
       width: 100%;
     }
     .opt-btn {
-      flex: 1;
-      padding: 10px;
+      padding: 8px 4px;
       background: #1e1e1e;
       color: #aaa;
       border: 1px solid #333;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
       text-align: center;
       transition: all 0.15s ease;
+      font-family: monospace;
     }
     .opt-btn.active {
       background: #fff;
@@ -187,12 +190,12 @@
     }
     #close-settings-btn {
       width: 100%;
-      padding: 12px;
+      padding: 11px;
       background: #222;
       color: #fff;
       border: none;
       border-radius: 4px;
-      font-size: 13px;
+      font-size: 12px;
       margin-top: 4px;
       cursor: pointer;
     }
@@ -248,17 +251,25 @@
         </div>
       </div>
 
+      <!-- Зональне фокусування за шкалою Leica M -->
       <div>
-        <div class="setting-title">Фокусування (Focus Mode)</div>
-        <div class="setting-row" id="focus-group">
-          <button class="opt-btn active" data-val="continuous">Auto (AF)</button>
-          <button class="opt-btn" data-val="hyperfocal">Гіперфокал (2-3м)</button>
+        <div class="setting-title">Фокусна відстань (Leica Zone Focus)</div>
+        <div class="setting-grid" id="focus-group">
+          <button class="opt-btn active" data-dist="auto">AF Auto</button>
+          <button class="opt-btn" data-dist="0.7">0.7 m</button>
+          <button class="opt-btn" data-dist="1.0">1.0 m</button>
+          <button class="opt-btn" data-dist="1.2">1.2 m</button>
+          <button class="opt-btn" data-dist="1.5">1.5 m</button>
+          <button class="opt-btn" data-dist="2.0">2.0 m</button>
+          <button class="opt-btn" data-dist="3.0">3.0 m</button>
+          <button class="opt-btn" data-dist="5.0">5.0 m</button>
+          <button class="opt-btn" data-dist="100.0" style="grid-column: span 4;">∞ Нескінченність</button>
         </div>
       </div>
 
       <div>
         <div class="setting-title">Світлочутливість (ISO)</div>
-        <div class="setting-row" id="iso-group">
+        <div class="setting-grid" id="iso-group">
           <button class="opt-btn active" data-val="auto">Auto</button>
           <button class="opt-btn" data-val="400">400</button>
           <button class="opt-btn" data-val="800">800</button>
@@ -330,15 +341,12 @@
           <div class="grid-line-h" style="top: 61.8%;"></div>
         `;
       } else if (mode === 'fibonacci') {
-        // Правильна гармонійна спіраль Фібоначчі із золотими дугами
         gridOverlay.innerHTML = `
           <svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none">
-            <!-- Золоті лінії та квадрати -->
             <line x1="618" y1="0" x2="618" y2="618" stroke="rgba(255,255,255,0.25)" />
             <line x1="618" y1="382" x2="1000" y2="382" stroke="rgba(255,255,255,0.25)" />
             <line x1="764" y1="382" x2="764" y2="618" stroke="rgba(255,255,255,0.25)" />
             <line x1="618" y1="472" x2="764" y2="472" stroke="rgba(255,255,255,0.25)" />
-            <!-- Точна дуга спіралі -->
             <path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" />
           </svg>
         `;
@@ -424,23 +432,24 @@
       }
     });
 
-    // Налаштування кнопок фокусування (AF / Hyperfocal)
+    // Зональне фокусування (Leica M Scale)
     document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
-        const mode = btn.getAttribute('data-val');
+        const dist = btn.getAttribute('data-dist');
         if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
           const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
           if (caps.focusMode) {
-            if (mode === 'hyperfocal') {
-              videoTrack.applyConstraints({
-                advanced: [{ focusMode: 'manual', focusDistance: 2.5 }]
-              }).catch(() => {});
-            } else {
+            if (dist === 'auto') {
               videoTrack.applyConstraints({
                 advanced: [{ focusMode: 'continuous' }]
+              }).catch(() => {});
+            } else {
+              const distanceVal = parseFloat(dist);
+              videoTrack.applyConstraints({
+                advanced: [{ focusMode: 'manual', focusDistance: distanceVal }]
               }).catch(() => {});
             }
           }
@@ -448,7 +457,7 @@
       });
     });
 
-    // Налаштування кнопок ISO
+    // ISO
     document.querySelectorAll('#iso-group .opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#iso-group .opt-btn').forEach(b => b.classList.remove('active'));
