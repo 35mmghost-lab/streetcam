@@ -47,7 +47,7 @@
       z-index: 1;
     }
 
-    /* Шар для сіток */
+    /* Шар сіток */
     #grid-overlay {
       position: absolute;
       top: 0;
@@ -59,21 +59,21 @@
     }
     .grid-line-v, .grid-line-h {
       position: absolute;
-      background: rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.4);
       box-shadow: 0 0 1px rgba(0, 0, 0, 0.8);
     }
     .grid-line-v { top: 0; bottom: 0; width: 1px; }
     .grid-line-h { left: 0; right: 0; height: 1px; }
 
-    /* Векторна спіраль Фібоначчі */
-    .fibonacci-svg {
+    /* SVG для Спіралі та Діагоналей */
+    .grid-svg {
       width: 100%;
       height: 100%;
       position: absolute;
       top: 0;
       left: 0;
-      stroke: rgba(255, 255, 255, 0.55);
-      stroke-width: 1.5;
+      stroke: rgba(255, 255, 255, 0.45);
+      stroke-width: 1.2;
       fill: none;
       filter: drop-shadow(0 0 1px rgba(0,0,0,0.8));
     }
@@ -124,7 +124,7 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
-    /* Панель налаштувань */
+    /* Меню налаштувань */
     #settings-modal {
       position: absolute;
       bottom: 0;
@@ -297,12 +297,13 @@
     ];
     let currentFilmIdx = 0;
 
-    // Режими сіток зі спіраллю Фібоначчі
-    const gridModes = ['thirds', 'golden', 'fibonacci', 'center', 'off'];
+    // Режими сіток
+    const gridModes = ['thirds', 'golden', 'fibonacci', 'diagonals', 'center', 'off'];
     const gridLabels = {
       'thirds': '🌐 Третини',
       'golden': '🌐 Золотий перетин',
       'fibonacci': '🌐 Спіраль Фібоначчі',
+      'diagonals': '🌐 Діагоналі',
       'center': '🌐 Центр',
       'off': '🌐 Сітка: Вимк'
     };
@@ -329,12 +330,25 @@
           <div class="grid-line-h" style="top: 61.8%;"></div>
         `;
       } else if (mode === 'fibonacci') {
+        // Точна гармонійна спіраль Фібоначчі та золоті прямокутники
         gridOverlay.innerHTML = `
-          <svg class="fibonacci-svg" viewBox="0 0 1000 618" preserveAspectRatio="none">
-            <path d="M 1000,618 A 618,618 0 0,1 382,0 A 382,382 0 0,1 0,382 A 236,236 0 0,1 236,618 A 146,146 0 0,1 382,472 A 90,90 0 0,1 292,382 A 56,56 0 0,1 236,438 A 34,34 0 0,1 270,472" />
-            <line x1="382" y1="0" x2="382" y2="618" stroke="rgba(255,255,255,0.25)" />
-            <line x1="0" y1="382" x2="382" y2="382" stroke="rgba(255,255,255,0.25)" />
-            <line x1="236" y1="382" x2="236" y2="618" stroke="rgba(255,255,255,0.25)" />
+          <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            <path d="M 0,1000 C 552,1000 1000,552 1000,0 C 1000,382 764,618 618,618 C 527,618 454,545 454,454 C 454,398 498,354 554,354 C 588,354 618,382 618,416" />
+            <line x1="618" y1="0" x2="618" y2="1000" stroke="rgba(255,255,255,0.25)" />
+            <line x1="0" y1="618" x2="618" y2="618" stroke="rgba(255,255,255,0.25)" />
+            <line x1="454" y1="354" x2="454" y2="618" stroke="rgba(255,255,255,0.25)" />
+          </svg>
+        `;
+      } else if (mode === 'diagonals') {
+        // Сітка правила діагоналей (Diagonal Method & Harmonic Armature)
+        gridOverlay.innerHTML = `
+          <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            <line x1="0" y1="0" x2="1000" y2="1000" />
+            <line x1="1000" y1="0" x2="0" y2="1000" />
+            <line x1="0" y1="500" x2="500" y2="0" stroke="rgba(255,255,255,0.25)" />
+            <line x1="500" y1="1000" x2="1000" y2="500" stroke="rgba(255,255,255,0.25)" />
+            <line x1="0" y1="500" x2="500" y2="1000" stroke="rgba(255,255,255,0.25)" />
+            <line x1="500" y1="0" x2="1000" y2="500" stroke="rgba(255,255,255,0.25)" />
           </svg>
         `;
       } else if (mode === 'center') {
@@ -419,12 +433,10 @@
           const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
           if (caps.focusMode) {
             if (mode === 'hyperfocal') {
-              // Фіксація фокусу на гіперфокальну відстань (близько 2.5м)
               videoTrack.applyConstraints({
                 advanced: [{ focusMode: 'manual', focusDistance: 2.5 }]
               }).catch(() => {});
             } else {
-              // Безперервний автофокус
               videoTrack.applyConstraints({
                 advanced: [{ focusMode: 'continuous' }]
               }).catch(() => {});
