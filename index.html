@@ -18,12 +18,12 @@
     
     #hud {
       position: fixed; top: 12px; left: 0; width: 100%; display: none;
-      justify-content: space-around; align-items: center; padding: 6px 4px;
+      justify-content: space-around; align-items: center; padding: 6px 2px;
       z-index: 500; background: rgba(0, 0, 0, 0.75);
     }
     .hud-btn {
       background: transparent; border: 1px solid rgba(255, 255, 255, 0.4);
-      color: #eee; padding: 6px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+      color: #eee; padding: 6px 6px; border-radius: 4px; font-size: 10.5px; cursor: pointer; white-space: nowrap;
     }
     .hud-btn.active {
       background: rgba(255, 182, 66, 0.3);
@@ -124,6 +124,7 @@
   <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
+    <button class="hud-btn" id="btn-lang" onclick="nextLang()">🌐 UA</button>
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
     <button class="hud-btn" id="btn-film" onclick="nextFilm()">🎞️ Tri-X 400</button>
     <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
@@ -135,7 +136,7 @@
   <!-- Модальне вікно налаштувань -->
   <div id="settings-modal">
     <div>
-      <div class="setting-title">ЕКСПОКОРЕКЦІЯ (EV)</div>
+      <div class="setting-title" id="t-ev">ЕКСПОКОРЕКЦІЯ (EV)</div>
       <div class="slider-container">
         <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="setEV(this.value)">
         <span id="ev-val" style="min-width: 45px; color: #ffb642;">0.0 EV</span>
@@ -143,7 +144,7 @@
     </div>
 
     <div>
-      <div class="setting-title">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
+      <div class="setting-title" id="t-zone-focus">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
       <div class="setting-grid" id="focus-group">
         <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
         <button class="opt-btn" onclick="setFocus('0.7', this)">0.7 m</button>
@@ -151,7 +152,7 @@
         <button class="opt-btn" onclick="setFocus('2.0', this)">2.0 m</button>
         <button class="opt-btn" onclick="setFocus('3.0', this)">3.0 m</button>
         <button class="opt-btn" onclick="setFocus('5.0', this)">5.0 m</button>
-        <button class="opt-btn" onclick="setFocus('100.0', this)" style="grid-column: span 2;">∞ Нескінченність</button>
+        <button class="opt-btn" onclick="setFocus('100.0', this)" id="opt-inf" style="grid-column: span 2;">∞ Нескінченність</button>
       </div>
     </div>
 
@@ -168,16 +169,114 @@
     const rangefinder = document.getElementById('rangefinder');
     const shutter = document.getElementById('shutter');
     const canvas = document.getElementById('c');
+    const btnLang = document.getElementById('btn-lang');
+    const btnSnap = document.getElementById('btn-snap');
     const btnFilm = document.getElementById('btn-film');
     const btnGrid = document.getElementById('btn-grid');
     const btnRange = document.getElementById('btn-range');
+    const btnStealth = document.getElementById('btn-stealth');
     const stealthOverlay = document.getElementById('stealth-overlay');
+    const btnStealthExit = document.getElementById('btn-stealth-exit');
     const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
     const evVal = document.getElementById('ev-val');
+    const tEv = document.getElementById('t-ev');
+    const tZoneFocus = document.getElementById('t-zone-focus');
+    const optInf = document.getElementById('opt-inf');
 
     let videoTrack = null;
     let isRangeActive = false;
     let currentEV = 0.0;
+
+    const i18n = {
+      ua: {
+        tag: '🌐 UA',
+        startBtn: '▶ УВІМКНУТИ КАМЕРУ',
+        snap: '📷 СПУСК',
+        range: '🎯 Далекомір',
+        stealth: '🕶️ Стелс',
+        stealthExit: '✕ ВИЙТИ',
+        evTitle: 'ЕКСПОКОРЕКЦІЯ (EV)',
+        focusTitle: 'ЗОННЕ ФОКУСУВАННЯ LEICA',
+        optInf: '∞ Нескінченність',
+        closeSettings: 'Закрити',
+        grids: {
+          'off': '🌐 Сітка: Вимк',
+          'thirds': '🌐 Третини',
+          'golden': '🌐 Золотий',
+          'fibonacci': '🌐 Фібоначчі',
+          'diagonals': '🌐 Діагоналі',
+          'center': '🌐 Центр'
+        }
+      },
+      en: {
+        tag: '🌐 EN',
+        startBtn: '▶ START CAMERA',
+        snap: '📷 SNAP',
+        range: '🎯 Rangefinder',
+        stealth: '🕶️ Stealth',
+        stealthExit: '✕ EXIT',
+        evTitle: 'EXPOSURE (EV)',
+        focusTitle: 'LEICA ZONE FOCUS',
+        optInf: '∞ Infinity',
+        closeSettings: 'Close',
+        grids: {
+          'off': '🌐 Grid: Off',
+          'thirds': '🌐 Thirds',
+          'golden': '🌐 Golden',
+          'fibonacci': '🌐 Fibonacci',
+          'diagonals': '🌐 Diagonals',
+          'center': '🌐 Center'
+        }
+      },
+      ja: {
+        tag: '🌐 日本語',
+        startBtn: '▶ カメラを起動',
+        snap: '📷 シャッター',
+        range: '🎯 距離計',
+        stealth: '🕶️ ステルス',
+        stealthExit: '✕ 終了',
+        evTitle: '露出補正 (EV)',
+        focusTitle: 'ゾーンフォーカス',
+        optInf: '∞ 無限遠',
+        closeSettings: '閉じる',
+        grids: {
+          'off': '🌐 グリッド: 切',
+          'thirds': '🌐 三分割',
+          'golden': '🌐 黄金比',
+          'fibonacci': '🌐 フィボナッチ',
+          'diagonals': '🌐 対角線',
+          'center': '🌐 中央クロス'
+        }
+      }
+    };
+
+    const langKeys = ['ua', 'en', 'ja'];
+    let langIdx = 0;
+
+    function applyLanguage() {
+      const currentLang = langKeys[langIdx];
+      const dict = i18n[currentLang];
+
+      btnLang.textContent = dict.tag;
+      btnStart.textContent = dict.startBtn;
+      btnSnap.textContent = dict.snap;
+      btnRange.textContent = dict.range;
+      btnStealth.textContent = dict.stealth;
+      btnStealthExit.textContent = dict.stealthExit;
+
+      tEv.textContent = dict.evTitle;
+      tZoneFocus.textContent = dict.focusTitle;
+      optInf.textContent = dict.optInf;
+      closeSettingsBtn.textContent = dict.closeSettings;
+
+      renderGrid();
+    }
+
+    function nextLang() {
+      langIdx = (langIdx + 1) % langKeys.length;
+      applyLanguage();
+    }
 
     const films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
@@ -190,14 +289,6 @@
     let filmIdx = 0;
 
     const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    const gridLabels = {
-      'off': '🌐 Сітка: Вимк',
-      'thirds': '🌐 Третини',
-      'golden': '🌐 Золотий',
-      'fibonacci': '🌐 Фібоначчі',
-      'diagonals': '🌐 Діагоналі',
-      'center': '🌐 Центр'
-    };
     let gridIdx = 0;
 
     async function startApp() {
@@ -210,6 +301,7 @@
         videoTrack = stream.getVideoTracks()[0];
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
+        applyLanguage();
         applyFilmFilter();
       } catch (err) {
         alert("Помилка камери: " + err.message);
@@ -234,7 +326,8 @@
 
     function renderGrid() {
       const mode = grids[gridIdx];
-      btnGrid.textContent = gridLabels[mode];
+      const currentLang = langKeys[langIdx];
+      btnGrid.textContent = i18n[currentLang].grids[mode];
       grid.innerHTML = '';
 
       if (mode === 'thirds') {
@@ -352,4 +445,5 @@
     }
   </script>
 </body>
-</html>
+  </html>
+  
