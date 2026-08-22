@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>StreetCam</title>
+  <title>StreetCam Pro</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body, html { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: monospace; }
@@ -15,25 +15,29 @@
       border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 1000; cursor: pointer;
     }
 
+    /* Верхня панель з горизонтальним скролом */
     #top-bar {
       position: fixed; top: 10px; left: 0; width: 100%; display: none;
-      justify-content: space-around; z-index: 999; background: rgba(0,0,0,0.65); padding: 8px 4px;
-      flex-wrap: wrap; gap: 4px;
+      z-index: 999; background: rgba(0,0,0,0.75); padding: 8px 6px;
+      overflow-x: auto; white-space: nowrap; gap: 6px; -webkit-overflow-scrolling: touch;
     }
+    #top-bar::-webkit-scrollbar { display: none; }
+    
     .t-btn {
-      background: #222; color: #ffb642; border: 1px solid #ffb642;
-      padding: 6px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+      display: inline-block; background: #222; color: #ffb642; border: 1px solid #ffb642;
+      padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
     .t-btn.active { background: #ffb642; color: #000; font-weight: bold; }
 
-    /* Панель експокорекції */
-    #ev-bar {
-      position: fixed; top: 55px; left: 50%; transform: translateX(-50%);
-      display: none; align-items: center; gap: 8px; z-index: 998;
-      background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px;
+    /* Окремий зручний блок параметрів (EV / Інфо) */
+    #control-strip {
+      position: fixed; top: 58px; left: 0; width: 100%; display: none;
+      justify-content: center; align-items: center; gap: 10px; z-index: 998;
+      background: rgba(0,0,0,0.55); padding: 6px 12px;
     }
-    #ev-slider { accent-color: #ffb642; width: 130px; }
-    #ev-label { font-size: 11px; color: #ffb642; min-width: 45px; }
+    .strip-label { font-size: 11px; color: #aaa; font-weight: bold; }
+    #ev-slider { accent-color: #ffb642; width: 140px; height: 20px; }
+    #ev-label { font-size: 12px; color: #ffb642; min-width: 50px; text-align: right; }
 
     /* Рамка кадрування */
     #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
@@ -59,16 +63,9 @@
     .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; }
     .stadia-label { fill: #ffb642; font-size: 14px; font-weight: bold; font-family: monospace; }
 
-    /* Стелс-оверлей */
-    #stealth-overlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: #000; z-index: 2000; display: none; cursor: pointer;
-    }
-    #btn-stealth-exit {
-      position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.3); color: #888; padding: 8px 12px;
-      border-radius: 6px; font-size: 11px; cursor: pointer;
-    }
+    /* Стелс */
+    #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 2000; display: none; cursor: pointer; }
+    #btn-stealth-exit { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #888; padding: 8px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; }
 
     #hud {
       position: fixed; bottom: 25px; left: 0; width: 100%; display: none;
@@ -101,15 +98,17 @@
     </svg>
   </div>
 
-  <!-- Чорний екран для стелс-зйомки -->
   <div id="stealth-overlay" onclick="snap(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
   <button id="btn-start" onclick="startCam()">▶ УВІМКНУТИ КАМЕРУ</button>
 
+  <!-- Верхня панель (горизонтальна прокрутка) -->
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
+    <button class="t-btn" id="iso-btn" onclick="nextISO()">⚡ ISO: Auto</button>
+    <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Фокус: Auto</button>
     <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
     <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
     <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
@@ -117,8 +116,9 @@
     <button class="t-btn" id="format-btn" onclick="nextFormat()">💾 JPG</button>
   </div>
 
-  <!-- Панель регулювання експозиції -->
-  <div id="ev-bar">
+  <!-- Окремий чистий рядок експокорекції -->
+  <div id="control-strip">
+    <span class="strip-label">EV:</span>
     <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
     <span id="ev-label">0.0 EV</span>
   </div>
@@ -133,12 +133,14 @@
     const v = document.getElementById('v');
     const btnStart = document.getElementById('btn-start');
     const topBar = document.getElementById('top-bar');
-    const evBar = document.getElementById('ev-bar');
+    const controlStrip = document.getElementById('control-strip');
     const evSlider = document.getElementById('ev-slider');
     const evLabel = document.getElementById('ev-label');
     const hud = document.getElementById('hud');
     const c = document.getElementById('c');
     const filmBtn = document.getElementById('film-btn');
+    const isoBtn = document.getElementById('iso-btn');
+    const focusBtn = document.getElementById('focus-btn');
     const frameBtn = document.getElementById('frame-btn');
     const gridBtn = document.getElementById('grid-btn');
     const rangeBtn = document.getElementById('range-btn');
@@ -148,6 +150,8 @@
     const gridEl = document.getElementById('grid');
     const rangeEl = document.getElementById('rangefinder');
     const stealthEl = document.getElementById('stealth-overlay');
+
+    let activeStream = null;
 
     const films = [
       { name: 'Tri-X 400', base: 'grayscale(100%) contrast(150%)' },
@@ -159,6 +163,22 @@
     ];
     let fIdx = 0;
     let currentEV = 0.0;
+
+    // ISO
+    const isoList = ['Auto', '100', '200', '400', '800', '1600', '3200'];
+    let isoIdx = 0;
+
+    // Фокусні зони Leica
+    const focusZones = [
+      { name: 'Auto', val: 'auto' },
+      { name: '0.7m', val: 0.7 },
+      { name: '1.2m', val: 1.2 },
+      { name: '2.0m', val: 2.0 },
+      { name: '3.0m', val: 3.0 },
+      { name: '5.0m', val: 5.0 },
+      { name: '∞ Нескінч', val: 100.0 }
+    ];
+    let focusIdx = 0;
 
     const frames = [
       { name: 'Full', ratio: null },
@@ -190,10 +210,11 @@
           video: { facingMode: "environment" },
           audio: false
         });
+        activeStream = stream;
         v.srcObject = stream;
         btnStart.style.display = 'none';
         topBar.style.display = 'flex';
-        evBar.style.display = 'flex';
+        controlStrip.style.display = 'flex';
         hud.style.display = 'flex';
         applyFilm();
         renderLayout();
@@ -217,6 +238,40 @@
       fIdx = (fIdx + 1) % films.length;
       filmBtn.textContent = '🎞️ ' + films[fIdx].name;
       applyFilm();
+    }
+
+    function nextISO() {
+      isoIdx = (isoIdx + 1) % isoList.length;
+      const curISO = isoList[isoIdx];
+      isoBtn.textContent = '⚡ ISO: ' + curISO;
+
+      if (activeStream) {
+        const track = activeStream.getVideoTracks()[0];
+        if (track && track.applyConstraints) {
+          if (curISO === 'Auto') {
+            track.applyConstraints({ advanced: [{ exposureMode: 'continuous' }] }).catch(() => {});
+          } else {
+            track.applyConstraints({ advanced: [{ iso: parseInt(curISO) }] }).catch(() => {});
+          }
+        }
+      }
+    }
+
+    function nextFocus() {
+      focusIdx = (focusIdx + 1) % focusZones.length;
+      const zone = focusZones[focusIdx];
+      focusBtn.textContent = '🔍 Фокус: ' + zone.name;
+
+      if (activeStream) {
+        const track = activeStream.getVideoTracks()[0];
+        if (track && track.applyConstraints) {
+          if (zone.val === 'auto') {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+          } else {
+            track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: zone.val }] }).catch(() => {});
+          }
+        }
+      }
     }
 
     function nextFrame() {
