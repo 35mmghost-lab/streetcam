@@ -106,6 +106,7 @@
 
   <!-- Верхня панель (горизонтальна прокрутка) -->
   <div id="top-bar">
+    <button class="t-btn" id="lang-btn" onclick="nextLang()">🌐 UA</button>
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
     <button class="t-btn" id="iso-btn" onclick="nextISO()">⚡ ISO: Auto</button>
     <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Фокус: Auto</button>
@@ -116,7 +117,6 @@
     <button class="t-btn" id="format-btn" onclick="nextFormat()">💾 JPG</button>
   </div>
 
-  <!-- Окремий чистий рядок експокорекції -->
   <div id="control-strip">
     <span class="strip-label">EV:</span>
     <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
@@ -138,12 +138,15 @@
     const evLabel = document.getElementById('ev-label');
     const hud = document.getElementById('hud');
     const c = document.getElementById('c');
+    const langBtn = document.getElementById('lang-btn');
     const filmBtn = document.getElementById('film-btn');
     const isoBtn = document.getElementById('iso-btn');
     const focusBtn = document.getElementById('focus-btn');
     const frameBtn = document.getElementById('frame-btn');
     const gridBtn = document.getElementById('grid-btn');
     const rangeBtn = document.getElementById('range-btn');
+    const stealthBtn = document.getElementById('stealth-btn');
+    const btnSnap = document.getElementById('btn-snap');
     const formatBtn = document.getElementById('format-btn');
     const frameline = document.getElementById('frameline');
     const frameBox = document.getElementById('frame-box');
@@ -152,6 +155,63 @@
     const stealthEl = document.getElementById('stealth-overlay');
 
     let activeStream = null;
+
+    // Словник перекладів (UA, EN, JA)
+    const i18n = {
+      ua: {
+        code: '🌐 UA',
+        snap: '📷 СПУСК',
+        range: '🎯 Далекомір',
+        stealth: '🕶️ Стелс',
+        focusPrefix: '🔍 Фокус: ',
+        focusAuto: 'Auto',
+        focusInf: '∞ Нескінч',
+        grids: {
+          off: '🌐 Сітка: Вимк',
+          thirds: '🌐 Третини',
+          golden: '🌐 Золотий перетин',
+          fibonacci: '🌐 Фібоначчі',
+          diagonals: '🌐 Діагоналі',
+          center: '🌐 Центр'
+        }
+      },
+      en: {
+        code: '🌐 EN',
+        snap: '📷 SNAP',
+        range: '🎯 Rangefinder',
+        stealth: '🕶️ Stealth',
+        focusPrefix: '🔍 Focus: ',
+        focusAuto: 'Auto',
+        focusInf: '∞ Infinity',
+        grids: {
+          off: '🌐 Grid: Off',
+          thirds: '🌐 Thirds',
+          golden: '🌐 Golden Ratio',
+          fibonacci: '🌐 Fibonacci',
+          diagonals: '🌐 Diagonals',
+          center: '🌐 Center'
+        }
+      },
+      ja: {
+        code: '🌐 JA',
+        snap: '📷 撮影',
+        range: '🎯 距離計',
+        stealth: '🕶️ ステルス',
+        focusPrefix: '🔍 フォーカス: ',
+        focusAuto: '自動',
+        focusInf: '∞ 無限遠',
+        grids: {
+          off: '🌐 グリッド: 切',
+          thirds: '🌐 三分割',
+          golden: '🌐 黄金比',
+          fibonacci: '🌐 フィボナッチ',
+          diagonals: '🌐 対角線',
+          center: '🌐 中央'
+        }
+      }
+    };
+    const langs = ['ua', 'en', 'ja'];
+    let langIdx = 0;
 
     const films = [
       { name: 'Tri-X 400', base: 'grayscale(100%) contrast(150%)' },
@@ -164,19 +224,17 @@
     let fIdx = 0;
     let currentEV = 0.0;
 
-    // ISO
     const isoList = ['Auto', '100', '200', '400', '800', '1600', '3200'];
     let isoIdx = 0;
 
-    // Фокусні зони Leica
     const focusZones = [
-      { name: 'Auto', val: 'auto' },
-      { name: '0.7m', val: 0.7 },
-      { name: '1.2m', val: 1.2 },
-      { name: '2.0m', val: 2.0 },
-      { name: '3.0m', val: 3.0 },
-      { name: '5.0m', val: 5.0 },
-      { name: '∞ Нескінч', val: 100.0 }
+      { nameKey: 'focusAuto', val: 'auto' },
+      { nameKey: '0.7m', val: 0.7 },
+      { nameKey: '1.2m', val: 1.2 },
+      { nameKey: '2.0m', val: 2.0 },
+      { nameKey: '3.0m', val: 3.0 },
+      { nameKey: '5.0m', val: 5.0 },
+      { nameKey: 'focusInf', val: 100.0 }
     ];
     let focusIdx = 0;
 
@@ -190,14 +248,6 @@
     let rIdx = 0;
 
     const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    const gridLabels = {
-      'off': '🌐 Сітка: Вимк',
-      'thirds': '🌐 Третини',
-      'golden': '🌐 Золотий перетин',
-      'fibonacci': '🌐 Фібоначчі',
-      'diagonals': '🌐 Діагоналі',
-      'center': '🌐 Центр'
-    };
     let gIdx = 0;
 
     let isRangeOn = false;
@@ -218,9 +268,34 @@
         hud.style.display = 'flex';
         applyFilm();
         renderLayout();
+        updateLanguageUI();
       } catch (err) {
         alert("Помилка: " + err.message);
       }
+    }
+
+    function nextLang() {
+      langIdx = (langIdx + 1) % langs.length;
+      updateLanguageUI();
+    }
+
+    function updateLanguageUI() {
+      const curLang = langs[langIdx];
+      const dict = i18n[curLang];
+      langBtn.textContent = dict.code;
+      btnSnap.textContent = dict.snap;
+      rangeBtn.textContent = dict.range;
+      stealthBtn.textContent = dict.stealth;
+
+      // Оновлення поточної сітки
+      gridBtn.textContent = dict.grids[grids[gIdx]];
+
+      // Оновлення назви фокусу
+      const zone = focusZones[focusIdx];
+      let focusText = zone.nameKey;
+      if (zone.nameKey === 'focusAuto') focusText = dict.focusAuto;
+      if (zone.nameKey === 'focusInf') focusText = dict.focusInf;
+      focusBtn.textContent = dict.focusPrefix + focusText;
     }
 
     function applyFilm() {
@@ -259,9 +334,9 @@
 
     function nextFocus() {
       focusIdx = (focusIdx + 1) % focusZones.length;
-      const zone = focusZones[focusIdx];
-      focusBtn.textContent = '🔍 Фокус: ' + zone.name;
+      updateLanguageUI();
 
+      const zone = focusZones[focusIdx];
       if (activeStream) {
         const track = activeStream.getVideoTracks()[0];
         if (track && track.applyConstraints) {
@@ -282,7 +357,7 @@
 
     function nextGrid() {
       gIdx = (gIdx + 1) % grids.length;
-      gridBtn.textContent = gridLabels[grids[gIdx]];
+      updateLanguageUI();
       renderGrid();
     }
 
@@ -424,55 +499,4 @@
       view.setUint16(p, 8, true); p += 2;
       view.setUint16(p, 8, true); p += 2;
 
-      return new Blob([buffer], { type: 'image/x-adobe-dng' });
-    }
-
-    function snap(isSilent = false) {
-      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
-
-      const rawW = v.videoWidth || 1920;
-      const rawH = v.videoHeight || 1080;
-      const curFrame = frames[rIdx];
-
-      let cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
-
-      if (curFrame.ratio) {
-        if (rawW / rawH > curFrame.ratio) {
-          cropW = rawH * curFrame.ratio;
-          cropX = (rawW - cropW) / 2;
-        } else {
-          cropW = rawW / curFrame.ratio;
-          cropX = 0;
-          cropY = (rawH - cropH) / 2;
-        }
-      }
-
-      c.width = Math.round(cropW);
-      c.height = Math.round(cropH);
-      const ctx = c.getContext('2d');
-      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-
-      if (formats[fmtIdx] === 'DNG / RAW') {
-        const imgData = ctx.getImageData(0, 0, c.width, c.height);
-        const dngBlob = buildDNG(c.width, c.height, imgData.data);
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(dngBlob);
-        a.download = 'RAW_' + Date.now() + '.dng';
-        a.click();
-        return;
-      }
-
-      const bFactor = Math.pow(2, currentEV);
-      ctx.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
-      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-      
-      c.toBlob(blob => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'STREET_' + films[fIdx].name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
-        a.click();
-      }, 'image/jpeg', 0.95);
-    }
-  </script>
-</body>
-</html>
+      return
