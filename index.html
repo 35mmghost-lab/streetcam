@@ -47,7 +47,6 @@
       z-index: 1;
     }
 
-    /* Шар сіток */
     #grid-overlay {
       position: absolute;
       top: 0;
@@ -94,7 +93,6 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Бурштиновий рівень горизонту Pip-Boy */
     #spirit-level {
       position: absolute;
       top: 50%;
@@ -122,7 +120,6 @@
       box-shadow: 0 0 3px #000, 0 0 16px #ffb642, 0 0 24px rgba(255, 182, 66, 0.95);
     }
 
-    /* Шар далекоміра (Стадіаметричний + Клінометр) */
     #rangefinder-overlay {
       position: absolute;
       top: 0;
@@ -163,7 +160,6 @@
       text-shadow: 0 0 2px #000;
     }
 
-    /* Механічний затвор */
     #iris-shutter {
       position: absolute;
       top: 0;
@@ -196,7 +192,6 @@
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
-    /* HUD */
     #top-hud {
       position: absolute;
       top: 12px;
@@ -226,7 +221,6 @@
       color: #ffb642;
     }
 
-    /* Налаштування */
     #settings-modal {
       position: absolute;
       bottom: 0;
@@ -312,27 +306,21 @@
       <video id="camera-stream" autoplay playsinline muted></video>
       <div id="grid-overlay"></div>
       
-      <!-- Бурштиновий рівень горизонту -->
       <div id="spirit-level">
         <div class="level-line"></div>
       </div>
 
-      <!-- Далекомірний оверлей -->
       <div id="rangefinder-overlay">
         <div class="rangefinder-hud-val" id="rangefinder-text">DIST: -- m (H: 1.6m)</div>
         <svg class="stadiametric-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-          <!-- Стадіаметричні мітки росту (1.75м): 1.2м, 2.0м, 3.0м -->
-          <!-- 1.2m -->
           <line x1="420" y1="120" x2="440" y2="120" />
           <line x1="420" y1="880" x2="440" y2="880" />
           <text x="385" y="505" class="stadia-text">1.2m</text>
           
-          <!-- 2.0m -->
           <line x1="460" y1="260" x2="475" y2="260" />
           <line x1="460" y1="740" x2="475" y2="740" />
           <text x="430" y="505" class="stadia-text">2.0m</text>
 
-          <!-- 3.0m -->
           <line x1="485" y1="340" x2="495" y2="340" />
           <line x1="485" y1="660" x2="495" y2="660" />
           <text x="510" y="505" class="stadia-text">3.0m</text>
@@ -344,7 +332,6 @@
       </div>
     </div>
 
-    <!-- Панель керування HUD -->
     <div id="top-hud">
       <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
       <button class="hud-btn" id="level-btn">🧭 Рівень</button>
@@ -355,7 +342,6 @@
       <button class="hud-btn" id="open-settings-btn">⚙️</button>
     </div>
 
-    <!-- Модальне вікно налаштувань -->
     <div id="settings-modal">
       <div>
         <div class="setting-title">Висота точки зйомки далекоміра</div>
@@ -381,7 +367,6 @@
         </div>
       </div>
 
-      <!-- Зональний фокус Leica M -->
       <div>
         <div class="setting-title">Фокусна відстань (Leica Zone Focus)</div>
         <div class="setting-grid" id="focus-group">
@@ -439,7 +424,7 @@
     let isRangeActive = false;
     let hapticsEnabled = true;
     let wasAligned = false;
-    let cameraHeight = 1.6; // Базова висота точки зйомки (метри)
+    let cameraHeight = 1.6;
 
     const filmPresets = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 14 },
@@ -519,13 +504,11 @@
       }
     }
 
-    // Обробка орієнтації: Рівень + Тригонометричний далекомір
     function handleOrientation(event) {
       const isLandscape = window.innerWidth > window.innerHeight;
       const roll = isLandscape ? (event.beta || 0) : (event.gamma || 0);
       const pitch = isLandscape ? (event.gamma || 0) : (event.beta || 0);
 
-      // Оновлення рівня горизонту
       if (isLevelActive) {
         levelLine.style.transform = `rotate(${roll}deg)`;
         const isAligned = Math.abs(roll) <= 0.5;
@@ -541,7 +524,6 @@
         }
       }
 
-      // Оновлення гіро-далекоміра (кут нахилу вниз)
       if (isRangeActive) {
         const declination = Math.max(1, 90 - Math.abs(pitch));
         const rad = declination * (Math.PI / 180);
@@ -579,7 +561,6 @@
       checkSensorPermission();
     });
 
-    // Налаштування висоти зйомки далекоміра
     document.querySelectorAll('#height-group .opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#height-group .opt-btn').forEach(b => b.classList.remove('active'));
@@ -588,7 +569,6 @@
       });
     });
 
-    // Налаштування вібрації
     document.querySelectorAll('#haptic-group .opt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#haptic-group .opt-btn').forEach(b => b.classList.remove('active'));
@@ -603,4 +583,31 @@
           currentStream.getTracks().forEach(t => t.stop());
         }
 
-        // Запит максимальної роздільної здатності
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 3840 },
+            height: { ideal: 2160 }
+          },
+          audio: false
+        });
+
+        currentStream = stream;
+        video.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
+
+        await video.play();
+        updateFilters();
+        renderGrid();
+      } catch (err) {
+        console.error('Помилка камери:', err);
+      }
+    }
+
+    function getCombinedFilter() {
+      const brightnessFactor = Math.pow(2, currentEV);
+      const preset = filmPresets[currentFilmIdx];
+      if (preset.isBW) {
+        return `grayscale(100%) contrast(${preset.contrast * 100}%) brightness(${brightnessFactor * 100}%)`;
+      } else {
+        return `
