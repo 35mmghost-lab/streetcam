@@ -11,10 +11,12 @@
     #viewfinder-box {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       display: flex; justify-content: center; align-items: center; background: #000;
+      overflow: hidden;
     }
-    #v-frame {
+    #v-container {
       position: relative; width: 100vw; height: 100vh;
       display: flex; justify-content: center; align-items: center; overflow: hidden;
+      background: #000;
     }
     video { width: 100%; height: 100%; object-fit: cover; }
     
@@ -22,7 +24,7 @@
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       z-index: 1000; padding: 20px 32px; font-size: 16px; font-weight: bold;
       background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 182, 66, 0.6);
+      box-shadow: 0 0 20px rgba(255, 182, 66, 0.6); text-align: center;
     }
     
     #hud {
@@ -105,7 +107,7 @@
 </head>
 <body>
   <div id="viewfinder-box">
-    <div id="v-frame">
+    <div id="v-container">
       <video id="v" autoplay playsinline muted></video>
       <div id="grid"></div>
       <div id="rangefinder">
@@ -151,22 +153,22 @@
     <div>
       <div class="setting-title" id="t-lang">МОВА / LANGUAGE</div>
       <div class="setting-grid" id="lang-group">
-        <button class="opt-btn active" onclick="setLanguage('ua', this)">UA Українська</button>
-        <button class="opt-btn" onclick="setLanguage('en', this)">EN English</button>
-        <button class="opt-btn" onclick="setLanguage('ja', this)">JA 日本語</button>
+        <button class="opt-btn active" onclick="setLanguage('ua')">UA Українська</button>
+        <button class="opt-btn" onclick="setLanguage('en')">EN English</button>
+        <button class="opt-btn" onclick="setLanguage('ja')">JA 日本語</button>
       </div>
     </div>
 
     <div>
       <div class="setting-title" id="t-ratio">ФОРМАТ КАДРУ (ASPECT RATIO)</div>
       <div class="setting-grid" id="ratio-group" style="grid-template-columns: repeat(4, 1fr);">
-        <button class="opt-btn active" onclick="selectRatio(0, this)">3:2 (35mm)</button>
-        <button class="opt-btn" onclick="selectRatio(1, this)">4:3 (645)</button>
-        <button class="opt-btn" onclick="selectRatio(2, this)">4:5 (Insta)</button>
-        <button class="opt-btn" onclick="selectRatio(3, this)">1:1 (6x6)</button>
-        <button class="opt-btn" onclick="selectRatio(4, this)">16:9</button>
-        <button class="opt-btn" onclick="selectRatio(5, this)" style="grid-column: span 2;">65:24 (XPan)</button>
-        <button class="opt-btn" onclick="selectRatio(6, this)">Full</button>
+        <button class="opt-btn active" onclick="selectRatio(0)">3:2 (35mm)</button>
+        <button class="opt-btn" onclick="selectRatio(1)">4:3 (645)</button>
+        <button class="opt-btn" onclick="selectRatio(2)">4:5 (Insta)</button>
+        <button class="opt-btn" onclick="selectRatio(3)">1:1 (6x6)</button>
+        <button class="opt-btn" onclick="selectRatio(4)">16:9</button>
+        <button class="opt-btn" onclick="selectRatio(5)" style="grid-column: span 2;">65:24 (XPan)</button>
+        <button class="opt-btn" onclick="selectRatio(6)">Full</button>
       </div>
     </div>
 
@@ -197,8 +199,12 @@
   <canvas id="c"></canvas>
 
   <script>
+    window.onerror = function(msg, url, line) {
+      alert("JS Помилка: " + msg + " (рядок: " + line + ")");
+    };
+
     const v = document.getElementById('v');
-    const vFrame = document.getElementById('v-frame');
+    const vContainer = document.getElementById('v-container');
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
     const grid = document.getElementById('grid');
@@ -212,13 +218,7 @@
     const btnRange = document.getElementById('btn-range');
     const stealthOverlay = document.getElementById('stealth-overlay');
     const settingsModal = document.getElementById('settings-modal');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
     const evVal = document.getElementById('ev-val');
-    const tLang = document.getElementById('t-lang');
-    const tRatio = document.getElementById('t-ratio');
-    const tEv = document.getElementById('t-ev');
-    const tZoneFocus = document.getElementById('t-zone-focus');
-    const optInf = document.getElementById('opt-inf');
 
     let videoTrack = null;
     let isRangeActive = false;
@@ -296,33 +296,6 @@
     const langKeys = ['ua', 'en', 'ja'];
     let langIdx = 0;
 
-    function applyLanguage() {
-      const dict = i18n[langKeys[langIdx]];
-      if (btnLang) btnLang.textContent = dict.tag;
-      if (tLang) tLang.textContent = dict.langTitle;
-      if (tRatio) tRatio.textContent = dict.ratioTitle;
-      if (tEv) tEv.textContent = dict.evTitle;
-      if (tZoneFocus) tZoneFocus.textContent = dict.focusTitle;
-      if (optInf) optInf.textContent = dict.optInf;
-      if (closeSettingsBtn) closeSettingsBtn.textContent = dict.closeSettings;
-
-      const opts = document.querySelectorAll('#lang-group .opt-btn');
-      opts.forEach((b, idx) => b.classList.toggle('active', idx === langIdx));
-
-      renderGrid();
-    }
-
-    function setLanguage(lang, el) {
-      langIdx = langKeys.indexOf(lang);
-      if (langIdx === -1) langIdx = 0;
-      applyLanguage();
-    }
-
-    function nextLang() {
-      langIdx = (langIdx + 1) % langKeys.length;
-      applyLanguage();
-    }
-
     const films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
       { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
@@ -347,16 +320,47 @@
     const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
     let gridIdx = 0;
 
+    function applyLanguage() {
+      const dict = i18n[langKeys[langIdx]];
+      if (btnLang) btnLang.textContent = dict.tag;
+      if (document.getElementById('btn-snap')) document.getElementById('btn-snap').textContent = dict.snap;
+      if (document.getElementById('btn-range')) document.getElementById('btn-range').textContent = dict.range;
+      if (document.getElementById('btn-stealth')) document.getElementById('btn-stealth').textContent = dict.stealth;
+      if (document.getElementById('btn-stealth-exit')) document.getElementById('btn-stealth-exit').textContent = dict.stealthExit;
+      if (document.getElementById('t-lang')) document.getElementById('t-lang').textContent = dict.langTitle;
+      if (document.getElementById('t-ratio')) document.getElementById('t-ratio').textContent = dict.ratioTitle;
+      if (document.getElementById('t-ev')) document.getElementById('t-ev').textContent = dict.evTitle;
+      if (document.getElementById('t-zone-focus')) document.getElementById('t-zone-focus').textContent = dict.focusTitle;
+      if (document.getElementById('opt-inf')) document.getElementById('opt-inf').textContent = dict.optInf;
+      if (document.getElementById('close-settings-btn')) document.getElementById('close-settings-btn').textContent = dict.closeSettings;
+
+      const langBtns = document.querySelectorAll('#lang-group .opt-btn');
+      langBtns.forEach((b, idx) => b.classList.toggle('active', idx === langIdx));
+
+      renderGrid();
+    }
+
+    function setLanguage(lang) {
+      langIdx = langKeys.indexOf(lang);
+      if (langIdx === -1) langIdx = 0;
+      applyLanguage();
+    }
+
+    function nextLang() {
+      langIdx = (langIdx + 1) % langKeys.length;
+      applyLanguage();
+    }
+
     function applyRatioFrame() {
       const r = ratios[ratioIdx];
       if (btnRatio) btnRatio.textContent = '📐 ' + r.name;
 
-      const opts = document.querySelectorAll('#ratio-group .opt-btn');
-      opts.forEach((b, idx) => b.classList.toggle('active', idx === ratioIdx));
+      const ratioBtns = document.querySelectorAll('#ratio-group .opt-btn');
+      ratioBtns.forEach((b, idx) => b.classList.toggle('active', idx === ratioIdx));
 
       if (!r.p) {
-        vFrame.style.width = '100vw';
-        vFrame.style.height = '100vh';
+        vContainer.style.width = '100vw';
+        vContainer.style.height = '100vh';
         return;
       }
       const isPortrait = window.innerHeight >= window.innerWidth;
@@ -364,15 +368,15 @@
       const screenRatio = window.innerWidth / window.innerHeight;
 
       if (screenRatio > targetRatio) {
-        vFrame.style.height = '100vh';
-        vFrame.style.width = Math.round(window.innerHeight * targetRatio) + 'px';
+        vContainer.style.height = '100vh';
+        vContainer.style.width = Math.round(window.innerHeight * targetRatio) + 'px';
       } else {
-        vFrame.style.width = '100vw';
-        vFrame.style.height = Math.round(window.innerWidth / targetRatio) + 'px';
+        vContainer.style.width = '100vw';
+        vContainer.style.height = Math.round(window.innerWidth / targetRatio) + 'px';
       }
     }
 
-    function selectRatio(idx, el) {
+    function selectRatio(idx) {
       ratioIdx = idx;
       applyRatioFrame();
     }
@@ -380,36 +384,6 @@
     function nextRatio() {
       ratioIdx = (ratioIdx + 1) % ratios.length;
       applyRatioFrame();
-    }
-
-    window.addEventListener('resize', applyRatioFrame);
-
-    async function startApp() {
-      btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
-      try {
-        let stream = null;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" } },
-            audio: false
-          });
-        } catch (e1) {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        }
-
-        v.srcObject = stream;
-        await v.play();
-        videoTrack = stream.getVideoTracks()[0];
-
-        btnStart.style.display = 'none';
-        hud.style.display = 'flex';
-        applyLanguage();
-        applyFilmFilter();
-        applyRatioFrame();
-      } catch (err) {
-        btnStart.textContent = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка камери: " + err.name + " - " + err.message);
-      }
     }
 
     function applyFilmFilter() {
@@ -484,4 +458,10 @@
     }
 
     function setFocus(dist, el) {
-      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('acti
+      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+      if (videoTrack && videoTrack.applyConstraints) {
+        if (dist === 'auto') {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        } else {
+          videoT
