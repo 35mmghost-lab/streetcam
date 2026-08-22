@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>StreetCam</title>
   <style>
     * {
@@ -10,28 +13,37 @@
       margin: 0;
       padding: 0;
     }
-    body {
-      margin: 0;
+    body, html {
+      width: 100%;
+      height: 100%;
       background: #000;
       color: #fff;
       font-family: monospace;
-      height: 100vh;
       overflow: hidden;
       user-select: none;
       -webkit-user-select: none;
     }
 
-    video {
+    /* Адаптивний видошукач */
+    #viewfinder-box {
       position: fixed;
       top: 0;
       left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+    }
+    video {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      z-index: 1;
       filter: grayscale(100%) contrast(150%);
     }
 
+    /* Стартова кнопка */
     #btn-start {
       position: fixed;
       top: 50%;
@@ -49,9 +61,10 @@
       box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
     }
 
+    /* Верхня панель HUD */
     #hud {
       position: fixed;
-      top: 10px;
+      top: env(safe-area-inset-top, 10px);
       left: 0;
       width: 100%;
       display: none;
@@ -78,6 +91,7 @@
       color: #ffb642;
     }
 
+    /* Сітки */
     #grid {
       position: fixed;
       top: 0;
@@ -121,32 +135,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    #level {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 240px;
-      height: 24px;
-      pointer-events: none;
-      z-index: 60;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-    #level-line {
-      width: 100%;
-      height: 2.5px;
-      background: #ffb642;
-      box-shadow: 0 0 10px rgba(255, 182, 66, 0.95);
-      transform-origin: center center;
-    }
-    #level-line.aligned {
-      height: 3.5px;
-      background: #ffe082;
-      box-shadow: 0 0 18px rgba(255, 182, 66, 1);
-    }
-
+    /* Далекомір */
     #rangefinder {
       position: fixed;
       top: 0;
@@ -185,6 +174,7 @@
       font-family: monospace;
     }
 
+    /* Затвор */
     #shutter {
       position: fixed;
       top: 0;
@@ -201,6 +191,7 @@
       opacity: 0.9;
     }
 
+    /* Налаштування */
     #settings-modal {
       position: fixed;
       bottom: 0;
@@ -269,13 +260,11 @@
   </style>
 </head>
 <body>
-  <video id="v" autoplay playsinline muted></video>
+  <div id="viewfinder-box">
+    <video id="v" autoplay playsinline muted></video>
+  </div>
   
   <div id="grid"></div>
-  
-  <div id="level">
-    <div id="level-line"></div>
-  </div>
 
   <div id="rangefinder">
     <div id="range-text">DIST: -- m (H: 1.60m)</div>
@@ -302,17 +291,16 @@
     <button class="hud-btn" id="btn-snap">📷 SNAP</button>
     <button class="hud-btn" id="btn-film">🎞️ Tri-X 400</button>
     <button class="hud-btn" id="btn-grid">🌐 Третини</button>
-    <button class="hud-btn" id="btn-level">🧭 Рівень</button>
     <button class="hud-btn" id="btn-range">🎯 Далекомір</button>
     <button class="hud-btn" id="btn-settings">⚙️</button>
   </div>
 
   <div id="settings-modal">
     <div>
-      <div class="setting-title">ВИСОТА ЗЙОМКИ</div>
+      <div class="setting-title">ВИСОТА ТОЧКИ ЗЙОМКИ</div>
       <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="height-group">
-        <button class="opt-btn active" data-h="1.6">👁️ Очі (1.60 м)</button>
-        <button class="opt-btn" data-h="1.3">🥋 Пояс (1.30 м)</button>
+        <button class="opt-btn active" data-h="1.6">👁️ Рівень очей (1.60 м)</button>
+        <button class="opt-btn" data-h="1.3">🥋 Рівень пояса (1.30 м)</button>
       </div>
     </div>
 
@@ -347,10 +335,7 @@
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
     const grid = document.getElementById('grid');
-    const level = document.getElementById('level');
-    const levelLine = document.getElementById('level-line');
     const rangefinder = document.getElementById('rangefinder');
-    const rangeText = document.getElementById('range-text');
     const shutter = document.getElementById('shutter');
     const canvas = document.getElementById('c');
     const settingsModal = document.getElementById('settings-modal');
@@ -358,7 +343,6 @@
     const btnSnap = document.getElementById('btn-snap');
     const btnFilm = document.getElementById('btn-film');
     const btnGrid = document.getElementById('btn-grid');
-    const btnLevel = document.getElementById('btn-level');
     const btnRange = document.getElementById('btn-range');
     const btnSettings = document.getElementById('btn-settings');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
@@ -366,9 +350,7 @@
     const evVal = document.getElementById('ev-val');
 
     let videoTrack = null;
-    let isLevelActive = false;
     let isRangeActive = false;
-    let cameraHeight = 1.60;
     let currentEV = 0.0;
 
     const films = [
@@ -420,8 +402,13 @@
       }
     }
 
-    // 1. ЗАПУСК КАМЕРИ
+    // 1. ЗАПУСК КАМЕРИ ТА ПОВНОЕКРАННОГО РЕЖИМУ
     btnStart.addEventListener('click', () => {
+      // Запит повного екрана (ховає рядок браузера)
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
@@ -433,7 +420,6 @@
         hud.style.display = 'flex';
         renderGrid();
         updateFilters();
-        bindSensors();
       }).catch(err => {
         alert("Помилка камери: " + err.message);
       });
@@ -454,49 +440,12 @@
       renderGrid();
     });
 
-    // 4. ДАТЧИКИ ОРІЄНТАЦІЇ ТА РІВЕНЬ
-    function updateOrientation(e) {
-      const isLandscape = window.innerWidth > window.innerHeight;
-      const roll = isLandscape ? (e.beta || 0) : (e.gamma || 0);
-      const pitch = isLandscape ? (e.gamma || 0) : (e.beta || 0);
-
-      if (isLevelActive) {
-        levelLine.style.transform = 'rotate(' + roll + 'deg)';
-        if (Math.abs(roll) <= 0.6) {
-          levelLine.classList.add('aligned');
-        } else {
-          levelLine.classList.remove('aligned');
-        }
-      }
-
-      if (isRangeActive) {
-        const declination = Math.max(1, 90 - Math.abs(pitch));
-        const rad = declination * (Math.PI / 180);
-        let dist = cameraHeight / Math.tan(rad);
-        dist = Math.min(Math.max(dist, 0.5), 50.0);
-        rangeText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
-      }
-    }
-
-    function bindSensors() {
-      window.addEventListener('deviceorientation', updateOrientation, true);
-      window.addEventListener('deviceorientationabsolute', updateOrientation, true);
-    }
-
-    btnLevel.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isLevelActive = !isLevelActive;
-      level.style.display = isLevelActive ? 'flex' : 'none';
-      btnLevel.classList.toggle('active', isLevelActive);
-      bindSensors();
-    });
-
+    // 4. ДАЛЕКОМІР
     btnRange.addEventListener('click', (e) => {
       e.stopPropagation();
       isRangeActive = !isRangeActive;
       rangefinder.style.display = isRangeActive ? 'block' : 'none';
       btnRange.classList.toggle('active', isRangeActive);
-      bindSensors();
     });
 
     // 5. НАЛАШТУВАННЯ
@@ -513,14 +462,6 @@
       currentEV = parseFloat(e.target.value);
       evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
       updateFilters();
-    });
-
-    document.querySelectorAll('#height-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#height-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        cameraHeight = parseFloat(btn.getAttribute('data-h'));
-      });
     });
 
     document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
