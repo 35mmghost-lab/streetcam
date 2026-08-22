@@ -6,7 +6,7 @@
   <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; }
+    body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
     #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
     video { width: 100%; height: 100%; object-fit: cover; }
     
@@ -27,10 +27,7 @@
     }
 
     /* Сітки */
-    #grid {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 50;
-    }
+    #grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.4); }
     .grid-v { top: 0; bottom: 0; width: 1px; }
     .grid-h { left: 0; right: 0; height: 1px; }
@@ -39,6 +36,17 @@
     .center-cross::before, .center-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.7); }
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
+
+    /* Стелс-оверлей */
+    #stealth-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 950; display: none; cursor: pointer;
+    }
+    #btn-stealth-exit {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
+    }
 
     #shutter {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -55,12 +63,19 @@
 
   <div id="grid"></div>
   <div id="shutter"></div>
+
+  <!-- Оверлей стелс-режиму -->
+  <div id="stealth-overlay" onclick="takePhoto(true)">
+    <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
+  </div>
+
   <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
-    <button class="hud-btn" id="btn-snap" onclick="takePhoto()">📷 СПУСК</button>
+    <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
     <button class="hud-btn" id="btn-film" onclick="nextFilm()">🎞️ Tri-X 400</button>
     <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
+    <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
   </div>
 
   <canvas id="c"></canvas>
@@ -74,6 +89,7 @@
     const canvas = document.getElementById('c');
     const btnFilm = document.getElementById('btn-film');
     const btnGrid = document.getElementById('btn-grid');
+    const stealthOverlay = document.getElementById('stealth-overlay');
 
     const films = [
       { name: 'Tri-X 400', contrast: 1.55 },
@@ -139,10 +155,25 @@
       renderGrid();
     }
 
-    function takePhoto() {
-      shutter.classList.add('flash');
-      setTimeout(() => shutter.classList.remove('flash'), 100);
-      if (navigator.vibrate) navigator.vibrate(30);
+    function enterStealth() {
+      stealthOverlay.style.display = 'block';
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+
+    function exitStealth(e) {
+      if (e) e.stopPropagation();
+      stealthOverlay.style.display = 'none';
+      if (navigator.vibrate) navigator.vibrate([20, 20]);
+    }
+
+    function takePhoto(isSilent = false) {
+      if (!isSilent) {
+        shutter.classList.add('flash');
+        setTimeout(() => shutter.classList.remove('flash'), 100);
+      }
+      if (navigator.vibrate) {
+        navigator.vibrate(isSilent ? 35 : 30);
+      }
 
       const w = v.videoWidth || 1920;
       const h = v.videoHeight || 1080;
