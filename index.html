@@ -27,19 +27,47 @@
       align-items: center;
       background: #000;
     }
-    #viewfinder {
-      position: absolute;
+    video {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       z-index: 1;
+      filter: grayscale(100%) contrast(150%);
+    }
+
+    /* Стартовий екран запуску */
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      z-index: 1000;
+    }
+    #start-btn {
+      padding: 18px 36px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+      background: #ffb642;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 24px rgba(255, 182, 66, 0.8);
     }
 
     /* Сітки композиції */
     #grid-overlay {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
@@ -83,9 +111,9 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Бурштиновий рівень горизонту */
+    /* Бурштиновий рівень Pip-Boy */
     #spirit-level {
-      position: absolute;
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -111,9 +139,9 @@
       box-shadow: 0 0 3px #000, 0 0 16px #ffb642, 0 0 24px rgba(255, 182, 66, 0.95);
     }
 
-    /* Стадіаметричний далекомір */
+    /* Далекомір */
     #rangefinder-overlay {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
@@ -151,9 +179,9 @@
       font-family: monospace;
     }
 
-    /* Анімація механічного затвора */
+    /* Анімація спуску затвора */
     #iris-shutter {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
@@ -184,9 +212,9 @@
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
-    /* Верхня панель HUD */
+    /* Верхній HUD */
     #top-hud {
-      position: absolute;
+      position: fixed;
       top: 10px;
       left: 0;
       width: 100%;
@@ -207,7 +235,6 @@
       font-size: 11px;
       letter-spacing: 0.5px;
       cursor: pointer;
-      touch-action: manipulation;
     }
     .hud-btn.active {
       background: rgba(255, 182, 66, 0.3);
@@ -217,7 +244,7 @@
 
     /* Модальне вікно налаштувань */
     #settings-modal {
-      position: absolute;
+      position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
@@ -254,7 +281,6 @@
       cursor: pointer;
       text-align: center;
       font-family: monospace;
-      touch-action: manipulation;
     }
     .opt-btn.active {
       background: #fff;
@@ -289,7 +315,6 @@
       font-size: 12px;
       margin-top: 4px;
       cursor: pointer;
-      touch-action: manipulation;
     }
     canvas {
       display: none;
@@ -297,6 +322,12 @@
   </style>
 </head>
 <body>
+  <div id="start-screen">
+    <div style="font-size: 22px; font-weight: bold; color: #ffb642; letter-spacing: 1px;">STREETCAM</div>
+    <div style="font-size: 13px; color: #888; text-align: center; max-width: 280px;">Натисніть для запуску видошукача</div>
+    <button id="start-btn">▶ УВІМКНУТИ КАМЕРУ</button>
+  </div>
+
   <div id="app-container">
     <video id="viewfinder" autoplay playsinline muted></video>
     <div id="grid-overlay"></div>
@@ -393,6 +424,8 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
+    const startScreen = document.getElementById('start-screen');
+    const startBtn = document.getElementById('start-btn');
     const video = document.getElementById('viewfinder');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -448,6 +481,25 @@
       'off': '🌐 Сітка: Вимк'
     };
     let currentGridIdx = 0;
+
+    // Запуск камери за кліком на стартову кнопку
+    startBtn.addEventListener('click', () => {
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      }).then(stream => {
+        currentStream = stream;
+        video.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
+        video.play();
+        startScreen.style.display = 'none';
+        updateFilters();
+        renderGrid();
+        checkSensorPermission();
+      }).catch(err => {
+        alert("Помилка доступу до камери: " + err.message);
+      });
+    });
 
     function renderGrid() {
       const mode = gridModes[currentGridIdx];
@@ -558,42 +610,4 @@
       }
     };
 
-    document.getElementById('open-settings-btn').onclick = (e) => {
-      e.stopPropagation();
-      settingsModal.style.display = 'flex';
-    };
-
-    document.getElementById('close-settings-btn').onclick = () => {
-      settingsModal.style.display = 'none';
-    };
-
-    evSlider.oninput = (e) => {
-      currentEV = parseFloat(e.target.value);
-      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      updateFilters();
-    };
-
-    document.querySelectorAll('#height-group .opt-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#height-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        cameraHeight = parseFloat(btn.getAttribute('data-h'));
-      };
-    });
-
-    document.querySelectorAll('#haptic-group .opt-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#haptic-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        hapticsEnabled = btn.getAttribute('data-haptic') === 'on';
-      };
-    });
-
-    document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const dist = btn.getAttribute('data-dist');
-        if (videoTrack && videoTrack.applyConstraints) {
-          if (dist === 'auto') {
-            videoTrack.applyConstraints({ advanced: [{ focusMode: 'cont
+    document.getElementBy
