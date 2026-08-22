@@ -12,7 +12,7 @@
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 18px 28px; font-size: 16px; font-weight: bold; background: #ffb642;
-      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 1000;
+      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 1000; cursor: pointer;
     }
 
     #top-bar {
@@ -130,12 +130,14 @@
     ];
     let rIdx = 0;
 
-    const grids = ['off', 'thirds', 'diagonals', 'golden', 'center'];
+    // Всі 6 режимів композиційної розмітки
+    const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
     const gridLabels = {
       'off': '🌐 Сітка: Вимк',
       'thirds': '🌐 Третини',
+      'golden': '🌐 Золотий перетин',
+      'fibonacci': '🌐 Фібоначчі',
       'diagonals': '🌐 Діагоналі',
-      'golden': '🌐 Золотий',
       'center': '🌐 Центр'
     };
     let gIdx = 0;
@@ -187,8 +189,10 @@
         gridEl.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
       } else if (mode === 'golden') {
         gridEl.innerHTML = '<div class="grid-v" style="left:38.2%;"></div><div class="grid-v" style="left:61.8%;"></div><div class="grid-h" style="top:38.2%;"></div><div class="grid-h" style="top:61.8%;"></div>';
+      } else if (mode === 'fibonacci') {
+        gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" /><line x1="618" y1="0" x2="618" y2="618" stroke="rgba(255,255,255,0.3)" /><line x1="618" y1="382" x2="1000" y2="382" stroke="rgba(255,255,255,0.3)" /><line x1="764" y1="382" x2="764" y2="618" stroke="rgba(255,255,255,0.3)" /></svg>';
       } else if (mode === 'diagonals') {
-        gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /></svg>';
+        gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="1000" y1="0" x2="0" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="0" y1="500" x2="500" y2="0" stroke="rgba(255,255,255,0.25)" /><line x1="500" y1="1000" x2="1000" y2="500" stroke="rgba(255,255,255,0.25)" /></svg>';
       } else if (mode === 'center') {
         gridEl.innerHTML = '<div class="center-cross"></div><div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
       }
@@ -291,7 +295,7 @@
           cropW = rawH * curFrame.ratio;
           cropX = (rawW - cropW) / 2;
         } else {
-          cropH = rawW / curFrame.ratio;
+          cropW = rawW / curFrame.ratio;
           cropX = 0;
           cropY = (rawH - cropH) / 2;
         }
@@ -324,4 +328,5 @@
     }
   </script>
 </body>
-</html>
+  </html>
+  
