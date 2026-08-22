@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>StreetCam</title>
+  <title>StreetCam Pro</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
-    #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    
+    #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
     video { width: 100%; height: 100%; object-fit: cover; }
     
     #btn-start {
@@ -29,6 +30,17 @@
       background: rgba(255, 182, 66, 0.3);
       border-color: #ffb642;
       color: #ffb642;
+    }
+
+    /* Рамка кадрування (Framelines) */
+    #frameline-box {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 45; display: flex; justify-content: center; align-items: center;
+    }
+    #frameline-border {
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 182, 66, 0.8);
+      position: relative;
     }
 
     /* Сітки */
@@ -66,7 +78,7 @@
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(15, 15, 15, 0.98); border-top: 1px solid #333;
       padding: 16px; display: none; flex-direction: column; gap: 14px;
-      z-index: 900; max-height: 80vh; overflow-y: auto;
+      z-index: 900; max-height: 85vh; overflow-y: auto;
     }
     .setting-title { font-size: 11px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
     .setting-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -74,7 +86,7 @@
       padding: 8px 4px; background: #222; color: #aaa; border: 1px solid #333;
       border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace;
     }
-    .opt-btn.active { background: #fff; color: #000; font-weight: bold; }
+    .opt-btn.active { background: #ffb642; color: #000; font-weight: bold; border-color: #ffb642; }
     .slider-container { display: flex; align-items: center; gap: 12px; }
     input[type=range] { flex: 1; accent-color: #ffb642; }
     #close-settings-btn {
@@ -93,6 +105,11 @@
 <body>
   <div id="viewfinder-box">
     <video id="v" autoplay playsinline muted></video>
+  </div>
+
+  <!-- Рамка кадрування -->
+  <div id="frameline-box">
+    <div id="frameline-border"></div>
   </div>
 
   <div id="grid"></div>
@@ -126,24 +143,59 @@
   <div id="hud">
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
     <button class="hud-btn" id="btn-film" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
+    <button class="hud-btn" id="btn-grid" onclick="nextGrid()">⊞ Сітка: Вимк</button>
     <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Далекомір</button>
     <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
     <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
   </div>
 
-  <!-- Модальне вікно налаштувань -->
+  <!-- Меню налаштувань -->
   <div id="settings-modal">
+    <!-- МОВА -->
     <div>
-      <div class="setting-title">ЕКСПОКОРЕКЦІЯ (EV)</div>
+      <div class="setting-title" id="t-lang">МОВА / LANGUAGE</div>
+      <div class="setting-grid" id="lang-group" style="grid-template-columns: repeat(3, 1fr);">
+        <button class="opt-btn active" onclick="setLanguage('ua', this)">UA Українська</button>
+        <button class="opt-btn" onclick="setLanguage('en', this)">EN English</button>
+        <button class="opt-btn" onclick="setLanguage('ja', this)">JA 日本語</button>
+      </div>
+    </div>
+
+    <!-- ФОРМАТ ЗБЕРЕЖЕННЯ (JPEG / RAW DNG) -->
+    <div>
+      <div class="setting-title" id="t-save-format">ФОРМАТ ЗБЕРЕЖЕННЯ</div>
+      <div class="setting-grid" id="save-format-group" style="grid-template-columns: repeat(2, 1fr);">
+        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Look)</button>
+        <button class="opt-btn" onclick="setSaveFormat('raw', this)">RAW / DNG (Чистий)</button>
+      </div>
+    </div>
+
+    <!-- КЛАСИЧНІ РАМКИ (FRAMELINES) -->
+    <div>
+      <div class="setting-title" id="t-frame">КЛАСИЧНІ РАМКИ (FRAMELINES)</div>
+      <div class="setting-grid" id="frame-group">
+        <button class="opt-btn active" onclick="setFrameline(0, this)">Full</button>
+        <button class="opt-btn" onclick="setFrameline(1, this)">3:2 (35mm)</button>
+        <button class="opt-btn" onclick="setFrameline(2, this)">4:3 (645)</button>
+        <button class="opt-btn" onclick="setFrameline(3, this)">4:5 (Insta)</button>
+        <button class="opt-btn" onclick="setFrameline(4, this)">1:1 (6x6)</button>
+        <button class="opt-btn" onclick="setFrameline(5, this)">16:9</button>
+        <button class="opt-btn" onclick="setFrameline(6, this)" style="grid-column: span 2;">65:24 (XPan)</button>
+      </div>
+    </div>
+
+    <!-- ЕКСПОКОРЕКЦІЯ -->
+    <div>
+      <div class="setting-title" id="t-ev">ЕКСПОКОРЕКЦІЯ (EV)</div>
       <div class="slider-container">
         <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="setEV(this.value)">
         <span id="ev-val" style="min-width: 45px; color: #ffb642;">0.0 EV</span>
       </div>
     </div>
 
+    <!-- ЗОННЕ ФОКУСУВАННЯ -->
     <div>
-      <div class="setting-title">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
+      <div class="setting-title" id="t-zone-focus">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
       <div class="setting-grid" id="focus-group">
         <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
         <button class="opt-btn" onclick="setFocus('0.7', this)">0.7 m</button>
@@ -151,7 +203,7 @@
         <button class="opt-btn" onclick="setFocus('2.0', this)">2.0 m</button>
         <button class="opt-btn" onclick="setFocus('3.0', this)">3.0 m</button>
         <button class="opt-btn" onclick="setFocus('5.0', this)">5.0 m</button>
-        <button class="opt-btn" onclick="setFocus('100.0', this)" style="grid-column: span 2;">∞ Нескінченність</button>
+        <button class="opt-btn" onclick="setFocus('100.0', this)" id="opt-inf" style="grid-column: span 2;">∞ Нескінченність</button>
       </div>
     </div>
 
@@ -174,10 +226,90 @@
     const stealthOverlay = document.getElementById('stealth-overlay');
     const settingsModal = document.getElementById('settings-modal');
     const evVal = document.getElementById('ev-val');
+    const framelineBorder = document.getElementById('frameline-border');
 
     let videoTrack = null;
     let isRangeActive = false;
     let currentEV = 0.0;
+    let saveFormat = 'jpg'; // 'jpg' або 'raw'
+
+    const i18n = {
+      ua: {
+        snap: '📷 СПУСК',
+        range: '🎯 Далекомір',
+        stealth: '🕶️ Стелс',
+        stealthExit: '✕ ВИЙТИ',
+        langTitle: 'МОВА / LANGUAGE',
+        saveTitle: 'ФОРМАТ ЗБЕРЕЖЕННЯ',
+        frameTitle: 'КЛАСИЧНІ РАМКИ (FRAMELINES)',
+        evTitle: 'ЕКСПОКОРЕКЦІЯ (EV)',
+        focusTitle: 'ЗОННЕ ФОКУСУВАННЯ LEICA',
+        optInf: '∞ Нескінченність',
+        closeSettings: 'Закрити',
+        grids: {
+          'off': '⊞ Сітка: Вимк',
+          'thirds': '⊞ Третини',
+          'golden': '⊞ Золотий',
+          'fibonacci': '⊞ Фібоначчі',
+          'diagonals': '⊞ Діагоналі',
+          'center': '⊞ Центр'
+        }
+      },
+      en: {
+        snap: '📷 SNAP',
+        range: '🎯 Rangefinder',
+        stealth: '🕶️ Stealth',
+        stealthExit: '✕ EXIT',
+        langTitle: 'LANGUAGE',
+        saveTitle: 'SAVE FORMAT',
+        frameTitle: 'FRAMELINES (ASPECT RATIO)',
+        evTitle: 'EXPOSURE (EV)',
+        focusTitle: 'LEICA ZONE FOCUS',
+        optInf: '∞ Infinity',
+        closeSettings: 'Close',
+        grids: {
+          'off': '⊞ Grid: Off',
+          'thirds': '⊞ Thirds',
+          'golden': '⊞ Golden',
+          'fibonacci': '⊞ Fibonacci',
+          'diagonals': '⊞ Diagonals',
+          'center': '⊞ Center'
+        }
+      },
+      ja: {
+        snap: '📷 シャッター',
+        range: '🎯 距離計',
+        stealth: '🕶️ ステルス',
+        stealthExit: '✕ 終了',
+        langTitle: '言語設定',
+        saveTitle: '保存形式',
+        frameTitle: 'フレーム枠 (アスペクト比)',
+        evTitle: '露出補正 (EV)',
+        focusTitle: 'ゾーンフォーカス',
+        optInf: '∞ 無限遠',
+        closeSettings: '閉じる',
+        grids: {
+          'off': '⊞ グリッド: 切',
+          'thirds': '⊞ 三分割',
+          'golden': '⊞ 黄金比',
+          'fibonacci': '⊞ フィボナッチ',
+          'diagonals': '⊞ 対角線',
+          'center': '⊞ 中央クロス'
+        }
+      }
+    };
+    let currentLang = 'ua';
+
+    const frames = [
+      { name: 'Full', p: null, l: null },
+      { name: '3:2', p: 2 / 3, l: 3 / 2 },
+      { name: '4:3', p: 3 / 4, l: 4 / 3 },
+      { name: '4:5', p: 4 / 5, l: 5 / 4 },
+      { name: '1:1', p: 1.0, l: 1.0 },
+      { name: '16:9', p: 9 / 16, l: 16 / 9 },
+      { name: '65:24', p: 24 / 65, l: 65 / 24 }
+    ];
+    let frameIdx = 0;
 
     const films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
@@ -190,15 +322,64 @@
     let filmIdx = 0;
 
     const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    const gridLabels = {
-      'off': '🌐 Сітка: Вимк',
-      'thirds': '🌐 Третини',
-      'golden': '🌐 Золотий',
-      'fibonacci': '🌐 Фібоначчі',
-      'diagonals': '🌐 Діагоналі',
-      'center': '🌐 Центр'
-    };
     let gridIdx = 0;
+
+    function applyLanguage() {
+      const dict = i18n[currentLang];
+      document.getElementById('btn-snap').textContent = dict.snap;
+      document.getElementById('btn-range').textContent = dict.range;
+      document.getElementById('btn-stealth').textContent = dict.stealth;
+      document.getElementById('btn-stealth-exit').textContent = dict.stealthExit;
+      document.getElementById('t-lang').textContent = dict.langTitle;
+      document.getElementById('t-save-format').textContent = dict.saveTitle;
+      document.getElementById('t-frame').textContent = dict.frameTitle;
+      document.getElementById('t-ev').textContent = dict.evTitle;
+      document.getElementById('t-zone-focus').textContent = dict.focusTitle;
+      document.getElementById('opt-inf').textContent = dict.optInf;
+      document.getElementById('close-settings-btn').textContent = dict.closeSettings;
+      renderGrid();
+    }
+
+    function setLanguage(lang, el) {
+      currentLang = lang;
+      document.querySelectorAll('#lang-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      applyLanguage();
+    }
+
+    function setSaveFormat(fmt, el) {
+      saveFormat = fmt;
+      document.querySelectorAll('#save-format-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function setFrameline(idx, el) {
+      frameIdx = idx;
+      document.querySelectorAll('#frame-group .opt-btn').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+      updateFramelineView();
+    }
+
+    function updateFramelineView() {
+      const f = frames[frameIdx];
+      if (!f.p) {
+        framelineBorder.style.display = 'none';
+        return;
+      }
+      framelineBorder.style.display = 'block';
+      const isPortrait = window.innerHeight >= window.innerWidth;
+      const targetRatio = isPortrait ? f.p : f.l;
+      const screenRatio = window.innerWidth / window.innerHeight;
+
+      if (screenRatio > targetRatio) {
+        framelineBorder.style.height = '100vh';
+        framelineBorder.style.width = Math.round(window.innerHeight * targetRatio) + 'px';
+      } else {
+        framelineBorder.style.width = '100vw';
+        framelineBorder.style.height = Math.round(window.innerWidth / targetRatio) + 'px';
+      }
+    }
+    window.addEventListener('resize', updateFramelineView);
 
     async function startApp() {
       try {
@@ -211,6 +392,7 @@
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
         applyFilmFilter();
+        updateFramelineView();
       } catch (err) {
         alert("Помилка камери: " + err.message);
       }
@@ -234,7 +416,7 @@
 
     function renderGrid() {
       const mode = grids[gridIdx];
-      btnGrid.textContent = gridLabels[mode];
+      btnGrid.textContent = i18n[currentLang].grids[mode];
       grid.innerHTML = '';
 
       if (mode === 'thirds') {
@@ -289,68 +471,4 @@
     function setFocus(dist, el) {
       document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
-      if (videoTrack && videoTrack.applyConstraints) {
-        if (dist === 'auto') {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
-        } else {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
-        }
-      }
-    }
-
-    function takePhoto(isSilent = false) {
-      if (settingsModal.style.display === 'flex') return;
-
-      if (!isSilent) {
-        shutter.classList.add('flash');
-        setTimeout(() => shutter.classList.remove('flash'), 100);
-      }
-      if (navigator.vibrate) {
-        navigator.vibrate(isSilent ? 35 : 30);
-      }
-
-      const w = v.videoWidth || 1920;
-      const h = v.videoHeight || 1080;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      const preset = films[filmIdx];
-      const evFactor = Math.pow(2, currentEV);
-
-      if (preset.isBW) {
-        ctx.filter = 'none';
-        ctx.drawImage(v, 0, 0, w, h);
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const d = imgData.data;
-        const contrast = preset.contrast;
-
-        for (let i = 0; i < d.length; i += 4) {
-          let r = d[i] * evFactor;
-          let g = d[i + 1] * evFactor;
-          let b = d[i + 2] * evFactor;
-
-          let y = 0.299 * r + 0.587 * g + 0.114 * b;
-          y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
-          y = Math.min(255, Math.max(0, y));
-          d[i] = y; d[i + 1] = y; d[i + 2] = y;
-        }
-        ctx.putImageData(imgData, 0, 0);
-      } else {
-        ctx.filter = preset.filter + ' brightness(' + (evFactor * 100) + '%)';
-        ctx.drawImage(v, 0, 0, w, h);
-      }
-
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'STREET_' + preset.name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 500);
-      }, 'image/jpeg', 0.95);
-    }
-  </script>
-</body>
-    </html>
-  
+      if (videoTrack && videoTrack.applyConstraints) 
