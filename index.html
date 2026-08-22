@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>StreetCam</title>
+  <link rel="manifest" href="manifest.json">
   <style>
     * {
       box-sizing: border-box;
@@ -93,7 +94,76 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Ірисова діафрагма затвора */
+    /* Бурштиновий рівень горизонту Pip-Boy */
+    #spirit-level {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 7;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .level-line {
+      width: 100%;
+      height: 2px;
+      background-color: #ffb642;
+      box-shadow: 0 0 2px #000, 0 0 8px rgba(255, 182, 66, 0.9);
+      transition: transform 0.04s ease-out, box-shadow 0.15s ease, height 0.15s ease, background-color 0.15s ease;
+      transform-origin: center center;
+    }
+    .level-line.aligned {
+      height: 3px;
+      background-color: #ffe082;
+      box-shadow: 0 0 3px #000, 0 0 16px #ffb642, 0 0 24px rgba(255, 182, 66, 0.95);
+    }
+
+    /* Шар далекоміра (Стадіаметричний + Клінометр) */
+    #rangefinder-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 8;
+      display: none;
+    }
+    .rangefinder-hud-val {
+      position: absolute;
+      top: 54px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid #ffb642;
+      color: #ffb642;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+      letter-spacing: 1px;
+      text-shadow: 0 0 4px rgba(255, 182, 66, 0.8);
+    }
+    .stadiametric-svg {
+      width: 100%;
+      height: 100%;
+      stroke: #ffb642;
+      stroke-width: 1.5;
+      fill: none;
+      filter: drop-shadow(0 0 2px #000);
+    }
+    .stadia-text {
+      fill: #ffb642;
+      font-size: 10px;
+      font-family: monospace;
+      text-shadow: 0 0 2px #000;
+    }
+
+    /* Механічний затвор */
     #iris-shutter {
       position: absolute;
       top: 0;
@@ -126,7 +196,7 @@
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
-    /* Верхній HUD */
+    /* HUD */
     #top-hud {
       position: absolute;
       top: 12px;
@@ -135,7 +205,7 @@
       display: flex;
       justify-content: space-around;
       align-items: center;
-      padding: 6px 12px;
+      padding: 6px 8px;
       z-index: 20;
       background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(4px);
@@ -144,17 +214,19 @@
       background: transparent;
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #eee;
-      padding: 6px 10px;
+      padding: 6px 8px;
       border-radius: 4px;
       font-size: 11px;
       letter-spacing: 0.5px;
       cursor: pointer;
     }
-    .hud-btn:active {
-      background: rgba(255, 255, 255, 0.2);
+    .hud-btn.active {
+      background: rgba(255, 182, 66, 0.25);
+      border-color: #ffb642;
+      color: #ffb642;
     }
 
-    /* Меню налаштувань */
+    /* Налаштування */
     #settings-modal {
       position: absolute;
       bottom: 0;
@@ -240,22 +312,67 @@
       <video id="camera-stream" autoplay playsinline muted></video>
       <div id="grid-overlay"></div>
       
+      <!-- Бурштиновий рівень горизонту -->
+      <div id="spirit-level">
+        <div class="level-line"></div>
+      </div>
+
+      <!-- Далекомірний оверлей -->
+      <div id="rangefinder-overlay">
+        <div class="rangefinder-hud-val" id="rangefinder-text">DIST: -- m (H: 1.6m)</div>
+        <svg class="stadiametric-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+          <!-- Стадіаметричні мітки росту (1.75м): 1.2м, 2.0м, 3.0м -->
+          <!-- 1.2m -->
+          <line x1="420" y1="120" x2="440" y2="120" />
+          <line x1="420" y1="880" x2="440" y2="880" />
+          <text x="385" y="505" class="stadia-text">1.2m</text>
+          
+          <!-- 2.0m -->
+          <line x1="460" y1="260" x2="475" y2="260" />
+          <line x1="460" y1="740" x2="475" y2="740" />
+          <text x="430" y="505" class="stadia-text">2.0m</text>
+
+          <!-- 3.0m -->
+          <line x1="485" y1="340" x2="495" y2="340" />
+          <line x1="485" y1="660" x2="495" y2="660" />
+          <text x="510" y="505" class="stadia-text">3.0m</text>
+        </svg>
+      </div>
+      
       <div id="iris-shutter">
         <div class="iris-blade-container"></div>
       </div>
     </div>
 
-    <!-- HUD -->
+    <!-- Панель керування HUD -->
     <div id="top-hud">
       <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
+      <button class="hud-btn" id="level-btn">🧭 Рівень</button>
+      <button class="hud-btn" id="range-btn">🎯 Далекомір</button>
       <button class="hud-btn" id="lens-btn">🔍 1.0x</button>
       <button class="hud-btn" id="grid-btn">🌐 Третини</button>
       <button class="hud-btn" id="film-btn">🎞️ Tri-X 400</button>
       <button class="hud-btn" id="open-settings-btn">⚙️</button>
     </div>
 
-    <!-- Налаштування -->
+    <!-- Модальне вікно налаштувань -->
     <div id="settings-modal">
+      <div>
+        <div class="setting-title">Висота точки зйомки далекоміра</div>
+        <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="height-group">
+          <button class="opt-btn active" data-h="1.6">👁️ Рівень очей (1.60 м)</button>
+          <button class="opt-btn" data-h="1.3">🥋 Рівень пояса (1.30 м)</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="setting-title">Тактильний відгук горизонту (Вібрація)</div>
+        <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="haptic-group">
+          <button class="opt-btn active" data-haptic="on">📳 Увімк</button>
+          <button class="opt-btn" data-haptic="off">🔕 Вимк</button>
+        </div>
+      </div>
+
       <div>
         <div class="setting-title">Експокорекція (EV)</div>
         <div class="slider-container">
@@ -264,7 +381,7 @@
         </div>
       </div>
 
-      <!-- Зональне фокусування Leica M -->
+      <!-- Зональний фокус Leica M -->
       <div>
         <div class="setting-title">Фокусна відстань (Leica Zone Focus)</div>
         <div class="setting-grid" id="focus-group">
@@ -307,19 +424,30 @@
     const gridBtn = document.getElementById('grid-btn');
     const filmBtn = document.getElementById('film-btn');
     const lensBtn = document.getElementById('lens-btn');
+    const levelBtn = document.getElementById('level-btn');
+    const rangeBtn = document.getElementById('range-btn');
+    const spiritLevel = document.getElementById('spirit-level');
+    const rangefinderOverlay = document.getElementById('rangefinder-overlay');
+    const rangefinderText = document.getElementById('rangefinder-text');
+    const levelLine = document.querySelector('.level-line');
     const shutterHudBtn = document.getElementById('shutter-hud-btn');
 
     let videoTrack = null;
     let currentStream = null;
     let currentEV = 0.0;
+    let isLevelActive = false;
+    let isRangeActive = false;
+    let hapticsEnabled = true;
+    let wasAligned = false;
+    let cameraHeight = 1.6; // Базова висота точки зйомки (метри)
 
     const filmPresets = [
-      { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(155%)', grain: 16 },
-      { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(120%)', grain: 10 },
-      { name: 'T-Max 3200', filter: 'grayscale(100%) contrast(190%)', grain: 28 },
-      { name: 'Neopan 100', filter: 'grayscale(100%) contrast(135%)', grain: 6 },
-      { name: 'Portra 400', filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
-      { name: 'Cinestill 800T', filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
+      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 14 },
+      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 9 },
+      { name: 'T-Max 3200', isBW: true, contrast: 1.85, grain: 24 },
+      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 5 },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 10 },
+      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 16 }
     ];
     let currentFilmIdx = 0;
 
@@ -391,204 +519,88 @@
       }
     }
 
-    // Безвідмовний запуск потоку камери
+    // Обробка орієнтації: Рівень + Тригонометричний далекомір
+    function handleOrientation(event) {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const roll = isLandscape ? (event.beta || 0) : (event.gamma || 0);
+      const pitch = isLandscape ? (event.gamma || 0) : (event.beta || 0);
+
+      // Оновлення рівня горизонту
+      if (isLevelActive) {
+        levelLine.style.transform = `rotate(${roll}deg)`;
+        const isAligned = Math.abs(roll) <= 0.5;
+        if (isAligned) {
+          levelLine.classList.add('aligned');
+          if (!wasAligned && hapticsEnabled && navigator.vibrate) {
+            navigator.vibrate(20);
+          }
+          wasAligned = true;
+        } else {
+          levelLine.classList.remove('aligned');
+          wasAligned = false;
+        }
+      }
+
+      // Оновлення гіро-далекоміра (кут нахилу вниз)
+      if (isRangeActive) {
+        const declination = Math.max(1, 90 - Math.abs(pitch));
+        const rad = declination * (Math.PI / 180);
+        let dist = cameraHeight / Math.tan(rad);
+        dist = Math.min(Math.max(dist, 0.5), 50.0);
+        rangefinderText.textContent = `DIST: ${dist.toFixed(1)} m (H: ${cameraHeight.toFixed(2)}m)`;
+      }
+    }
+
+    function checkSensorPermission() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(state => {
+          if (state === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+          }
+        }).catch(console.error);
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      }
+    }
+
+    levelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isLevelActive = !isLevelActive;
+      spiritLevel.style.display = isLevelActive ? 'flex' : 'none';
+      levelBtn.classList.toggle('active', isLevelActive);
+      checkSensorPermission();
+    });
+
+    rangeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isRangeActive = !isRangeActive;
+      rangefinderOverlay.style.display = isRangeActive ? 'block' : 'none';
+      rangeBtn.classList.toggle('active', isRangeActive);
+      checkSensorPermission();
+    });
+
+    // Налаштування висоти зйомки далекоміра
+    document.querySelectorAll('#height-group .opt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#height-group .opt-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        cameraHeight = parseFloat(btn.getAttribute('data-h'));
+      });
+    });
+
+    // Налаштування вібрації
+    document.querySelectorAll('#haptic-group .opt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#haptic-group .opt-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        hapticsEnabled = btn.getAttribute('data-haptic') === 'on';
+      });
+    });
+
     async function initCamera() {
       try {
         if (currentStream) {
           currentStream.getTracks().forEach(t => t.stop());
         }
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' }
-          },
-          audio: false
-        });
-
-        currentStream = stream;
-        video.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-
-        await video.play();
-        updateFilters();
-        renderGrid();
-      } catch (err) {
-        console.error('Помилка камери:', err);
-      }
-    }
-
-    function getCombinedFilter() {
-      const brightnessFactor = Math.pow(2, currentEV);
-      const baseFilter = filmPresets[currentFilmIdx].filter;
-      return `${baseFilter} brightness(${brightnessFactor * 100}%)`;
-    }
-
-    function updateFilters() {
-      video.style.filter = getCombinedFilter();
-    }
-
-    lensBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
-
-      if (videoTrack && typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
-        const caps = videoTrack.getCapabilities();
-        if (caps && caps.zoom) {
-          const targetZoom = zoomLevels[currentZoomIdx].zoom;
-          const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
-          videoTrack.applyConstraints({ advanced: [{ zoom: clampedZoom }] }).catch(() => {});
-        }
-      }
-    });
-
-    filmBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
-      filmBtn.textContent = `🎞️ ${filmPresets[currentFilmIdx].name}`;
-      updateFilters();
-    });
-
-    gridBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentGridIdx = (currentGridIdx + 1) % gridModes.length;
-      renderGrid();
-    });
-
-    evSlider.addEventListener('input', (e) => {
-      currentEV = parseFloat(e.target.value);
-      evVal.textContent = `${currentEV > 0 ? '+' : ''}${currentEV.toFixed(1)} EV`;
-      updateFilters();
-    });
-
-    // Leica Zone Focus
-    document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const dist = btn.getAttribute('data-dist');
-        if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
-          const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-          if (caps.focusMode) {
-            if (dist === 'auto') {
-              videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
-            } else {
-              videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
-            }
-          }
-        }
-      });
-    });
-
-    // ISO
-    document.querySelectorAll('#iso-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#iso-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const val = btn.getAttribute('data-val');
-        if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
-          const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-          if (caps.iso) {
-            if (val === 'auto') {
-              videoTrack.applyConstraints({ advanced: [{ iso: caps.iso.min }] }).catch(() => {});
-            } else {
-              videoTrack.applyConstraints({ advanced: [{ iso: parseInt(val) }] }).catch(() => {});
-            }
-          }
-        }
-      });
-    });
-
-    // Плівкове зерно та віньєтка
-    function applyFilmGrainAndVignette(ctx, width, height, grainIntensity) {
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-      const len = data.length;
-
-      for (let i = 0; i < len; i += 4) {
-        const noise = (Math.random() - 0.5) * grainIntensity * 2.2;
-        data[i] = Math.min(255, Math.max(0, data[i] + noise));
-        data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
-        data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
-      }
-      ctx.putImageData(imgData, 0, 0);
-
-      const gradient = ctx.createRadialGradient(
-        width / 2, height / 2, Math.min(width, height) * 0.45,
-        width / 2, height / 2, Math.max(width, height) * 0.75
-      );
-      gradient.addColorStop(0, 'rgba(0,0,0,0)');
-      gradient.addColorStop(1, 'rgba(0,0,0,0.42)');
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-    }
-
-    // Спуск затвора
-    async function triggerShutter() {
-      irisShutter.classList.remove('iris-anim');
-      void irisShutter.offsetWidth;
-      irisShutter.classList.add('iris-anim');
-
-      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
-
-      const width = video.videoWidth || 1920;
-      const height = video.videoHeight || 1080;
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      ctx.filter = getCombinedFilter();
-      ctx.drawImage(video, 0, 0, width, height);
-
-      const activePreset = filmPresets[currentFilmIdx];
-      applyFilmGrainAndVignette(ctx, width, height, activePreset.grain);
-
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `STREET_${activePreset.name.replace(/\s+/g, '')}_${Date.now()}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-      }, 'image/jpeg', 0.95);
-    }
-
-    shutterHudBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      triggerShutter();
-    });
-
-    document.getElementById('viewfinder-container').addEventListener('click', () => {
-      if (settingsModal.style.display === 'flex') return;
-      if (!currentStream || video.paused) {
-        initCamera();
-        return;
-      }
-      triggerShutter();
-    });
-
-    document.getElementById('open-settings-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      settingsModal.style.display = 'flex';
-    });
-    document.getElementById('close-settings-btn').addEventListener('click', () => {
-      settingsModal.style.display = 'none';
-    });
-
-    // Ініціалізація
-    initCamera();
-    document.addEventListener('touchstart', () => {
-      if (!currentStream || video.paused) initCamera();
-    }, { once: true });
-  </script>
-</body>
-</html>
+        // Запит максимальної роздільної здатності
