@@ -225,19 +225,6 @@
       color: #ffb642;
     }
 
-    #debug-log {
-      position: absolute;
-      bottom: 8px;
-      left: 8px;
-      right: 8px;
-      color: #ff5555;
-      font-size: 10px;
-      font-family: monospace;
-      z-index: 99;
-      pointer-events: none;
-      word-break: break-all;
-    }
-
     #settings-modal {
       position: absolute;
       bottom: 0;
@@ -349,8 +336,6 @@
       </div>
     </div>
 
-    <div id="debug-log"></div>
-
     <div id="top-hud">
       <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
       <button class="hud-btn" id="level-btn">🧭 Рівень</button>
@@ -418,11 +403,6 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
-    const debugEl = document.getElementById('debug-log');
-    window.onerror = function(msg, url, line) {
-      debugEl.textContent = 'Err: ' + msg + ' (L:' + line + ')';
-    };
-
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -565,9 +545,7 @@
           if (state === 'granted') {
             window.addEventListener('deviceorientation', handleOrientation, true);
           }
-        }).catch(err => {
-          debugEl.textContent = 'Sensor: ' + err.message;
-        });
+        }).catch(console.error);
       } else {
         window.addEventListener('deviceorientation', handleOrientation, true);
       }
@@ -618,4 +596,12 @@
 
     lensBtn.onclick = (e) => {
       e.stopPropagation();
-      currentZoomIdx = (c
+      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
+      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
+
+      if (videoTrack && typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
+        const caps = videoTrack.getCapabilities();
+        if (caps && caps.zoom) {
+          const targetZoom = zoomLevels[currentZoomIdx].zoom;
+          const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
+          videoTrack.applyConstraints({ advanced: [{ zoom: 
