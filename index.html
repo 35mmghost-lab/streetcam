@@ -25,6 +25,11 @@
       background: transparent; border: 1px solid rgba(255, 255, 255, 0.4);
       color: #eee; padding: 6px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
+    .hud-btn.active {
+      background: rgba(255, 182, 66, 0.3);
+      border-color: #ffb642;
+      color: #ffb642;
+    }
 
     /* Сітки */
     #grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
@@ -36,6 +41,14 @@
     .center-cross::before, .center-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.7); }
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
+
+    /* Далекомір */
+    #rangefinder {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 70; display: none;
+    }
+    .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; }
+    .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
 
     /* Стелс-оверлей */
     #stealth-overlay {
@@ -62,6 +75,24 @@
   </div>
 
   <div id="grid"></div>
+
+  <!-- Стадіометричний далекомір -->
+  <div id="rangefinder">
+    <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+      <line x1="390" y1="120" x2="430" y2="120" />
+      <line x1="390" y1="880" x2="430" y2="880" />
+      <text x="320" y="505" class="stadia-label">1.2m</text>
+      
+      <line x1="440" y1="260" x2="470" y2="260" />
+      <line x1="440" y1="740" x2="470" y2="740" />
+      <text x="390" y="505" class="stadia-label">2.0m</text>
+
+      <line x1="475" y1="340" x2="495" y2="340" />
+      <line x1="475" y1="660" x2="495" y2="660" />
+      <text x="515" y="505" class="stadia-label">3.0m</text>
+    </svg>
+  </div>
+
   <div id="shutter"></div>
 
   <!-- Оверлей стелс-режиму -->
@@ -75,6 +106,7 @@
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
     <button class="hud-btn" id="btn-film" onclick="nextFilm()">🎞️ Tri-X 400</button>
     <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
+    <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Далекомір</button>
     <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
   </div>
 
@@ -85,11 +117,15 @@
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
     const grid = document.getElementById('grid');
+    const rangefinder = document.getElementById('rangefinder');
     const shutter = document.getElementById('shutter');
     const canvas = document.getElementById('c');
     const btnFilm = document.getElementById('btn-film');
     const btnGrid = document.getElementById('btn-grid');
+    const btnRange = document.getElementById('btn-range');
     const stealthOverlay = document.getElementById('stealth-overlay');
+
+    let isRangeActive = false;
 
     const films = [
       { name: 'Tri-X 400', contrast: 1.55 },
@@ -153,6 +189,12 @@
     function nextGrid() {
       gridIdx = (gridIdx + 1) % grids.length;
       renderGrid();
+    }
+
+    function toggleRange() {
+      isRangeActive = !isRangeActive;
+      rangefinder.style.display = isRangeActive ? 'block' : 'none';
+      btnRange.classList.toggle('active', isRangeActive);
     }
 
     function enterStealth() {
