@@ -2,37 +2,131 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StreetCam Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StreetCam</title>
   <style>
-    body { background: #000; color: #fff; text-align: center; padding-top: 50px; font-family: sans-serif; }
-    video { width: 90%; max-height: 60vh; object-fit: cover; border: 2px solid #ffb642; margin-top: 20px; }
-    button { padding: 16px 28px; font-size: 18px; font-weight: bold; background: #ffb642; border: none; border-radius: 8px; cursor: pointer; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; }
+    #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    video { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) contrast(155%); }
+    
+    #btn-start {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 1000; padding: 20px 32px; font-size: 16px; font-weight: bold;
+      background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
+    }
+    
+    #hud {
+      position: fixed; top: 12px; left: 0; width: 100%; display: none;
+      justify-content: space-around; align-items: center; padding: 6px 2px;
+      z-index: 500; background: rgba(0, 0, 0, 0.7);
+    }
+    .hud-btn {
+      background: transparent; border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #eee; padding: 6px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
+    }
+    #shutter {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.08s;
+    }
+    #shutter.flash { opacity: 0.9; }
+    canvas { display: none; }
   </style>
 </head>
 <body>
-  <button id="test-btn">▶ ТЕСТ КАМЕРИ</button>
-  <br>
-  <video id="test-video" autoplay playsinline muted></video>
+  <div id="viewfinder-box">
+    <video id="v" autoplay playsinline muted></video>
+  </div>
+
+  <div id="shutter"></div>
+  <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
+
+  <div id="hud">
+    <button class="hud-btn" id="btn-snap">📷 СПУСК</button>
+    <button class="hud-btn" id="btn-film">🎞️ Tri-X 400</button>
+  </div>
+
+  <canvas id="c"></canvas>
 
   <script>
-    const btn = document.getElementById('test-btn');
-    const vid = document.getElementById('test-video');
+    const v = document.getElementById('v');
+    const btnStart = document.getElementById('btn-start');
+    const hud = document.getElementById('hud');
+    const shutter = document.getElementById('shutter');
+    const canvas = document.getElementById('c');
+    const btnSnap = document.getElementById('btn-snap');
+    const btnFilm = document.getElementById('btn-film');
 
-    btn.addEventListener('click', async () => {
-      btn.textContent = "Запит дозволу...";
+    const films = [
+      { name: 'Tri-X 400', contrast: 1.55 },
+      { name: 'HP5 Plus', contrast: 1.25 },
+      { name: 'T-Max 3200', contrast: 1.90 },
+      { name: 'Neopan 100', contrast: 1.35 }
+    ];
+    let filmIdx = 0;
+
+    btnStart.addEventListener('click', async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
           audio: false
         });
-        vid.srcObject = stream;
-        btn.textContent = "Камера працює!";
+        v.srcObject = stream;
+        btnStart.style.display = 'none';
+        hud.style.display = 'flex';
       } catch (err) {
-        alert("Помилка доступу: " + err.name + " — " + err.message);
-        btn.textContent = "Помилка";
+        alert("Помилка: " + err.message);
       }
     });
+
+    btnFilm.addEventListener('click', (e) => {
+      e.stopPropagation();
+      filmIdx = (filmIdx + 1) % films.length;
+      btnFilm.textContent = '🎞️ ' + films[filmIdx].name;
+      v.style.filter = 'grayscale(100%) contrast(' + (films[filmIdx].contrast * 100) + '%)';
+    });
+
+    function takePhoto() {
+      shutter.classList.add('flash');
+      setTimeout(() => shutter.classList.remove('flash'), 100);
+      if (navigator.vibrate) navigator.vibrate(30);
+
+      const w = v.videoWidth || 1920;
+      const h = v.videoHeight || 1080;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(v, 0, 0, w, h);
+
+      const imgData = ctx.getImageData(0, 0, w, h);
+      const d = imgData.data;
+      const contrast = films[filmIdx].contrast;
+
+      for (let i = 0; i < d.length; i += 4) {
+        let y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
+        y = Math.min(255, Math.max(0, y));
+        d[i] = y; d[i + 1] = y; d[i + 2] = y;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'STREET_' + films[filmIdx].name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+      }, 'image/jpeg', 0.95);
+    }
+
+    btnSnap.addEventListener('click', (e) => {
+      e.stopPropagation();
+      takePhoto();
+    });
+
+    v.addEventListener('click', takePhoto);
   </script>
 </body>
 </html>
