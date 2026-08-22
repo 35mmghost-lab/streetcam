@@ -32,11 +32,11 @@
     }
 
     /* Рамка кадрування */
-    #frameline-overlay {
+    #frameline {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 40; display: none;
     }
-    .frame-guide {
+    #frame-box {
       position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85);
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
     }
@@ -84,7 +84,7 @@
       padding: 8px 4px; background: #222; color: #aaa; border: 1px solid #333;
       border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace;
     }
-    .opt-btn.active { background: #ffb642; color: #000; font-weight: bold; border-color: #ffb642; }
+    .opt-btn.active { background: #ffb642; color: #000; font-weight: bold; }
     .slider-container { display: flex; align-items: center; gap: 12px; }
     input[type=range] { flex: 1; accent-color: #ffb642; }
     #close-settings-btn {
@@ -105,9 +105,8 @@
     <video id="v" autoplay playsinline muted></video>
   </div>
 
-  <!-- Оверлей рамок кадрування -->
-  <div id="frameline-overlay">
-    <div class="frame-guide" id="frame-guide-box"></div>
+  <div id="frameline">
+    <div id="frame-box"></div>
   </div>
 
   <div id="grid"></div>
@@ -168,7 +167,7 @@
       </div>
     </div>
 
-    <!-- КЛАСИЧНІ РАМКИ -->
+    <!-- КЛАСИЧНІ РАМКИ LEICA -->
     <div>
       <div class="setting-title" id="t-frames">КЛАСИЧНІ РАМКИ (FRAMELINES)</div>
       <div class="setting-grid" id="frames-group">
@@ -224,13 +223,30 @@
     const stealthOverlay = document.getElementById('stealth-overlay');
     const settingsModal = document.getElementById('settings-modal');
     const evVal = document.getElementById('ev-val');
-    const framelineOverlay = document.getElementById('frameline-overlay');
-    const frameGuideBox = document.getElementById('frame-guide-box');
+    const frameline = document.getElementById('frameline');
+    const frameBox = document.getElementById('frame-box');
 
     let videoTrack = null;
     let isRangeActive = false;
     let currentEV = 0.0;
     let saveFormat = 'jpg';
+
+    // Базовий старт камери (1-в-1 з робочої версії)
+    async function startApp() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
+        v.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
+        btnStart.style.display = 'none';
+        hud.style.display = 'flex';
+        applyFilmFilter();
+      } catch (err) {
+        alert("Помилка камери: " + err.message);
+      }
+    }
 
     const i18n = {
       ua: {
@@ -323,22 +339,6 @@
     const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
     let gridIdx = 0;
 
-    async function startApp() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-          audio: false
-        });
-        v.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-        btnStart.style.display = 'none';
-        hud.style.display = 'flex';
-        applyFilmFilter();
-      } catch (err) {
-        alert("Помилка камери: " + err.message);
-      }
-    }
-
     function applyFilmFilter() {
       const preset = films[filmIdx];
       const brightnessFactor = Math.pow(2, currentEV);
@@ -420,7 +420,6 @@
       document.getElementById('t-focus').textContent = dict.tFocus;
       document.getElementById('opt-inf').textContent = dict.optInf;
       document.getElementById('close-settings-btn').textContent = dict.close;
-
       renderGrid();
     }
 
@@ -440,10 +439,10 @@
     function renderFrameline() {
       const f = frameList[currentFrameIdx];
       if (!f.p) {
-        framelineOverlay.style.display = 'none';
+        frameline.style.display = 'none';
         return;
       }
-      framelineOverlay.style.display = 'block';
+      frameline.style.display = 'block';
       const isPortrait = window.innerHeight >= window.innerWidth;
       const targetRatio = isPortrait ? f.p : f.l;
       const screenRatio = window.innerWidth / window.innerHeight;
@@ -457,10 +456,10 @@
         h = Math.round(w / targetRatio);
       }
 
-      frameGuideBox.style.width = w + 'px';
-      frameGuideBox.style.height = h + 'px';
-      frameGuideBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
-      frameGuideBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
+      frameBox.style.width = w + 'px';
+      frameBox.style.height = h + 'px';
+      frameBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
+      frameBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
     }
     window.addEventListener('resize', renderFrameline);
 
@@ -475,5 +474,145 @@
       el.classList.add('active');
       if (videoTrack && videoTrack.applyConstraints) {
         if (dist === 'auto') {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() =
-                                                                                         
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        } else {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
+        }
+      }
+    }
+
+    // Генерація DNG / Негативу
+    function buildDNG(width, height, rgba) {
+      const imageBytes = width * height * 3;
+      const headerSize = 8;
+      const ifdOffset = headerSize + imageBytes;
+      const numEntries = 9;
+      const ifdSize = 2 + (numEntries * 12) + 4;
+      const totalSize = ifdOffset + ifdSize + 64;
+
+      const buffer = new ArrayBuffer(totalSize);
+      const view = new DataView(buffer);
+      let p = 0;
+
+      view.setUint16(p, 0x4949, true); p += 2;
+      view.setUint16(p, 42, true); p += 2;
+      view.setUint32(p, ifdOffset, true); p += 4;
+
+      const imgBytes = new Uint8Array(buffer, p, imageBytes);
+      for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
+        imgBytes[j] = rgba[i];
+        imgBytes[j + 1] = rgba[i + 1];
+        imgBytes[j + 2] = rgba[i + 2];
+      }
+      p = ifdOffset;
+
+      view.setUint16(p, numEntries, true); p += 2;
+      const writeTag = (tag, type, count, val) => {
+        view.setUint16(p, tag, true);
+        view.setUint16(p + 2, type, true);
+        view.setUint32(p + 4, count, true);
+        view.setUint32(p + 8, val, true);
+        p += 12;
+      };
+
+      writeTag(0x0100, 4, 1, width);
+      writeTag(0x0101, 4, 1, height);
+      writeTag(0x0102, 3, 3, ifdOffset + ifdSize);
+      writeTag(0x0103, 3, 1, 1);
+      writeTag(0x0106, 3, 1, 2);
+      writeTag(0x0111, 4, 1, headerSize);
+      writeTag(0x0115, 3, 1, 3);
+      writeTag(0x0116, 4, 1, height);
+      writeTag(0x0117, 4, 1, imageBytes);
+      view.setUint32(p, 0, true); p += 4;
+
+      view.setUint16(p, 8, true); p += 2;
+      view.setUint16(p, 8, true); p += 2;
+      view.setUint16(p, 8, true); p += 2;
+
+      return new Blob([buffer], { type: 'image/x-adobe-dng' });
+    }
+
+    function takePhoto(isSilent = false) {
+      if (settingsModal.style.display === 'flex') return;
+
+      if (!isSilent) {
+        shutter.classList.add('flash');
+        setTimeout(() => shutter.classList.remove('flash'), 100);
+      }
+      if (navigator.vibrate) {
+        navigator.vibrate(isSilent ? 35 : 30);
+      }
+
+      const rawW = v.videoWidth || 1920;
+      const rawH = v.videoHeight || 1080;
+      const f = frameList[currentFrameIdx];
+
+      let cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
+
+      if (f.p) {
+        const isVideoPortrait = rawH > rawW;
+        const targetRatio = isVideoPortrait ? f.p : f.l;
+        const currentRatio = rawW / rawH;
+
+        if (currentRatio > targetRatio) {
+          cropH = rawH;
+          cropW = rawH * targetRatio;
+          cropX = (rawW - cropW) / 2;
+          cropY = 0;
+        } else {
+          cropW = rawW;
+          cropH = rawW / targetRatio;
+          cropX = 0;
+          cropY = (rawH - cropH) / 2;
+        }
+      }
+
+      canvas.width = Math.round(cropW);
+      canvas.height = Math.round(cropH);
+      const ctx = canvas.getContext('2d');
+      const preset = films[filmIdx];
+      const evFactor = Math.pow(2, currentEV);
+
+      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      if (saveFormat === 'raw') {
+        const dngBlob = buildDNG(canvas.width, canvas.height, imgData.data);
+        const url = URL.createObjectURL(dngBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'RAW_' + f.name.replace(':', 'x') + '_' + Date.now() + '.dng';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+        return;
+      }
+
+      if (preset.isBW) {
+        const d = imgData.data;
+        const contrast = preset.contrast;
+        for (let i = 0; i < d.length; i += 4) {
+          let y = 0.299 * (d[i] * evFactor) + 0.587 * (d[i + 1] * evFactor) + 0.114 * (d[i + 2] * evFactor);
+          y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
+          y = Math.min(255, Math.max(0, y));
+          d[i] = y; d[i + 1] = y; d[i + 2] = y;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } else {
+        ctx.filter = preset.filter + ' brightness(' + (evFactor * 100) + '%)';
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+      }
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'STREET_' + f.name.replace(':', 'x') + '_' + preset.name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+      }, 'image/jpeg', 0.95);
+    }
+  </script>
+</body>
+</html>
