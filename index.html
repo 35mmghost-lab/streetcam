@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>StreetCam Pro</title>
+  <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
+    body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; }
     
     #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; z-index: 1; }
     video { width: 100%; height: 100%; object-fit: cover; }
 
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 10000; padding: 20px 32px; font-size: 16px; font-weight: bold;
+      z-index: 10000; padding: 22px 32px; font-size: 16px; font-weight: bold;
       background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
-      box-shadow: 0 0 25px rgba(255, 182, 66, 0.7); text-align: center;
+      text-align: center;
     }
 
     #hud {
@@ -47,7 +47,7 @@
     .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
 
     #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 950; display: none; cursor: pointer; }
-    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
+    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
 
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
@@ -93,7 +93,10 @@
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <!-- Інлайн-виклик потоку без ризику блокування -->
+  <button id="btn-start" onclick="this.textContent='⏳ Підключення...'; navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}).then(function(s){document.getElementById('v').srcObject=s; window.localStream=s; document.getElementById('btn-start').style.display='none'; document.getElementById('hud').style.display='flex'; if(window.onCamReady) window.onCamReady();}).catch(function(e){alert('Помилка камери: '+e.message); document.getElementById('btn-start').textContent='▶ УВІМКНУТИ КАМЕРУ';});">
+    ▶ УВІМКНУТИ КАМЕРУ
+  </button>
 
   <div id="hud">
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
@@ -208,13 +211,10 @@
     };
     var currentLang = 'ua';
 
-    var videoTrack = null;
-    var isRangeActive = false;
     var currentEV = 0.0;
     var saveFormat = 'jpg';
 
     var v = document.getElementById('v');
-    var btnStart = document.getElementById('btn-start');
     var hud = document.getElementById('hud');
     var grid = document.getElementById('grid');
     var rangefinder = document.getElementById('rangefinder');
@@ -229,22 +229,10 @@
     var frameline = document.getElementById('frameline');
     var frameBox = document.getElementById('frame-box');
 
-    function startCamera() {
-      btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
-        .then(function(stream) {
-          v.srcObject = stream;
-          videoTrack = stream.getVideoTracks()[0];
-          btnStart.style.display = 'none';
-          hud.style.display = 'flex';
-          applyFilmFilter();
-          renderFrameline();
-        })
-        .catch(function(err) {
-          btnStart.textContent = "▶ УВІМКНУТИ КАМЕРУ";
-          alert("Помилка камери: " + err.message);
-        });
-    }
+    window.onCamReady = function() {
+      applyFilmFilter();
+      renderFrameline();
+    };
 
     function applyFilmFilter() {
       var preset = films[filmIdx];
@@ -377,11 +365,14 @@
       var focusBtns = document.querySelectorAll('#focus-group .opt-btn');
       for (var i = 0; i < focusBtns.length; i++) { focusBtns[i].classList.remove('active'); }
       el.classList.add('active');
-      if (videoTrack && videoTrack.applyConstraints) {
-        if (dist === 'auto') {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function() {});
-        } else {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(function() {});
+      if (window.localStream) {
+        var track = window.localStream.getVideoTracks()[0];
+        if (track && track.applyConstraints) {
+          if (dist === 'auto') {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function() {});
+          } else {
+            track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(function() {});
+          }
         }
       }
     }
@@ -399,4 +390,5 @@
       var p = 0;
 
       view.setUint16(p, 0x4949, true); p += 2;
-      vie
+      view.setUint16(p, 42, true); p += 2;
+      view.setUint32(p, ifdOffset, tr
