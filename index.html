@@ -128,19 +128,22 @@
     let isRangeActive = false;
 
     const films = [
-      { name: 'Tri-X 400', contrast: 1.55 },
-      { name: 'HP5 Plus', contrast: 1.25 },
-      { name: 'T-Max 3200', contrast: 1.90 },
-      { name: 'Neopan 100', contrast: 1.35 }
+      { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
+      { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
+      { name: 'T-Max 3200', isBW: true, contrast: 1.90 },
+      { name: 'Neopan 100', isBW: true, contrast: 1.35 },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)' },
+      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)' }
     ];
     let filmIdx = 0;
 
-    const grids = ['off', 'thirds', 'golden', 'fibonacci', 'center'];
+    const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
     const gridLabels = {
       'off': '🌐 Сітка: Вимк',
       'thirds': '🌐 Третини',
       'golden': '🌐 Золотий',
       'fibonacci': '🌐 Фібоначчі',
+      'diagonals': '🌐 Діагоналі',
       'center': '🌐 Центр'
     };
     let gridIdx = 0;
@@ -161,7 +164,12 @@
     }
 
     function applyFilmFilter() {
-      v.style.filter = 'grayscale(100%) contrast(' + (films[filmIdx].contrast * 100) + '%)';
+      const preset = films[filmIdx];
+      if (preset.isBW) {
+        v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%)';
+      } else {
+        v.style.filter = preset.filter;
+      }
     }
 
     function nextFilm() {
@@ -181,6 +189,8 @@
         grid.innerHTML = '<div class="grid-v" style="left:38.2%;"></div><div class="grid-v" style="left:61.8%;"></div><div class="grid-h" style="top:38.2%;"></div><div class="grid-h" style="top:61.8%;"></div>';
       } else if (mode === 'fibonacci') {
         grid.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" /><line x1="618" y1="0" x2="618" y2="618" stroke="rgba(255,255,255,0.3)" /><line x1="618" y1="382" x2="1000" y2="382" stroke="rgba(255,255,255,0.3)" /><line x1="764" y1="382" x2="764" y2="618" stroke="rgba(255,255,255,0.3)" /></svg>';
+      } else if (mode === 'diagonals') {
+        grid.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="1000" y1="0" x2="0" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="0" y1="500" x2="500" y2="0" stroke="rgba(255,255,255,0.25)" /><line x1="500" y1="1000" x2="1000" y2="500" stroke="rgba(255,255,255,0.25)" /></svg>';
       } else if (mode === 'center') {
         grid.innerHTML = '<div class="center-cross"></div><div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
       }
@@ -222,26 +232,33 @@
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(v, 0, 0, w, h);
+      const preset = films[filmIdx];
 
-      const imgData = ctx.getImageData(0, 0, w, h);
-      const d = imgData.data;
-      const contrast = films[filmIdx].contrast;
+      if (preset.isBW) {
+        ctx.filter = 'none';
+        ctx.drawImage(v, 0, 0, w, h);
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+        const contrast = preset.contrast;
 
-      for (let i = 0; i < d.length; i += 4) {
-        let y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-        y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
-        y = Math.min(255, Math.max(0, y));
-        d[i] = y; d[i + 1] = y; d[i + 2] = y;
+        for (let i = 0; i < d.length; i += 4) {
+          let y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
+          y = Math.min(255, Math.max(0, y));
+          d[i] = y; d[i + 1] = y; d[i + 2] = y;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } else {
+        ctx.filter = preset.filter;
+        ctx.drawImage(v, 0, 0, w, h);
       }
-      ctx.putImageData(imgData, 0, 0);
 
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'STREET_' + films[filmIdx].name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
+        a.download = 'STREET_' + preset.name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 500);
       }, 'image/jpeg', 0.95);
