@@ -93,6 +93,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
+    /* Бурштиновий рівень горизонту */
     #spirit-level {
       position: absolute;
       top: 50%;
@@ -120,6 +121,7 @@
       box-shadow: 0 0 3px #000, 0 0 16px #ffb642, 0 0 24px rgba(255, 182, 66, 0.95);
     }
 
+    /* Далекомір */
     #rangefinder-overlay {
       position: absolute;
       top: 0;
@@ -132,18 +134,19 @@
     }
     .rangefinder-hud-val {
       position: absolute;
-      top: 54px;
+      top: 56px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.65);
+      background: rgba(0, 0, 0, 0.7);
       border: 1px solid #ffb642;
       color: #ffb642;
       padding: 4px 12px;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 11px;
       font-family: monospace;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       text-shadow: 0 0 4px rgba(255, 182, 66, 0.8);
+      white-space: nowrap;
     }
     .stadiametric-svg {
       width: 100%;
@@ -155,7 +158,7 @@
     }
     .stadia-text {
       fill: #ffb642;
-      font-size: 10px;
+      font-size: 11px;
       font-family: monospace;
       text-shadow: 0 0 2px #000;
     }
@@ -315,15 +318,15 @@
         <svg class="stadiametric-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
           <line x1="420" y1="120" x2="440" y2="120" />
           <line x1="420" y1="880" x2="440" y2="880" />
-          <text x="385" y="505" class="stadia-text">1.2m</text>
+          <text x="380" y="505" class="stadia-text">1.2m</text>
           
           <line x1="460" y1="260" x2="475" y2="260" />
           <line x1="460" y1="740" x2="475" y2="740" />
-          <text x="430" y="505" class="stadia-text">2.0m</text>
+          <text x="425" y="505" class="stadia-text">2.0m</text>
 
           <line x1="485" y1="340" x2="495" y2="340" />
           <line x1="485" y1="660" x2="495" y2="660" />
-          <text x="510" y="505" class="stadia-text">3.0m</text>
+          <text x="505" y="505" class="stadia-text">3.0m</text>
         </svg>
       </div>
       
@@ -377,6 +380,7 @@
           <button class="opt-btn" data-dist="1.5">1.5 m</button>
           <button class="opt-btn" data-dist="2.0">2.0 m</button>
           <button class="opt-btn" data-dist="3.0">3.0 m</button>
+          <button class="opt-dist" data-dist="5.0" style="display:none;"></button>
           <button class="opt-btn" data-dist="5.0">5.0 m</button>
           <button class="opt-btn" data-dist="100.0" style="grid-column: span 4;">∞ Нескінченність</button>
         </div>
@@ -545,69 +549,59 @@
       }
     }
 
-    levelBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isLevelActive = !isLevelActive;
-      spiritLevel.style.display = isLevelActive ? 'flex' : 'none';
-      levelBtn.classList.toggle('active', isLevelActive);
-      checkSensorPermission();
-    });
-
-    rangeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isRangeActive = !isRangeActive;
-      rangefinderOverlay.style.display = isRangeActive ? 'block' : 'none';
-      rangeBtn.classList.toggle('active', isRangeActive);
-      checkSensorPermission();
-    });
-
-    document.querySelectorAll('#height-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#height-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        cameraHeight = parseFloat(btn.getAttribute('data-h'));
-      });
-    });
-
-    document.querySelectorAll('#haptic-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#haptic-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        hapticsEnabled = btn.getAttribute('data-haptic') === 'on';
-      });
-    });
-
-    async function initCamera() {
-      try {
-        if (currentStream) {
-          currentStream.getTracks().forEach(t => t.stop());
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 3840 },
-            height: { ideal: 2160 }
-          },
-          audio: false
-        });
-
-        currentStream = stream;
-        video.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-
-        await video.play();
-        updateFilters();
-        renderGrid();
-      } catch (err) {
-        console.error('Помилка камери:', err);
-      }
-    }
-
     function getCombinedFilter() {
       const brightnessFactor = Math.pow(2, currentEV);
       const preset = filmPresets[currentFilmIdx];
       if (preset.isBW) {
         return `grayscale(100%) contrast(${preset.contrast * 100}%) brightness(${brightnessFactor * 100}%)`;
       } else {
-        return `
+        return `${preset.filter} brightness(${brightnessFactor * 100}%)`;
+      }
+    }
+
+    function updateFilters() {
+      video.style.filter = getCombinedFilter();
+    }
+
+    // Прив'язка кнопок інтерфейсу
+    levelBtn.onclick = (e) => {
+      e.stopPropagation();
+      isLevelActive = !isLevelActive;
+      spiritLevel.style.display = isLevelActive ? 'flex' : 'none';
+      levelBtn.classList.toggle('active', isLevelActive);
+      checkSensorPermission();
+    };
+
+    rangeBtn.onclick = (e) => {
+      e.stopPropagation();
+      isRangeActive = !isRangeActive;
+      rangefinderOverlay.style.display = isRangeActive ? 'block' : 'none';
+      rangeBtn.classList.toggle('active', isRangeActive);
+      checkSensorPermission();
+    };
+
+    filmBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
+      filmBtn.textContent = `🎞️ ${filmPresets[currentFilmIdx].name}`;
+      updateFilters();
+    };
+
+    gridBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentGridIdx = (currentGridIdx + 1) % gridModes.length;
+      renderGrid();
+    };
+
+    lensBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
+      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
+
+      if (videoTrack && typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
+        const caps = videoTrack.getCapabilities();
+        if (caps && caps.zoom) {
+          const targetZoom = zoomLevels[currentZoomIdx].zoom;
+          const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
+          videoTrack.applyConstraints({ advanced: [{ zoom: clampedZoom }] }).catch(() => {});
+        }
