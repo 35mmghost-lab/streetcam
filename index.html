@@ -13,7 +13,7 @@
 
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 99999; padding: 22px 34px; font-size: 16px; font-weight: bold;
+      z-index: 9999; padding: 20px 32px; font-size: 16px; font-weight: bold;
       background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
       box-shadow: 0 0 25px rgba(255, 182, 66, 0.7); text-align: center;
     }
@@ -29,14 +29,8 @@
     }
     .hud-btn.active { background: rgba(255, 182, 66, 0.3); border-color: #ffb642; color: #ffb642; }
 
-    #frameline {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 40; display: none;
-    }
-    #frame-box {
-      position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85);
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
-    }
+    #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
+    #frame-box { position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); }
 
     #grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.4); }
@@ -48,22 +42,12 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    #rangefinder {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 70; display: none;
-    }
+    #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; display: none; }
     .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; }
     .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
 
-    #stealth-overlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: #000; z-index: 950; display: none; cursor: pointer;
-    }
-    #btn-stealth-exit {
-      position: absolute; top: 14px; right: 14px;
-      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
-      color: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
-    }
+    #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 950; display: none; cursor: pointer; }
+    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
 
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
@@ -73,22 +57,13 @@
     }
     .setting-title { font-size: 11px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
     .setting-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .opt-btn {
-      padding: 8px 4px; background: #222; color: #aaa; border: 1px solid #333;
-      border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace;
-    }
+    .opt-btn { padding: 8px 4px; background: #222; color: #aaa; border: 1px solid #333; border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace; }
     .opt-btn.active { background: #ffb642; color: #000; font-weight: bold; border-color: #ffb642; }
     .slider-container { display: flex; align-items: center; gap: 12px; }
     input[type=range] { flex: 1; accent-color: #ffb642; }
-    #close-settings-btn {
-      width: 100%; padding: 12px; background: #333; color: #fff; border: none;
-      border-radius: 4px; font-size: 13px; cursor: pointer;
-    }
+    #close-settings-btn { width: 100%; padding: 12px; background: #333; color: #fff; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; }
 
-    #shutter {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #000; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.08s;
-    }
+    #shutter { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
     #shutter.flash { opacity: 0.9; }
     canvas { display: none; }
   </style>
@@ -98,22 +73,16 @@
     <video id="v" autoplay playsinline muted></video>
   </div>
 
-  <div id="frameline">
-    <div id="frame-box"></div>
-  </div>
-
+  <div id="frameline"><div id="frame-box"></div></div>
   <div id="grid"></div>
 
   <div id="rangefinder">
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <line x1="390" y1="120" x2="430" y2="120" />
-      <line x1="390" y1="880" x2="430" y2="880" />
+      <line x1="390" y1="120" x2="430" y2="120" /><line x1="390" y1="880" x2="430" y2="880" />
       <text x="320" y="505" class="stadia-label">1.2m</text>
-      <line x1="440" y1="260" x2="470" y2="260" />
-      <line x1="440" y1="740" x2="470" y2="740" />
+      <line x1="440" y1="260" x2="470" y2="260" /><line x1="440" y1="740" x2="470" y2="740" />
       <text x="390" y="505" class="stadia-label">2.0m</text>
-      <line x1="475" y1="340" x2="495" y2="340" />
-      <line x1="475" y1="660" x2="495" y2="660" />
+      <line x1="475" y1="340" x2="495" y2="340" /><line x1="475" y1="660" x2="495" y2="660" />
       <text x="515" y="505" class="stadia-label">3.0m</text>
     </svg>
   </div>
@@ -193,44 +162,29 @@
   <canvas id="c"></canvas>
 
   <script>
-    const v = document.getElementById('v');
-    const btnStart = document.getElementById('btn-start');
-    const hud = document.getElementById('hud');
-    const grid = document.getElementById('grid');
-    const rangefinder = document.getElementById('rangefinder');
-    const shutter = document.getElementById('shutter');
-    const canvas = document.getElementById('c');
-    const btnFilm = document.getElementById('btn-film');
-    const btnGrid = document.getElementById('btn-grid');
-    const btnRange = document.getElementById('btn-range');
-    const stealthOverlay = document.getElementById('stealth-overlay');
-    const settingsModal = document.getElementById('settings-modal');
-    const evVal = document.getElementById('ev-val');
-    const frameline = document.getElementById('frameline');
-    const frameBox = document.getElementById('frame-box');
+    const films = [
+      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
+      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
+      { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
+      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 8 },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
+      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
+    ];
+    let filmIdx = 0;
 
-    let videoTrack = null;
-    let isRangeActive = false;
-    let currentEV = 0.0;
-    let saveFormat = 'jpg';
+    const frameList = [
+      { name: 'Full', p: null, l: null },
+      { name: '3:2', p: 2 / 3, l: 3 / 2 },
+      { name: '4:3', p: 3 / 4, l: 4 / 3 },
+      { name: '4:5', p: 4 / 5, l: 5 / 4 },
+      { name: '1:1', p: 1.0, l: 1.0 },
+      { name: '16:9', p: 9 / 16, l: 16 / 9 },
+      { name: '65:24', p: 24 / 65, l: 65 / 24 }
+    ];
+    let currentFrameIdx = 1;
 
-    // Прямий і перевірений виклик потоку
-    async function startApp() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-          audio: false
-        });
-        v.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-        btnStart.style.display = 'none';
-        hud.style.display = 'flex';
-        applyFilmFilter();
-        renderFrameline();
-      } catch (err) {
-        alert("Помилка камери: " + err.message);
-      }
-    }
+    const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
+    let gridIdx = 0;
 
     const i18n = {
       ua: {
@@ -254,29 +208,43 @@
     };
     let currentLang = 'ua';
 
-    const frameList = [
-      { name: 'Full', p: null, l: null },
-      { name: '3:2', p: 2 / 3, l: 3 / 2 },
-      { name: '4:3', p: 3 / 4, l: 4 / 3 },
-      { name: '4:5', p: 4 / 5, l: 5 / 4 },
-      { name: '1:1', p: 1.0, l: 1.0 },
-      { name: '16:9', p: 9 / 16, l: 16 / 9 },
-      { name: '65:24', p: 24 / 65, l: 65 / 24 }
-    ];
-    let currentFrameIdx = 1;
+    let videoTrack = null;
+    let isRangeActive = false;
+    let currentEV = 0.0;
+    let saveFormat = 'jpg';
 
-    const films = [
-      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
-      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
-      { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
-      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 8 },
-      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
-      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
-    ];
-    let filmIdx = 0;
+    const v = document.getElementById('v');
+    const btnStart = document.getElementById('btn-start');
+    const hud = document.getElementById('hud');
+    const grid = document.getElementById('grid');
+    const rangefinder = document.getElementById('rangefinder');
+    const shutter = document.getElementById('shutter');
+    const canvas = document.getElementById('c');
+    const btnFilm = document.getElementById('btn-film');
+    const btnGrid = document.getElementById('btn-grid');
+    const btnRange = document.getElementById('btn-range');
+    const stealthOverlay = document.getElementById('stealth-overlay');
+    const settingsModal = document.getElementById('settings-modal');
+    const evVal = document.getElementById('ev-val');
+    const frameline = document.getElementById('frameline');
+    const frameBox = document.getElementById('frame-box');
 
-    const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    let gridIdx = 0;
+    async function startApp() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
+        v.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
+        btnStart.style.display = 'none';
+        hud.style.display = 'flex';
+        applyFilmFilter();
+        renderFrameline();
+      } catch (err) {
+        alert("Помилка камери: " + err.message);
+      }
+    }
 
     function applyFilmFilter() {
       const preset = films[filmIdx];
@@ -428,4 +396,10 @@
 
       view.setUint16(p, 0x4949, true); p += 2;
       view.setUint16(p, 42, true); p += 2;
-      view.setUint32(p, ifdOffset, t
+      view.setUint32(p, ifdOffset, true); p += 4;
+
+      const imgBytes = new Uint8Array(buffer, p, imageBytes);
+      for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
+        imgBytes[j] = rgba[i];
+        imgBytes[j + 1] = rgba[i + 1];
+        imgBytes[j + 2] = rgba[i 
