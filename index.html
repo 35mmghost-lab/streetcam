@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>StreetCam</title>
-  <link rel="manifest" href="manifest.json">
   <style>
     * {
       box-sizing: border-box;
@@ -45,6 +44,7 @@
       height: 100%;
       object-fit: cover;
       z-index: 1;
+      background: #111;
     }
 
     #grid-overlay {
@@ -93,7 +93,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Рівень горизонту */
+    /* Бурштиновий рівень Pip-Boy */
     #spirit-level {
       position: absolute;
       top: 50%;
@@ -193,10 +193,25 @@
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
+    /* Індикатор стану */
+    #status-indicator {
+      position: absolute;
+      top: 2px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 9px;
+      font-family: monospace;
+      color: #00ff66;
+      background: rgba(0,0,0,0.8);
+      z-index: 50;
+      padding: 2px 0;
+    }
+
     /* HUD */
     #top-hud {
       position: absolute;
-      top: 12px;
+      top: 18px;
       left: 0;
       width: 100%;
       display: flex;
@@ -204,7 +219,7 @@
       align-items: center;
       padding: 6px 8px;
       z-index: 20;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
     }
     .hud-btn {
@@ -221,23 +236,6 @@
       background: rgba(255, 182, 66, 0.25);
       border-color: #ffb642;
       color: #ffb642;
-    }
-
-    #start-overlay-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 40;
-      padding: 14px 28px;
-      background: #ffb642;
-      color: #000;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-      display: none;
     }
 
     #settings-modal {
@@ -320,6 +318,8 @@
   </style>
 </head>
 <body>
+  <div id="status-indicator">🚀 Ініціалізація системи...</div>
+
   <div id="app-container">
     <div id="viewfinder-container">
       <video id="camera-stream" autoplay playsinline muted></video>
@@ -349,8 +349,6 @@
       <div id="iris-shutter">
         <div class="iris-blade-container"></div>
       </div>
-
-      <button id="start-overlay-btn">▶ УВІМКНУТИ КАМЕРУ</button>
     </div>
 
     <div id="top-hud">
@@ -420,6 +418,19 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
+    // 1. Очищення старих Service Worker та кешу
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
+
+    const statusEl = document.getElementById('status-indicator');
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -437,7 +448,6 @@
     const rangefinderText = document.getElementById('rangefinder-text');
     const levelLine = document.querySelector('.level-line');
     const shutterHudBtn = document.getElementById('shutter-hud-btn');
-    const startOverlayBtn = document.getElementById('start-overlay-btn');
 
     let videoTrack = null;
     let currentStream = null;
@@ -603,12 +613,4 @@
 
     document.querySelectorAll('#height-group .opt-btn').forEach(btn => {
       btn.onclick = () => {
-        document.querySelectorAll('#height-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        cameraHeight = parseFloat(btn.getAttribute('data-h'));
-      };
-    });
-
-    document.querySelectorAll('#haptic-group .opt-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.que
+        document.querySelectorAll('#height-group .opt-btn').forEach(
