@@ -22,6 +22,7 @@
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       z-index: 1000; padding: 20px 32px; font-size: 16px; font-weight: bold;
       background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 182, 66, 0.6);
     }
     
     #hud {
@@ -302,19 +303,19 @@
       const currentLang = langKeys[langIdx];
       const dict = i18n[currentLang];
 
-      btnLang.textContent = dict.tag;
-      btnStart.textContent = dict.startBtn;
-      btnSnap.textContent = dict.snap;
-      btnRange.textContent = dict.range;
-      btnStealth.textContent = dict.stealth;
-      btnStealthExit.textContent = dict.stealthExit;
+      if (btnLang) btnLang.textContent = dict.tag;
+      if (btnStart) btnStart.textContent = dict.startBtn;
+      if (btnSnap) btnSnap.textContent = dict.snap;
+      if (btnRange) btnRange.textContent = dict.range;
+      if (btnStealth) btnStealth.textContent = dict.stealth;
+      if (btnStealthExit) btnStealthExit.textContent = dict.stealthExit;
 
-      tLang.textContent = dict.langTitle;
-      tRatio.textContent = dict.ratioTitle;
-      tEv.textContent = dict.evTitle;
-      tZoneFocus.textContent = dict.focusTitle;
-      optInf.textContent = dict.optInf;
-      closeSettingsBtn.textContent = dict.closeSettings;
+      if (tLang) tLang.textContent = dict.langTitle;
+      if (tRatio) tRatio.textContent = dict.ratioTitle;
+      if (tEv) tEv.textContent = dict.evTitle;
+      if (tZoneFocus) tZoneFocus.textContent = dict.focusTitle;
+      if (optInf) optInf.textContent = dict.optInf;
+      if (closeSettingsBtn) closeSettingsBtn.textContent = dict.closeSettings;
 
       document.querySelectorAll('#lang-group .opt-btn').forEach((b, idx) => {
         b.classList.toggle('active', idx === langIdx);
@@ -360,7 +361,7 @@
 
     function applyRatioFrame() {
       const r = ratios[ratioIdx];
-      btnRatio.textContent = '📐 ' + r.name;
+      if (btnRatio) btnRatio.textContent = '📐 ' + r.name;
 
       document.querySelectorAll('#ratio-group .opt-btn').forEach((b, idx) => {
         b.classList.toggle('active', idx === ratioIdx);
@@ -398,20 +399,26 @@
     window.addEventListener('resize', applyRatioFrame);
 
     async function startApp() {
+      btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: {
+            facingMode: { ideal: "environment" }
+          },
           audio: false
         });
         v.srcObject = stream;
+        await v.play();
         videoTrack = stream.getVideoTracks()[0];
+
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
         applyLanguage();
         applyFilmFilter();
         applyRatioFrame();
       } catch (err) {
-        alert("Помилка камери: " + err.message);
+        btnStart.textContent = "▶ УВІМКНУТИ КАМЕРУ";
+        alert("Помилка камери: " + err.name + " - " + err.message);
       }
     }
 
@@ -434,7 +441,7 @@
     function renderGrid() {
       const mode = grids[gridIdx];
       const currentLang = langKeys[langIdx];
-      btnGrid.textContent = i18n[currentLang].grids[mode];
+      if (btnGrid) btnGrid.textContent = i18n[currentLang].grids[mode];
       grid.innerHTML = '';
 
       if (mode === 'thirds') {
@@ -477,17 +484,4 @@
     }
 
     function closeSettings() {
-      settingsModal.style.display = 'none';
-    }
-
-    function setEV(val) {
-      currentEV = parseFloat(val);
-      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      applyFilmFilter();
-    }
-
-    function setFocus(dist, el) {
-      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      if (videoTrack && videoTrack.applyConstraints) {
-        if (dist ==
+      settingsModal.style.display = 'none'
