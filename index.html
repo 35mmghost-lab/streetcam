@@ -26,6 +26,15 @@
     }
     .t-btn.active { background: #ffb642; color: #000; font-weight: bold; }
 
+    /* Панель експокорекції */
+    #ev-bar {
+      position: fixed; top: 55px; left: 50%; transform: translateX(-50%);
+      display: none; align-items: center; gap: 8px; z-index: 998;
+      background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 20px;
+    }
+    #ev-slider { accent-color: #ffb642; width: 130px; }
+    #ev-label { font-size: 11px; color: #ffb642; min-width: 45px; }
+
     /* Рамка кадрування */
     #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
     #frame-box {
@@ -33,7 +42,7 @@
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55); overflow: hidden;
     }
 
-    /* Сітки всередині кадру */
+    /* Сітки композиції */
     #grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.45); }
     .grid-v { top: 0; bottom: 0; width: 1px; }
@@ -49,6 +58,17 @@
     #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; display: none; }
     .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; }
     .stadia-label { fill: #ffb642; font-size: 14px; font-weight: bold; font-family: monospace; }
+
+    /* Стелс-оверлей */
+    #stealth-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 2000; display: none; cursor: pointer;
+    }
+    #btn-stealth-exit {
+      position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3); color: #888; padding: 8px 12px;
+      border-radius: 6px; font-size: 11px; cursor: pointer;
+    }
 
     #hud {
       position: fixed; bottom: 25px; left: 0; width: 100%; display: none;
@@ -72,18 +92,18 @@
 
   <div id="rangefinder">
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <line x1="390" y1="120" x2="430" y2="120" />
-      <line x1="390" y1="880" x2="430" y2="880" />
+      <line x1="390" y1="120" x2="430" y2="120" /><line x1="390" y1="880" x2="430" y2="880" />
       <text x="320" y="505" class="stadia-label">1.2m</text>
-      
-      <line x1="440" y1="260" x2="470" y2="260" />
-      <line x1="440" y1="740" x2="470" y2="740" />
+      <line x1="440" y1="260" x2="470" y2="260" /><line x1="440" y1="740" x2="470" y2="740" />
       <text x="390" y="505" class="stadia-label">2.0m</text>
-
-      <line x1="475" y1="340" x2="495" y2="340" />
-      <line x1="475" y1="660" x2="495" y2="660" />
+      <line x1="475" y1="340" x2="495" y2="340" /><line x1="475" y1="660" x2="495" y2="660" />
       <text x="515" y="505" class="stadia-label">3.0m</text>
     </svg>
+  </div>
+
+  <!-- Чорний екран для стелс-зйомки -->
+  <div id="stealth-overlay" onclick="snap(true)">
+    <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
   <button id="btn-start" onclick="startCam()">▶ УВІМКНУТИ КАМЕРУ</button>
@@ -93,11 +113,18 @@
     <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
     <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
     <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
+    <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
     <button class="t-btn" id="format-btn" onclick="nextFormat()">💾 JPG</button>
   </div>
 
+  <!-- Панель регулювання експозиції -->
+  <div id="ev-bar">
+    <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
+    <span id="ev-label">0.0 EV</span>
+  </div>
+
   <div id="hud">
-    <button id="btn-snap" onclick="snap()">📷 СПУСК</button>
+    <button id="btn-snap" onclick="snap(false)">📷 СПУСК</button>
   </div>
 
   <canvas id="c"></canvas>
@@ -106,6 +133,9 @@
     const v = document.getElementById('v');
     const btnStart = document.getElementById('btn-start');
     const topBar = document.getElementById('top-bar');
+    const evBar = document.getElementById('ev-bar');
+    const evSlider = document.getElementById('ev-slider');
+    const evLabel = document.getElementById('ev-label');
     const hud = document.getElementById('hud');
     const c = document.getElementById('c');
     const filmBtn = document.getElementById('film-btn');
@@ -117,16 +147,18 @@
     const frameBox = document.getElementById('frame-box');
     const gridEl = document.getElementById('grid');
     const rangeEl = document.getElementById('rangefinder');
+    const stealthEl = document.getElementById('stealth-overlay');
 
     const films = [
-      { name: 'Tri-X 400', filter: 'grayscale(100%) contrast(150%)' },
-      { name: 'T-Max 3200', filter: 'grayscale(100%) contrast(190%) brightness(90%)' },
-      { name: 'HP5 Plus', filter: 'grayscale(100%) contrast(125%)' },
-      { name: 'Neopan 100', filter: 'grayscale(100%) contrast(135%)' },
-      { name: 'Portra 400', filter: 'saturate(85%) contrast(110%) sepia(15%)' },
-      { name: 'Cinestill 800T', filter: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
+      { name: 'Tri-X 400', base: 'grayscale(100%) contrast(150%)' },
+      { name: 'T-Max 3200', base: 'grayscale(100%) contrast(190%)' },
+      { name: 'HP5 Plus', base: 'grayscale(100%) contrast(125%)' },
+      { name: 'Neopan 100', base: 'grayscale(100%) contrast(135%)' },
+      { name: 'Portra 400', base: 'saturate(85%) contrast(110%) sepia(15%)' },
+      { name: 'Cinestill 800T', base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
     ];
     let fIdx = 0;
+    let currentEV = 0.0;
 
     const frames = [
       { name: 'Full', ratio: null },
@@ -161,6 +193,7 @@
         v.srcObject = stream;
         btnStart.style.display = 'none';
         topBar.style.display = 'flex';
+        evBar.style.display = 'flex';
         hud.style.display = 'flex';
         applyFilm();
         renderLayout();
@@ -170,7 +203,14 @@
     }
 
     function applyFilm() {
-      v.style.filter = films[fIdx].filter;
+      const bFactor = Math.pow(2, currentEV);
+      v.style.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
+    }
+
+    function setEV(val) {
+      currentEV = parseFloat(val);
+      evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      applyFilm();
     }
 
     function nextFilm() {
@@ -195,6 +235,17 @@
       isRangeOn = !isRangeOn;
       rangeEl.style.display = isRangeOn ? 'block' : 'none';
       rangeBtn.classList.toggle('active', isRangeOn);
+    }
+
+    function enterStealth() {
+      stealthEl.style.display = 'block';
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+
+    function exitStealth(e) {
+      if (e) e.stopPropagation();
+      stealthEl.style.display = 'none';
+      if (navigator.vibrate) navigator.vibrate([20, 20]);
     }
 
     function nextFormat() {
@@ -251,7 +302,6 @@
         gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /><line x1="0" y1="500" x2="500" y2="0" class="grid-subline" /><line x1="500" y1="1000" x2="1000" y2="500" class="grid-subline" /><line x1="0" y1="500" x2="500" y2="1000" class="grid-subline" /><line x1="500" y1="0" x2="1000" y2="500" class="grid-subline" /></svg>';
       } else if (mode === 'fibonacci') {
         if (isPortrait) {
-          // Вертикальна неперервна спіраль (618x1000)
           gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none">' +
             '<path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764 A 34,34 0 0,1 146,730" />' +
             '<line x1="0" y1="618" x2="618" y2="618" class="grid-subline" />' +
@@ -260,7 +310,6 @@
             '<line x1="146" y1="618" x2="146" y2="764" class="grid-subline" />' +
             '</svg>';
         } else {
-          // Горизонтальна неперервна спіраль (1000x618)
           gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none">' +
             '<path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" />' +
             '<line x1="618" y1="0" x2="618" y2="618" class="grid-subline" />' +
@@ -323,7 +372,9 @@
       return new Blob([buffer], { type: 'image/x-adobe-dng' });
     }
 
-    function snap() {
+    function snap(isSilent = false) {
+      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
+
       const rawW = v.videoWidth || 1920;
       const rawH = v.videoHeight || 1080;
       const curFrame = frames[rIdx];
@@ -335,7 +386,7 @@
           cropW = rawH * curFrame.ratio;
           cropX = (rawW - cropW) / 2;
         } else {
-          cropH = rawW / curFrame.ratio;
+          cropW = rawW / curFrame.ratio;
           cropX = 0;
           cropY = (rawH - cropH) / 2;
         }
@@ -356,7 +407,8 @@
         return;
       }
 
-      ctx.filter = films[fIdx].filter;
+      const bFactor = Math.pow(2, currentEV);
+      ctx.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
       ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
       
       c.toBlob(blob => {
