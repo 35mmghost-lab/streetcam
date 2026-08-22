@@ -26,19 +26,20 @@
     }
     .t-btn.active { background: #ffb642; color: #000; font-weight: bold; }
 
-    /* Рамка кадрування з внутрішнім контейнером для сіток */
+    /* Рамка кадрування */
     #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
     #frame-box {
       position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85);
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55); overflow: hidden;
     }
 
-    /* Сітки композиції (розміщені всередині активного вікна) */
+    /* Сітки всередині кадру */
     #grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.45); }
     .grid-v { top: 0; bottom: 0; width: 1px; }
     .grid-h { left: 0; right: 0; height: 1px; }
-    .grid-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; stroke: rgba(255,255,255,0.5); stroke-width: 1.5; fill: none; }
+    .grid-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; stroke: rgba(255,255,255,0.55); stroke-width: 1.5; fill: none; }
+    .grid-subline { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
     .center-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 32px; height: 32px; }
     .center-cross::before, .center-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.7); }
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
@@ -247,14 +248,26 @@
       } else if (mode === 'center') {
         gridEl.innerHTML = '<div class="center-cross"></div><div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
       } else if (mode === 'diagonals') {
-        gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /><line x1="0" y1="500" x2="500" y2="0" stroke="rgba(255,255,255,0.25)" /><line x1="500" y1="1000" x2="1000" y2="500" stroke="rgba(255,255,255,0.25)" /></svg>';
+        gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /><line x1="0" y1="500" x2="500" y2="0" class="grid-subline" /><line x1="500" y1="1000" x2="1000" y2="500" class="grid-subline" /><line x1="0" y1="500" x2="500" y2="1000" class="grid-subline" /><line x1="500" y1="0" x2="1000" y2="500" class="grid-subline" /></svg>';
       } else if (mode === 'fibonacci') {
         if (isPortrait) {
-          // Вертикальна золота спіраль
-          gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none"><path d="M 618,0 A 618,618 0 0,1 0,618 A 382,382 0 0,1 382,1000 A 236,236 0 0,1 618,764 A 146,146 0 0,1 472,618 A 90,90 0 0,1 382,708 A 56,56 0 0,1 438,764" /><line x1="0" y1="618" x2="618" y2="618" stroke="rgba(255,255,255,0.3)" /><line x1="382" y1="618" x2="382" y2="1000" stroke="rgba(255,255,255,0.3)" /><line x1="382" y1="764" x2="618" y2="764" stroke="rgba(255,255,255,0.3)" /></svg>';
+          // Вертикальна неперервна спіраль (618x1000)
+          gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none">' +
+            '<path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764 A 34,34 0 0,1 146,730" />' +
+            '<line x1="0" y1="618" x2="618" y2="618" class="grid-subline" />' +
+            '<line x1="236" y1="618" x2="236" y2="1000" class="grid-subline" />' +
+            '<line x1="0" y1="764" x2="236" y2="764" class="grid-subline" />' +
+            '<line x1="146" y1="618" x2="146" y2="764" class="grid-subline" />' +
+            '</svg>';
         } else {
-          // Горизонтальна золота спіраль
-          gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438" /><line x1="618" y1="0" x2="618" y2="618" stroke="rgba(255,255,255,0.3)" /><line x1="618" y1="382" x2="1000" y2="382" stroke="rgba(255,255,255,0.3)" /><line x1="764" y1="382" x2="764" y2="618" stroke="rgba(255,255,255,0.3)" /></svg>';
+          // Горизонтальна неперервна спіраль (1000x618)
+          gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none">' +
+            '<path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" />' +
+            '<line x1="618" y1="0" x2="618" y2="618" class="grid-subline" />' +
+            '<line x1="618" y1="382" x2="1000" y2="382" class="grid-subline" />' +
+            '<line x1="764" y1="382" x2="764" y2="618" class="grid-subline" />' +
+            '<line x1="618" y1="472" x2="764" y2="472" class="grid-subline" />' +
+            '</svg>';
         }
       }
     }
