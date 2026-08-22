@@ -2,24 +2,20 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
-  <title>StreetCam Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
-    
-    #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
+    #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
     video { width: 100%; height: 100%; object-fit: cover; }
-
+    
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 1000; padding: 22px 32px; font-size: 15px; font-weight: bold;
-      background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
-      box-shadow: 0 0 25px rgba(255, 182, 66, 0.7); text-align: center; max-width: 85vw;
+      z-index: 1000; padding: 20px 32px; font-size: 16px; font-weight: bold;
+      background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
     }
-
-    /* Верхня панель HUD */
+    
     #hud {
       position: fixed; top: 12px; left: 0; width: 100%; display: none;
       justify-content: space-around; align-items: center; padding: 6px 4px;
@@ -29,11 +25,21 @@
       background: transparent; border: 1px solid rgba(255, 255, 255, 0.4);
       color: #eee; padding: 6px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
-    .hud-btn.active { background: rgba(255, 182, 66, 0.3); border-color: #ffb642; color: #ffb642; }
+    .hud-btn.active {
+      background: rgba(255, 182, 66, 0.3);
+      border-color: #ffb642;
+      color: #ffb642;
+    }
 
     /* Рамка кадрування */
-    #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
-    #frame-box { position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); }
+    #frameline {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 40; display: none;
+    }
+    #frame-box {
+      position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+    }
 
     /* Сітки */
     #grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
@@ -47,15 +53,25 @@
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
     /* Далекомір */
-    #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; display: none; }
+    #rangefinder {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 70; display: none;
+    }
     .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; }
     .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
 
-    /* Стелс */
-    #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 950; display: none; cursor: pointer; }
-    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
+    /* Стелс-оверлей */
+    #stealth-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 950; display: none; cursor: pointer;
+    }
+    #btn-stealth-exit {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
+    }
 
-    /* Модальне вікно */
+    /* Модальне вікно налаштувань */
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(15, 15, 15, 0.98); border-top: 1px solid #333;
@@ -64,28 +80,22 @@
     }
     .setting-title { font-size: 11px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
     .setting-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .opt-btn { padding: 8px 4px; background: #222; color: #aaa; border: 1px solid #333; border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace; }
+    .opt-btn {
+      padding: 8px 4px; background: #222; color: #aaa; border: 1px solid #333;
+      border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace;
+    }
     .opt-btn.active { background: #ffb642; color: #000; font-weight: bold; }
     .slider-container { display: flex; align-items: center; gap: 12px; }
     input[type=range] { flex: 1; accent-color: #ffb642; }
-    #close-settings-btn { width: 100%; padding: 12px; background: #333; color: #fff; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; }
-
-    /* Кнопка та консоль логів */
-    #btn-log-toggle {
-      position: fixed; bottom: 12px; left: 12px; z-index: 1100;
-      background: rgba(30, 30, 30, 0.85); border: 1px solid #555; color: #ffb642;
-      padding: 6px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;
+    #close-settings-btn {
+      width: 100%; padding: 12px; background: #333; color: #fff; border: none;
+      border-radius: 4px; font-size: 13px; cursor: pointer;
     }
-    #log-modal {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.95); z-index: 2000; display: none;
-      flex-direction: column; padding: 16px; font-size: 11px; color: #00ff66;
-    }
-    #log-view { flex: 1; overflow-y: auto; background: #111; padding: 10px; border: 1px solid #333; margin: 10px 0; white-space: pre-wrap; word-break: break-all; }
-    .log-actions { display: flex; gap: 8px; }
-    .log-btn { flex: 1; padding: 10px; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px; font-size: 12px; cursor: pointer; }
 
-    #shutter { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
+    #shutter {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.08s;
+    }
     #shutter.flash { opacity: 0.9; }
     canvas { display: none; }
   </style>
@@ -95,39 +105,37 @@
     <video id="v" autoplay playsinline muted></video>
   </div>
 
-  <div id="frameline"><div id="frame-box"></div></div>
+  <div id="frameline">
+    <div id="frame-box"></div>
+  </div>
+
   <div id="grid"></div>
 
+  <!-- Стадіометричний далекомір -->
   <div id="rangefinder">
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <line x1="390" y1="120" x2="430" y2="120" /><line x1="390" y1="880" x2="430" y2="880" />
+      <line x1="390" y1="120" x2="430" y2="120" />
+      <line x1="390" y1="880" x2="430" y2="880" />
       <text x="320" y="505" class="stadia-label">1.2m</text>
-      <line x1="440" y1="260" x2="470" y2="260" /><line x1="440" y1="740" x2="470" y2="740" />
+      
+      <line x1="440" y1="260" x2="470" y2="260" />
+      <line x1="440" y1="740" x2="470" y2="740" />
       <text x="390" y="505" class="stadia-label">2.0m</text>
-      <line x1="475" y1="340" x2="495" y2="340" /><line x1="475" y1="660" x2="495" y2="660" />
+
+      <line x1="475" y1="340" x2="495" y2="340" />
+      <line x1="475" y1="660" x2="495" y2="660" />
       <text x="515" y="505" class="stadia-label">3.0m</text>
     </svg>
   </div>
 
   <div id="shutter"></div>
 
+  <!-- Стелс-оверлей -->
   <div id="stealth-overlay" onclick="takePhoto(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
   <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
-  <button id="btn-log-toggle" onclick="toggleLogModal()">📋 ЛОГ</button>
-
-  <!-- Консоль чорного ящика -->
-  <div id="log-modal">
-    <div><strong>🔍 СИСТЕМНИЙ ЖУРНАЛ / ДІАГНОСТИКА</strong></div>
-    <div id="log-view"></div>
-    <div class="log-actions">
-      <button class="log-btn" onclick="copyLogs()">📋 Скопіювати</button>
-      <button class="log-btn" onclick="clearLogs()">🗑️ Очистити</button>
-      <button class="log-btn" onclick="toggleLogModal()">✕ Закрити</button>
-    </div>
-  </div>
 
   <div id="hud">
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
@@ -138,29 +146,33 @@
     <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
   </div>
 
+  <!-- Модальне вікно налаштувань -->
   <div id="settings-modal">
+    <!-- МОВА -->
     <div>
-      <div class="setting-title" id="t-lang">МОВА / LANGUAGE</div>
+      <div class="setting-title" id="t-lang">LANGUAGE</div>
       <div class="setting-grid" id="lang-group" style="grid-template-columns: repeat(3, 1fr);">
-        <button class="opt-btn active" onclick="setLanguage('ua', this)">UA Українська</button>
-        <button class="opt-btn" onclick="setLanguage('en', this)">EN English</button>
+        <button class="opt-btn" onclick="setLanguage('ua', this)">UA Українська</button>
+        <button class="opt-btn active" onclick="setLanguage('en', this)">EN English</button>
         <button class="opt-btn" onclick="setLanguage('ja', this)">JA 日本語</button>
       </div>
     </div>
 
+    <!-- ФОРМАТ ЗБЕРЕЖЕННЯ -->
     <div>
-      <div class="setting-title" id="t-save">ФОРМАТ ЗБЕРЕЖЕННЯ</div>
+      <div class="setting-title" id="t-save">SAVE FORMAT</div>
       <div class="setting-grid" id="save-group" style="grid-template-columns: repeat(2, 1fr);">
-        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Grain)</button>
+        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Look)</button>
         <button class="opt-btn" onclick="setSaveFormat('raw', this)">RAW / DNG (Негатив)</button>
       </div>
     </div>
 
+    <!-- КЛАСИЧНІ РАМКИ LEICA -->
     <div>
-      <div class="setting-title" id="t-frames">КЛАСИЧНІ РАМКИ (FRAMELINES)</div>
+      <div class="setting-title" id="t-frames">FRAMELINES (ASPECT RATIO)</div>
       <div class="setting-grid" id="frames-group">
-        <button class="opt-btn active" onclick="setFrame(0, this)">Full</button>
-        <button class="opt-btn" onclick="setFrame(1, this)">3:2 (35mm)</button>
+        <button class="opt-btn" onclick="setFrame(0, this)">Full</button>
+        <button class="opt-btn active" onclick="setFrame(1, this)">3:2 (35mm)</button>
         <button class="opt-btn" onclick="setFrame(2, this)">4:3 (645)</button>
         <button class="opt-btn" onclick="setFrame(3, this)">4:5 (Insta)</button>
         <button class="opt-btn" onclick="setFrame(4, this)">1:1 (6x6)</button>
@@ -169,16 +181,18 @@
       </div>
     </div>
 
+    <!-- ЕКСПОКОРЕКЦІЯ -->
     <div>
-      <div class="setting-title" id="t-ev">ЕКСПОКОРЕКЦІЯ (EV)</div>
+      <div class="setting-title" id="t-ev">EXPOSURE (EV)</div>
       <div class="slider-container">
         <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="setEV(this.value)">
         <span id="ev-val" style="min-width: 45px; color: #ffb642;">0.0 EV</span>
       </div>
     </div>
 
+    <!-- ЗОННЕ ФОКУСУВАННЯ -->
     <div>
-      <div class="setting-title" id="t-focus">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
+      <div class="setting-title" id="t-focus">LEICA ZONE FOCUS</div>
       <div class="setting-grid" id="focus-group">
         <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
         <button class="opt-btn" onclick="setFocus('0.7', this)">0.7 m</button>
@@ -186,73 +200,16 @@
         <button class="opt-btn" onclick="setFocus('2.0', this)">2.0 m</button>
         <button class="opt-btn" onclick="setFocus('3.0', this)">3.0 m</button>
         <button class="opt-btn" onclick="setFocus('5.0', this)">5.0 m</button>
-        <button class="opt-btn" onclick="setFocus('100.0', this)" id="opt-inf" style="grid-column: span 2;">∞ Нескінченність</button>
+        <button class="opt-btn" onclick="setFocus('100.0', this)" id="opt-inf" style="grid-column: span 2;">∞ Infinity</button>
       </div>
     </div>
 
-    <button id="close-settings-btn" onclick="closeSettings()">Закрити</button>
+    <button id="close-settings-btn" onclick="closeSettings()">Close</button>
   </div>
 
   <canvas id="c"></canvas>
 
   <script>
-    // --- ДІАГНОСТИЧНИЙ ЧОРНИЙ ЯЩИК (DIAGNOSTIC LOGGER) ---
-    const Logger = {
-      logs: [],
-      add(level, msg) {
-        const time = new Date().toISOString().split('T')[1].slice(0, 8);
-        const record = `[${time}] [${level}] ${msg}`;
-        this.logs.push(record);
-        if (this.logs.length > 50) this.logs.shift();
-        try {
-          localStorage.setItem('sc_logs', JSON.stringify(this.logs));
-        } catch(e) {}
-        const view = document.getElementById('log-view');
-        if (view) view.textContent = this.logs.join('\n');
-      },
-      init() {
-        try {
-          const cached = localStorage.getItem('sc_logs');
-          if (cached) this.logs = JSON.parse(cached);
-        } catch(e) {}
-        this.add('INFO', 'StreetCam Logger запущено. UserAgent: ' + navigator.userAgent);
-      }
-    };
-    Logger.init();
-
-    window.onerror = (msg, src, line, col, err) => {
-      Logger.add('ERROR', `${msg} (${src}:${line}:${col})`);
-    };
-    window.addEventListener('unhandledrejection', (e) => {
-      Logger.add('PROMISE_FAIL', e.reason ? (e.reason.message || e.reason) : 'Невідома асинхронна помилка');
-    });
-
-    function toggleLogModal() {
-      const modal = document.getElementById('log-modal');
-      const isHidden = modal.style.display === 'none' || !modal.style.display;
-      modal.style.display = isHidden ? 'flex' : 'none';
-      if (isHidden) {
-        document.getElementById('log-view').textContent = Logger.logs.join('\n');
-      }
-    }
-
-    function copyLogs() {
-      const text = Logger.logs.join('\n');
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Логи скопійовано в буфер!');
-      }).catch(() => {
-        alert('Помилка копіювання. Виділіть текст вручну.');
-      });
-    }
-
-    function clearLogs() {
-      Logger.logs = [];
-      localStorage.removeItem('sc_logs');
-      document.getElementById('log-view').textContent = '';
-      Logger.add('INFO', 'Логи очищено.');
-    }
-
-    // --- ОСНОВНА СИСТЕМА КАМЕРИ ---
     const v = document.getElementById('v');
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
@@ -275,74 +232,88 @@
     let saveFormat = 'jpg';
 
     async function startApp() {
-      Logger.add('INIT', 'Спроба запуску камери...');
-      btnStart.textContent = '⏳ ІНІЦІАЛІЗАЦІЯ...';
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        Logger.add('FATAL', 'navigator.mediaDevices.getUserMedia відсутній у цьому середовищі.');
-        btnStart.textContent = '⚠️ API КАМЕРИ НЕДОСТУПНЕ';
-        return;
-      }
-
-      let stream = null;
-      const constraintsList = [
-        { name: 'Rear (ideal)', opts: { video: { facingMode: { ideal: 'environment' } }, audio: false } },
-        { name: 'Rear (exact)', opts: { video: { facingMode: { exact: 'environment' } }, audio: false } },
-        { name: 'Any Default', opts: { video: true, audio: false } }
-      ];
-
-      for (const item of constraintsList) {
-        try {
-          Logger.add('TRY', `Запит конфігурації: ${item.name}`);
-          stream = await navigator.mediaDevices.getUserMedia(item.opts);
-          Logger.add('SUCCESS', `Отримано потік: ${item.name}`);
-          break;
-        } catch (err) {
-          Logger.add('WARN', `Помилка ${item.name}: ${err.name} - ${err.message}`);
-        }
-      }
-
-      if (!stream) {
-        Logger.add('FAIL', 'Жодна конфігурація камери не спрацювала.');
-        btnStart.textContent = '⚠️ КАМЕРА ЗАБЛОКОВАНА (ДИВ. ЛОГ)';
-        return;
-      }
-
       try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
         v.srcObject = stream;
-        await v.play();
         videoTrack = stream.getVideoTracks()[0];
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
         applyFilmFilter();
         renderFrameline();
-        Logger.add('STATE', `Камера активна. Розмір сенсора: ${v.videoWidth}x${v.videoHeight}`);
-      } catch (playErr) {
-        Logger.add('ERROR', `Помилка video.play(): ${playErr.name} - ${playErr.message}`);
+      } catch (err) {
+        alert("Помилка камери: " + err.message);
       }
     }
 
     const i18n = {
       ua: {
-        snap: '📷 СПУСК', range: '🎯 Далекомір', stealth: '🕶️ Стелс', stealthExit: '✕ ВИЙТИ',
-        tLang: 'МОВА / LANGUAGE', tSave: 'ФОРМАТ ЗБЕРЕЖЕННЯ', tFrames: 'КЛАСИЧНІ РАМКИ (FRAMELINES)',
-        tEv: 'ЕКСПОКОРЕКЦІЯ (EV)', tFocus: 'ЗОННЕ ФОКУСУВАННЯ LEICA', optInf: '∞ Нескінченність', close: 'Закрити',
-        grids: { 'off': '🌐 Сітка: Вимк', 'thirds': '🌐 Третини', 'golden': '🌐 Золотий', 'fibonacci': '🌐 Фібоначчі', 'diagonals': '🌐 Діагоналі', 'center': '🌐 Центр' }
+        snap: '📷 СПУСК',
+        range: '🎯 Далекомір',
+        stealth: '🕶️ Стелс',
+        stealthExit: '✕ ВИЙТИ',
+        tLang: 'МОВА / LANGUAGE',
+        tSave: 'ФОРМАТ ЗБЕРЕЖЕННЯ',
+        tFrames: 'КЛАСИЧНІ РАМКИ (FRAMELINES)',
+        tEv: 'ЕКСПОКОРЕКЦІЯ (EV)',
+        tFocus: 'ЗОННЕ ФОКУСУВАННЯ LEICA',
+        optInf: '∞ Нескінченність',
+        close: 'Закрити',
+        grids: {
+          'off': '🌐 Сітка: Вимк',
+          'thirds': '🌐 Третини',
+          'golden': '🌐 Золотий',
+          'fibonacci': '🌐 Фібоначчі',
+          'diagonals': '🌐 Діагоналі',
+          'center': '🌐 Центр'
+        }
       },
       en: {
-        snap: '📷 SNAP', range: '🎯 Rangefinder', stealth: '🕶️ Stealth', stealthExit: '✕ EXIT',
-        tLang: 'LANGUAGE', tSave: 'SAVE FORMAT', tFrames: 'FRAMELINES (ASPECT RATIO)',
-        tEv: 'EXPOSURE (EV)', tFocus: 'LEICA ZONE FOCUS', optInf: '∞ Infinity', close: 'Close',
-        grids: { 'off': '🌐 Grid: Off', 'thirds': '🌐 Thirds', 'golden': '🌐 Golden', 'fibonacci': '🌐 Fibonacci', 'diagonals': '🌐 Diagonals', 'center': '🌐 Center' }
+        snap: '📷 SNAP',
+        range: '🎯 Rangefinder',
+        stealth: '🕶️ Stealth',
+        stealthExit: '✕ EXIT',
+        tLang: 'LANGUAGE',
+        tSave: 'SAVE FORMAT',
+        tFrames: 'FRAMELINES (ASPECT RATIO)',
+        tEv: 'EXPOSURE (EV)',
+        tFocus: 'LEICA ZONE FOCUS',
+        optInf: '∞ Infinity',
+        close: 'Close',
+        grids: {
+          'off': '🌐 Grid: Off',
+          'thirds': '🌐 Thirds',
+          'golden': '🌐 Golden',
+          'fibonacci': '🌐 Fibonacci',
+          'diagonals': '🌐 Diagonals',
+          'center': '🌐 Center'
+        }
       },
       ja: {
-        snap: '📷 シャッター', range: '🎯 距離計', stealth: '🕶️ ステルス', stealthExit: '✕ 終了',
-        tLang: '言語設定', tSave: '保存形式', tFrames: 'フレーム枠 (アスペクト比)',
-        tEv: '露出補正 (EV)', tFocus: 'ゾーンフォーカス', optInf: '∞ 無限遠', close: '閉じる',
-        grids: { 'off': '🌐 グリッド: 切', 'thirds': '🌐 三分割', 'golden': '🌐 黄金比', 'fibonacci': '🌐 フィボナッチ', 'diagonals': '🌐 対角線', 'center': '🌐 中央クロス' }
+        snap: '📷 シャッター',
+        range: '🎯 距離計',
+        stealth: '🕶️ ステルス',
+        stealthExit: '✕ 終了',
+        tLang: '言語設定',
+        tSave: '保存形式',
+        tFrames: 'フレーム枠 (アスペクト比)',
+        tEv: '露出補正 (EV)',
+        tFocus: 'ゾーンフォーカス',
+        optInf: '∞ 無限遠',
+        close: '閉じる',
+        grids: {
+          'off': '🌐 グリッド: 切',
+          'thirds': '🌐 三分割',
+          'golden': '🌐 黄金比',
+          'fibonacci': '🌐 フィボナッチ',
+          'diagonals': '🌐 対角線',
+          'center': '🌐 中央クロス'
+        }
       }
     };
-    let currentLang = 'ua';
+    let currentLang = 'en';
 
     const frameList = [
       { name: 'Full', p: null, l: null },
@@ -353,20 +324,20 @@
       { name: '16:9', p: 9 / 16, l: 16 / 9 },
       { name: '65:24', p: 24 / 65, l: 65 / 24 }
     ];
-    let currentFrameIdx = 0;
+    let currentFrameIdx = 1;
 
     const films = [
-      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
-      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
-      { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
-      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 8 },
-      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
-      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
+      { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
+      { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
+      { name: 'T-Max 3200', isBW: true, contrast: 1.90 },
+      { name: 'Neopan 100', isBW: true, contrast: 1.35 },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)' },
+      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)' }
     ];
     let filmIdx = 0;
 
     const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    let gridIdx = 0;
+    let gridIdx = 4;
 
     function applyFilmFilter() {
       const preset = films[filmIdx];
@@ -388,6 +359,7 @@
       const mode = grids[gridIdx];
       btnGrid.textContent = i18n[currentLang].grids[mode];
       grid.innerHTML = '';
+
       if (mode === 'thirds') {
         grid.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
       } else if (mode === 'golden') {
@@ -395,4 +367,115 @@
       } else if (mode === 'fibonacci') {
         grid.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" /><line x1="618" y1="0" x2="618" y2="618" stroke="rgba(255,255,255,0.3)" /><line x1="618" y1="382" x2="1000" y2="382" stroke="rgba(255,255,255,0.3)" /><line x1="764" y1="382" x2="764" y2="618" stroke="rgba(255,255,255,0.3)" /></svg>';
       } else if (mode === 'diagonals') {
-        grid.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="1000" y1="0" x2="0" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="0" y1="500" x2="500" y2="0" stroke="rgba(255,255,255,0.25
+        grid.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="1000" y1="0" x2="0" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="0" y1="500" x2="500" y2="0" stroke="rgba(255,255,255,0.25)" /><line x1="500" y1="1000" x2="1000" y2="500" stroke="rgba(255,255,255,0.25)" /></svg>';
+      } else if (mode === 'center') {
+        grid.innerHTML = '<div class="center-cross"></div><div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
+      }
+    }
+
+    function nextGrid() {
+      gridIdx = (gridIdx + 1) % grids.length;
+      renderGrid();
+    }
+
+    function toggleRange() {
+      isRangeActive = !isRangeActive;
+      rangefinder.style.display = isRangeActive ? 'block' : 'none';
+      btnRange.classList.toggle('active', isRangeActive);
+    }
+
+    function enterStealth() {
+      stealthOverlay.style.display = 'block';
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+
+    function exitStealth(e) {
+      if (e) e.stopPropagation();
+      stealthOverlay.style.display = 'none';
+      if (navigator.vibrate) navigator.vibrate([20, 20]);
+    }
+
+    function openSettings() {
+      settingsModal.style.display = 'flex';
+    }
+
+    function closeSettings() {
+      settingsModal.style.display = 'none';
+    }
+
+    function setLanguage(lang, el) {
+      currentLang = lang;
+      document.querySelectorAll('#lang-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+
+      const dict = i18n[currentLang];
+      document.getElementById('btn-snap').textContent = dict.snap;
+      document.getElementById('btn-range').textContent = dict.range;
+      document.getElementById('btn-stealth').textContent = dict.stealth;
+      document.getElementById('btn-stealth-exit').textContent = dict.stealthExit;
+      document.getElementById('t-lang').textContent = dict.tLang;
+      document.getElementById('t-save').textContent = dict.tSave;
+      document.getElementById('t-frames').textContent = dict.tFrames;
+      document.getElementById('t-ev').textContent = dict.tEv;
+      document.getElementById('t-focus').textContent = dict.tFocus;
+      document.getElementById('opt-inf').textContent = dict.optInf;
+      document.getElementById('close-settings-btn').textContent = dict.close;
+      renderGrid();
+    }
+
+    function setSaveFormat(fmt, el) {
+      saveFormat = fmt;
+      document.querySelectorAll('#save-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function setFrame(idx, el) {
+      currentFrameIdx = idx;
+      document.querySelectorAll('#frames-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      renderFrameline();
+    }
+
+    function renderFrameline() {
+      const f = frameList[currentFrameIdx];
+      if (!f.p) {
+        frameline.style.display = 'none';
+        return;
+      }
+      frameline.style.display = 'block';
+      const isPortrait = window.innerHeight >= window.innerWidth;
+      const targetRatio = isPortrait ? f.p : f.l;
+      const screenRatio = window.innerWidth / window.innerHeight;
+
+      let w, h;
+      if (screenRatio > targetRatio) {
+        h = window.innerHeight;
+        w = Math.round(h * targetRatio);
+      } else {
+        w = window.innerWidth;
+        h = Math.round(w / targetRatio);
+      }
+
+      frameBox.style.width = w + 'px';
+      frameBox.style.height = h + 'px';
+      frameBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
+      frameBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
+    }
+    window.addEventListener('resize', renderFrameline);
+
+    function setEV(val) {
+      currentEV = parseFloat(val);
+      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      applyFilmFilter();
+    }
+
+    function setFocus(dist, el) {
+      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      if (videoTrack && videoTrack.applyConstraints) {
+        if (dist === 'auto') {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        } else {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
+        }
+   
