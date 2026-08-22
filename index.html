@@ -93,7 +93,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Рівень горизонту Pip-Boy */
+    /* Бурштиновий рівень горизонту Pip-Boy */
     #spirit-level {
       position: absolute;
       top: 50%;
@@ -134,7 +134,7 @@
     }
     .rangefinder-hud-val {
       position: absolute;
-      top: 56px;
+      top: 58px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.7);
@@ -200,7 +200,7 @@
       left: 0;
       width: 100%;
       text-align: center;
-      font-size: 9px;
+      font-size: 10px;
       font-family: monospace;
       color: #00ff66;
       background: rgba(0,0,0,0.85);
@@ -209,10 +209,37 @@
       word-break: break-all;
     }
 
+    /* Велика кнопка запуску при блокуванні автостарту */
+    #manual-start-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      z-index: 60;
+    }
+    #manual-start-btn {
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+      background: #ffb642;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(255, 182, 66, 0.8);
+    }
+
     /* HUD */
     #top-hud {
       position: absolute;
-      top: 18px;
+      top: 20px;
       left: 0;
       width: 100%;
       display: flex;
@@ -319,7 +346,13 @@
   </style>
 </head>
 <body>
-  <div id="status-indicator">🚀 Ініціалізація інтерфейсу...</div>
+  <div id="status-indicator">⏳ Очікування натискання «Запустити камеру»</div>
+
+  <div id="manual-start-overlay">
+    <div style="font-size: 18px; font-weight: bold; color: #ffb642; letter-spacing: 1px;">STREETCAM</div>
+    <div style="font-size: 12px; color: #aaa; text-align: center; max-width: 260px;">Натисніть для підключення оптичного видошукача та сенсорів</div>
+    <button id="manual-start-btn">▶ ЗАПУСТИТИ КАМЕРУ</button>
+  </div>
 
   <div id="app-container">
     <div id="viewfinder-container">
@@ -420,9 +453,12 @@
 
   <script>
     const statusEl = document.getElementById('status-indicator');
+    const startOverlay = document.getElementById('manual-start-overlay');
+    const startBtn = document.getElementById('manual-start-btn');
+
     window.onerror = function(msg, url, line) {
       if (statusEl) {
-        statusEl.textContent = '❌ Помилка: ' + msg + ' (Рядок:' + line + ')';
+        statusEl.textContent = '❌ Помилка: ' + msg + ' (L:' + line + ')';
         statusEl.style.color = '#ff4444';
       }
     };
@@ -484,89 +520,72 @@
     let currentGridIdx = 0;
 
     function renderGrid() {
-      try {
-        const mode = gridModes[currentGridIdx];
-        gridBtn.textContent = gridLabels[mode];
-        gridOverlay.innerHTML = '';
+      const mode = gridModes[currentGridIdx];
+      gridBtn.textContent = gridLabels[mode];
+      gridOverlay.innerHTML = '';
 
-        if (mode === 'thirds') {
-          gridOverlay.innerHTML = '<div class="grid-line-v" style="left:33.33%;"></div><div class="grid-line-v" style="left:66.66%;"></div><div class="grid-line-h" style="top:33.33%;"></div><div class="grid-line-h" style="top:66.66%;"></div>';
-        } else if (mode === 'golden') {
-          gridOverlay.innerHTML = '<div class="grid-line-v" style="left:38.2%;"></div><div class="grid-line-v" style="left:61.8%;"></div><div class="grid-line-h" style="top:38.2%;"></div><div class="grid-line-h" style="top:61.8%;"></div>';
-        } else if (mode === 'fibonacci') {
-          gridOverlay.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382" /></svg>';
-        } else if (mode === 'diagonals') {
-          gridOverlay.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /></svg>';
-        } else if (mode === 'center') {
-          gridOverlay.innerHTML = '<div class="center-cross"></div><div class="grid-line-h" style="top:50%;"></div><div class="grid-line-v" style="left:50%;"></div>';
-        }
-      } catch (e) {
-        console.error(e);
+      if (mode === 'thirds') {
+        gridOverlay.innerHTML = '<div class="grid-line-v" style="left:33.33%;"></div><div class="grid-line-v" style="left:66.66%;"></div><div class="grid-line-h" style="top:33.33%;"></div><div class="grid-line-h" style="top:66.66%;"></div>';
+      } else if (mode === 'golden') {
+        gridOverlay.innerHTML = '<div class="grid-line-v" style="left:38.2%;"></div><div class="grid-line-v" style="left:61.8%;"></div><div class="grid-line-h" style="top:38.2%;"></div><div class="grid-line-h" style="top:61.8%;"></div>';
+      } else if (mode === 'fibonacci') {
+        gridOverlay.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382" /></svg>';
+      } else if (mode === 'diagonals') {
+        gridOverlay.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /></svg>';
+      } else if (mode === 'center') {
+        gridOverlay.innerHTML = '<div class="center-cross"></div><div class="grid-line-h" style="top:50%;"></div><div class="grid-line-v" style="left:50%;"></div>';
       }
     }
 
     function handleOrientation(event) {
-      try {
-        const isLandscape = window.innerWidth > window.innerHeight;
-        const roll = isLandscape ? (event.beta || 0) : (event.gamma || 0);
-        const pitch = isLandscape ? (event.gamma || 0) : (event.beta || 0);
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const roll = isLandscape ? (event.beta || 0) : (event.gamma || 0);
+      const pitch = isLandscape ? (event.gamma || 0) : (event.beta || 0);
 
-        if (isLevelActive) {
-          levelLine.style.transform = 'rotate(' + roll + 'deg)';
-          const isAligned = Math.abs(roll) <= 0.5;
-          if (isAligned) {
-            levelLine.classList.add('aligned');
-            if (!wasAligned && hapticsEnabled && navigator.vibrate) navigator.vibrate(20);
-            wasAligned = true;
-          } else {
-            levelLine.classList.remove('aligned');
-            wasAligned = false;
-          }
+      if (isLevelActive) {
+        levelLine.style.transform = 'rotate(' + roll + 'deg)';
+        const isAligned = Math.abs(roll) <= 0.5;
+        if (isAligned) {
+          levelLine.classList.add('aligned');
+          if (!wasAligned && hapticsEnabled && navigator.vibrate) navigator.vibrate(20);
+          wasAligned = true;
+        } else {
+          levelLine.classList.remove('aligned');
+          wasAligned = false;
         }
+      }
 
-        if (isRangeActive) {
-          const declination = Math.max(1, 90 - Math.abs(pitch));
-          const rad = declination * (Math.PI / 180);
-          let dist = cameraHeight / Math.tan(rad);
-          dist = Math.min(Math.max(dist, 0.5), 50.0);
-          rangefinderText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
-        }
-      } catch (e) {
-        console.error(e);
+      if (isRangeActive) {
+        const declination = Math.max(1, 90 - Math.abs(pitch));
+        const rad = declination * (Math.PI / 180);
+        let dist = cameraHeight / Math.tan(rad);
+        dist = Math.min(Math.max(dist, 0.5), 50.0);
+        rangefinderText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
       }
     }
 
     function checkSensorPermission() {
-      try {
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          DeviceOrientationEvent.requestPermission().then(state => {
-            if (state === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation, true);
-            }
-          }).catch(console.error);
-        } else {
-          window.addEventListener('deviceorientation', handleOrientation, true);
-        }
-      } catch (e) {
-        console.error(e);
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(state => {
+          if (state === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+          }
+        }).catch(console.error);
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation, true);
       }
     }
 
     function updateFilters() {
-      try {
-        const brightnessFactor = Math.pow(2, currentEV);
-        const preset = filmPresets[currentFilmIdx];
-        if (preset.isBW) {
-          video.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
-        } else {
-          video.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
-        }
-      } catch (e) {
-        console.error(e);
+      const brightnessFactor = Math.pow(2, currentEV);
+      const preset = filmPresets[currentFilmIdx];
+      if (preset.isBW) {
+        video.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
+      } else {
+        video.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
       }
     }
 
-    // Підключення кнопок інтерфейсу
     levelBtn.onclick = (e) => {
       e.stopPropagation();
       isLevelActive = !isLevelActive;
@@ -599,24 +618,4 @@
     lensBtn.onclick = (e) => {
       e.stopPropagation();
       currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
-      if (videoTrack && videoTrack.applyConstraints && videoTrack.getCapabilities) {
-        const caps = videoTrack.getCapabilities();
-        if (caps && caps.zoom) {
-          const targetZoom = zoomLevels[currentZoomIdx].zoom;
-          videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max) }] }).catch(() => {});
-        }
-      }
-    };
-
-    document.getElementById('open-settings-btn').onclick = (e) => {
-      e.stopPropagation();
-      settingsModal.style.display = 'flex';
-    };
-
-    document.getElementById('close-settings-btn').onclick = () => {
-      settingsModal.style.display = 'none';
-    };
-
-    evSlider.oninput = (e) => {
-      currentEV = parseFloat(e.tar
+      lensBtn.textContent = zoomLe
