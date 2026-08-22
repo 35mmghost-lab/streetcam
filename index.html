@@ -91,7 +91,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Бурштиновий рівень Pip-Boy */
+    /* Бурштиновий рівень горизонту Pip-Boy */
     #spirit-level {
       position: absolute;
       top: 50%;
@@ -194,52 +194,50 @@
     /* Індикатор стану */
     #status-indicator {
       position: absolute;
-      top: 2px;
+      top: 0;
       left: 0;
       width: 100%;
       text-align: center;
-      font-size: 10px;
+      font-size: 11px;
       font-family: monospace;
       color: #00ff66;
-      background: rgba(0,0,0,0.9);
-      z-index: 100;
-      padding: 3px 4px;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      padding: 4px;
       word-break: break-all;
     }
 
     /* Оверлей запуску */
     #manual-start-overlay {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.92);
+      width: 100%;
+      height: 100%;
+      background: #000;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 18px;
-      z-index: 90;
-      pointer-events: auto;
+      gap: 20px;
+      z-index: 500;
     }
     #manual-start-btn {
-      padding: 16px 36px;
+      padding: 18px 36px;
       font-size: 16px;
       font-weight: bold;
       color: #000;
       background: #ffb642;
-      border: none;
+      border: 2px solid #fff;
       border-radius: 8px;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 182, 66, 0.9);
-      touch-action: manipulation;
+      box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
     }
 
     /* HUD */
     #top-hud {
       position: absolute;
-      top: 22px;
+      top: 24px;
       left: 0;
       width: 100%;
       display: flex;
@@ -259,7 +257,6 @@
       font-size: 11px;
       letter-spacing: 0.5px;
       cursor: pointer;
-      touch-action: manipulation;
     }
     .hud-btn.active {
       background: rgba(255, 182, 66, 0.25);
@@ -305,7 +302,6 @@
       cursor: pointer;
       text-align: center;
       font-family: monospace;
-      touch-action: manipulation;
     }
     .opt-btn.active {
       background: #fff;
@@ -340,7 +336,6 @@
       font-size: 12px;
       margin-top: 4px;
       cursor: pointer;
-      touch-action: manipulation;
     }
     canvas {
       display: none;
@@ -348,12 +343,12 @@
   </style>
 </head>
 <body>
-  <div id="status-indicator">⏳ Натисніть «ЗАПУСТИТИ КАМЕРУ» нижче</div>
+  <div id="status-indicator">⏳ Натисніть кнопку нижче для запуску</div>
 
   <div id="manual-start-overlay">
-    <div style="font-size: 20px; font-weight: bold; color: #ffb642; letter-spacing: 1px;">STREETCAM</div>
-    <div style="font-size: 13px; color: #aaa; text-align: center; max-width: 260px;">Торкніться кнопки для увімкнення камери та сенсорів</div>
-    <button id="manual-start-btn" onclick="startCameraStream()">▶ ЗАПУСТИТИ КАМЕРУ</button>
+    <div style="font-size: 22px; font-weight: bold; color: #ffb642; letter-spacing: 1px;">STREETCAM</div>
+    <div style="font-size: 13px; color: #aaa; text-align: center; max-width: 280px;">Торкніться кнопки для увімкнення оптичного видошукача та сенсорів</div>
+    <button id="manual-start-btn">▶ ЗАПУСТИТИ КАМЕРУ</button>
   </div>
 
   <div id="app-container">
@@ -456,6 +451,7 @@
   <script>
     const statusEl = document.getElementById('status-indicator');
     const startOverlay = document.getElementById('manual-start-overlay');
+    const startBtn = document.getElementById('manual-start-btn');
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -511,6 +507,49 @@
       'off': '🌐 Сітка: Вимк'
     };
     let currentGridIdx = 0;
+
+    // Головна функція запуску камери
+    window.startCameraStream = function() {
+      statusEl.textContent = '🎥 Запит доступу до сенсора...';
+      statusEl.style.color = '#ffbb00';
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusEl.textContent = '❌ Немає підтримки getUserMedia';
+        statusEl.style.color = '#ff4444';
+        return;
+      }
+
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      }).then(stream => {
+        currentStream = stream;
+        video.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
+        video.muted = true;
+        video.playsInline = true;
+
+        video.play().then(() => {
+          statusEl.textContent = '🟢 Камера активна';
+          statusEl.style.color = '#00ff66';
+          startOverlay.style.display = 'none';
+        }).catch(e => {
+          statusEl.textContent = '⚠️ Помилка play: ' + e.message;
+          startOverlay.style.display = 'none';
+        });
+
+        updateFilters();
+        renderGrid();
+        checkSensorPermission();
+      }).catch(err => {
+        statusEl.textContent = '❌ Помилка: ' + err.name + ' (' + err.message + ')';
+        statusEl.style.color = '#ff4444';
+      });
+    };
+
+    // Прив'язка подій до кнопки запуску
+    startBtn.addEventListener('click', window.startCameraStream);
+    startBtn.addEventListener('pointerdown', window.startCameraStream);
 
     function renderGrid() {
       const mode = gridModes[currentGridIdx];
@@ -575,44 +614,4 @@
       if (preset.isBW) {
         video.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
       } else {
-        video.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
-      }
-    }
-
-    levelBtn.onclick = (e) => {
-      e.stopPropagation();
-      isLevelActive = !isLevelActive;
-      spiritLevel.style.display = isLevelActive ? 'flex' : 'none';
-      levelBtn.classList.toggle('active', isLevelActive);
-      checkSensorPermission();
-    };
-
-    rangeBtn.onclick = (e) => {
-      e.stopPropagation();
-      isRangeActive = !isRangeActive;
-      rangefinderOverlay.style.display = isRangeActive ? 'block' : 'none';
-      rangeBtn.classList.toggle('active', isRangeActive);
-      checkSensorPermission();
-    };
-
-    filmBtn.onclick = (e) => {
-      e.stopPropagation();
-      currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
-      filmBtn.textContent = '🎞️ ' + filmPresets[currentFilmIdx].name;
-      updateFilters();
-    };
-
-    gridBtn.onclick = (e) => {
-      e.stopPropagation();
-      currentGridIdx = (currentGridIdx + 1) % gridModes.length;
-      renderGrid();
-    };
-
-    lensBtn.onclick = (e) => {
-      e.stopPropagation();
-      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
-      if (videoTrack && videoTrack.applyConstraints && videoTrack.getCapabilities) {
-        const caps = videoTrack.getCapabilities();
-        if (caps && caps.zoom) {
-          const target
+        video.style.filter = pr
