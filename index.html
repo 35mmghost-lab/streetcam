@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>StreetCam</title>
   <style>
     * {
@@ -42,35 +41,35 @@
       filter: grayscale(100%) contrast(150%);
     }
 
-    /* Стартова кнопка */
+    /* Кнопка старту */
     #btn-start {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 1000;
-      padding: 20px 36px;
-      font-size: 15px;
+      padding: 22px 36px;
+      font-size: 16px;
       font-weight: bold;
       background: #ffb642;
       border: 2px solid #fff;
-      border-radius: 10px;
+      border-radius: 12px;
       color: #000;
       cursor: pointer;
-      box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
+      box-shadow: 0 0 24px rgba(255, 182, 66, 0.8);
       text-align: center;
     }
 
-    /* Верхня панель HUD */
+    /* Верхній HUD */
     #hud {
       position: fixed;
-      top: env(safe-area-inset-top, 8px);
+      top: env(safe-area-inset-top, 10px);
       left: 0;
       width: 100%;
       display: none;
       justify-content: space-around;
       align-items: center;
-      padding: 6px 2px;
+      padding: 6px 4px;
       z-index: 500;
       background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(4px);
@@ -79,9 +78,9 @@
       background: transparent;
       border: 1px solid rgba(255, 255, 255, 0.3);
       color: #eee;
-      padding: 6px 6px;
+      padding: 6px 8px;
       border-radius: 4px;
-      font-size: 10.5px;
+      font-size: 11px;
       cursor: pointer;
       white-space: nowrap;
     }
@@ -104,7 +103,6 @@
     .grid-v, .grid-h {
       position: absolute;
       background: rgba(255, 255, 255, 0.35);
-      box-shadow: 0 0 1px rgba(0, 0, 0, 0.8);
     }
     .grid-v { top: 0; bottom: 0; width: 1px; }
     .grid-h { left: 0; right: 0; height: 1px; }
@@ -148,7 +146,7 @@
     }
     #range-text {
       position: absolute;
-      top: 54px;
+      top: 56px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.85);
@@ -191,7 +189,7 @@
       opacity: 0.9;
     }
 
-    /* Стелс-оверлей */
+    /* Стелс */
     #stealth-overlay {
       position: fixed;
       top: 0;
@@ -207,28 +205,28 @@
       position: absolute;
       top: env(safe-area-inset-top, 14px);
       right: 14px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      color: rgba(255, 255, 255, 0.6);
-      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 8px 12px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
       z-index: 960;
     }
 
-    /* Налаштування */
+    /* Модальне вікно налаштувань */
     #settings-modal {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
-      background: rgba(12, 12, 12, 0.98);
+      background: rgba(15, 15, 15, 0.98);
       border-top: 1px solid #333;
-      padding: 16px;
+      padding: 18px;
       display: none;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       z-index: 900;
       max-height: 85vh;
       overflow-y: auto;
@@ -246,7 +244,7 @@
     }
     .opt-btn {
       padding: 8px 4px;
-      background: #1e1e1e;
+      background: #222;
       color: #aaa;
       border: 1px solid #333;
       border-radius: 4px;
@@ -268,18 +266,16 @@
     input[type=range] {
       flex: 1;
       accent-color: #ffb642;
-      height: 4px;
     }
     #close-settings-btn {
       width: 100%;
       padding: 12px;
-      background: #222;
+      background: #333;
       color: #fff;
       border: none;
       border-radius: 4px;
       font-size: 13px;
       cursor: pointer;
-      margin-top: 4px;
     }
 
     canvas {
@@ -313,12 +309,11 @@
 
   <div id="shutter"></div>
 
-  <!-- Стелс-оверлей -->
   <div id="stealth-overlay">
     <button id="btn-stealth-exit">✕ EXIT</button>
   </div>
 
-  <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
+  <button id="btn-start" onclick="initCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
     <button class="hud-btn" id="btn-lang">🌐 UA</button>
@@ -366,10 +361,6 @@
   <canvas id="c"></canvas>
 
   <script>
-    window.onerror = function(msg, url, line) {
-      alert("System Notice: " + msg + " (line " + line + ")");
-    };
-
     const v = document.getElementById('v');
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
@@ -424,7 +415,7 @@
         distPrefix: 'ВІДСТАНЬ',
         grids: {
           'thirds': '🌐 Третини',
-          'golden': '🌐 Золотий перетин',
+          'golden': '🌐 Золотий',
           'fibonacci': '🌐 Фібоначчі',
           'diagonals': '🌐 Діагоналі',
           'center': '🌐 Центр',
@@ -466,7 +457,7 @@
         optEye: '👁️ 目線位置 (1.60m)',
         optHip: '🥋 腰の位置 (1.30m)',
         evTitle: '露出補正 (EV)',
-        focusTitle: 'ライカ・ゾーンフォーカス',
+        focusTitle: 'ゾーンフォーカス',
         optInf: '∞ 無限遠',
         closeSettings: '閉じる',
         distPrefix: '距離',
@@ -482,13 +473,8 @@
     };
 
     const langKeys = ['ua', 'en', 'ja'];
-    let currentLang = 'ua';
-    try {
-      currentLang = localStorage.getItem('streetcam_lang') || 'ua';
-      if (!i18n[currentLang]) currentLang = 'ua';
-    } catch(e) {
-      currentLang = 'ua';
-    }
+    let currentLang = localStorage.getItem('streetcam_lang') || 'ua';
+    if (!i18n[currentLang]) currentLang = 'ua';
 
     function applyLanguage(lang) {
       currentLang = lang;
@@ -568,55 +554,46 @@
     }
 
     // ЗАПУСК КАМЕРИ
-    function startCameraStream() {
+    async function initCamera() {
       btnStart.textContent = "⌛ ЗАПУСК...";
       
-      const constraints = {
-        video: { 
-          facingMode: { ideal: "environment" },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 }
-        },
-        audio: false
-      };
-
-      navigator.mediaDevices.getUserMedia(constraints)
-        .then(stream => {
-          v.srcObject = stream;
-          videoTrack = stream.getVideoTracks()[0];
-          v.play();
-          btnStart.style.display = 'none';
-          hud.style.display = 'flex';
-          applyLanguage(currentLang);
-          updateFilters();
-        })
-        .catch(err => {
-          // Fallback до базового запиту
-          navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-            .then(stream => {
-              v.srcObject = stream;
-              videoTrack = stream.getVideoTracks()[0];
-              v.play();
-              btnStart.style.display = 'none';
-              hud.style.display = 'flex';
-              applyLanguage(currentLang);
-              updateFilters();
-            })
-            .catch(e => {
-              alert("Помилка камери: " + e.name + " - " + e.message);
-              btnStart.textContent = i18n[currentLang].startBtn;
-            });
-        });
-    }
-
-    btnStart.addEventListener('click', () => {
       try {
         if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().catch(() => {});
+          await document.documentElement.requestFullscreen().catch(() => {});
         }
-      } catch(e){}
-      startCameraStream();
-    });
+      } catch(e) {}
+
+      const constraintsOptions = [
+        { video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false },
+        { video: { facingMode: "environment" }, audio: false },
+        { video: true, audio: false }
+      ];
+
+      let stream = null;
+      for (let opts of constraintsOptions) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(opts);
+          if (stream) break;
+        } catch(err) {}
+      }
+
+      if (!stream) {
+        alert("Не вдалося отримати доступ до камери. Перевірте дозволи у браузері.");
+        btnStart.textContent = i18n[currentLang].startBtn;
+        return;
+      }
+
+      v.srcObject = stream;
+      videoTrack = stream.getVideoTracks()[0];
+      try {
+        await v.play();
+      } catch(e) {}
+
+      btnStart.style.display = 'none';
+      hud.style.display = 'flex';
+      applyLanguage(currentLang);
+      updateFilters();
+    }
 
     btnFilm.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -641,4 +618,29 @@
     btnStealth.addEventListener('click', (e) => {
       e.stopPropagation();
       isStealthActive = true;
-      stealth
+      stealthOverlay.style.display = 'block';
+      if (navigator.vibrate) navigator.vibrate(40);
+    });
+
+    btnStealthExit.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isStealthActive = false;
+      stealthOverlay.style.display = 'none';
+      if (navigator.vibrate) navigator.vibrate([20, 20]);
+    });
+
+    stealthOverlay.addEventListener('click', (e) => {
+      if (e.target === btnStealthExit) return;
+      capturePhoto(true);
+    });
+
+    btnSettings.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsModal.style.display = 'flex';
+    });
+
+    closeSettingsBtn.addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+
+    document.querySelectorAll('#height-gr
