@@ -11,19 +11,17 @@
     #viewfinder-box {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       display: flex; justify-content: center; align-items: center; background: #000;
-      overflow: hidden;
     }
-    #v-container {
+    #v-frame {
       position: relative; width: 100vw; height: 100vh;
       display: flex; justify-content: center; align-items: center; overflow: hidden;
-      background: #000;
     }
     video { width: 100%; height: 100%; object-fit: cover; }
     
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 1000; padding: 20px 32px; font-size: 16px; font-weight: bold;
-      background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
+      z-index: 1000; padding: 22px 30px; font-size: 15px; font-weight: bold;
+      background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
       box-shadow: 0 0 20px rgba(255, 182, 66, 0.6); text-align: center;
     }
     
@@ -107,7 +105,7 @@
 </head>
 <body>
   <div id="viewfinder-box">
-    <div id="v-container">
+    <div id="v-frame">
       <video id="v" autoplay playsinline muted></video>
       <div id="grid"></div>
       <div id="rangefinder">
@@ -199,12 +197,8 @@
   <canvas id="c"></canvas>
 
   <script>
-    window.onerror = function(msg, url, line) {
-      alert("JS Помилка: " + msg + " (рядок: " + line + ")");
-    };
-
     const v = document.getElementById('v');
-    const vContainer = document.getElementById('v-container');
+    const vFrame = document.getElementById('v-frame');
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
     const grid = document.getElementById('grid');
@@ -323,16 +317,27 @@
     function applyLanguage() {
       const dict = i18n[langKeys[langIdx]];
       if (btnLang) btnLang.textContent = dict.tag;
-      if (document.getElementById('btn-snap')) document.getElementById('btn-snap').textContent = dict.snap;
-      if (document.getElementById('btn-range')) document.getElementById('btn-range').textContent = dict.range;
-      if (document.getElementById('btn-stealth')) document.getElementById('btn-stealth').textContent = dict.stealth;
-      if (document.getElementById('btn-stealth-exit')) document.getElementById('btn-stealth-exit').textContent = dict.stealthExit;
-      if (document.getElementById('t-lang')) document.getElementById('t-lang').textContent = dict.langTitle;
-      if (document.getElementById('t-ratio')) document.getElementById('t-ratio').textContent = dict.ratioTitle;
-      if (document.getElementById('t-ev')) document.getElementById('t-ev').textContent = dict.evTitle;
-      if (document.getElementById('t-zone-focus')) document.getElementById('t-zone-focus').textContent = dict.focusTitle;
-      if (document.getElementById('opt-inf')) document.getElementById('opt-inf').textContent = dict.optInf;
-      if (document.getElementById('close-settings-btn')) document.getElementById('close-settings-btn').textContent = dict.closeSettings;
+      const snapBtn = document.getElementById('btn-snap');
+      if (snapBtn) snapBtn.textContent = dict.snap;
+      const rangeBtn = document.getElementById('btn-range');
+      if (rangeBtn) rangeBtn.textContent = dict.range;
+      const stealthBtn = document.getElementById('btn-stealth');
+      if (stealthBtn) stealthBtn.textContent = dict.stealth;
+      const exitBtn = document.getElementById('btn-stealth-exit');
+      if (exitBtn) exitBtn.textContent = dict.stealthExit;
+
+      const tL = document.getElementById('t-lang');
+      if (tL) tL.textContent = dict.langTitle;
+      const tR = document.getElementById('t-ratio');
+      if (tR) tR.textContent = dict.ratioTitle;
+      const tE = document.getElementById('t-ev');
+      if (tE) tE.textContent = dict.evTitle;
+      const tZ = document.getElementById('t-zone-focus');
+      if (tZ) tZ.textContent = dict.focusTitle;
+      const oI = document.getElementById('opt-inf');
+      if (oI) oI.textContent = dict.optInf;
+      const cS = document.getElementById('close-settings-btn');
+      if (cS) cS.textContent = dict.closeSettings;
 
       const langBtns = document.querySelectorAll('#lang-group .opt-btn');
       langBtns.forEach((b, idx) => b.classList.toggle('active', idx === langIdx));
@@ -359,8 +364,8 @@
       ratioBtns.forEach((b, idx) => b.classList.toggle('active', idx === ratioIdx));
 
       if (!r.p) {
-        vContainer.style.width = '100vw';
-        vContainer.style.height = '100vh';
+        vFrame.style.width = '100vw';
+        vFrame.style.height = '100vh';
         return;
       }
       const isPortrait = window.innerHeight >= window.innerWidth;
@@ -368,11 +373,11 @@
       const screenRatio = window.innerWidth / window.innerHeight;
 
       if (screenRatio > targetRatio) {
-        vContainer.style.height = '100vh';
-        vContainer.style.width = Math.round(window.innerHeight * targetRatio) + 'px';
+        vFrame.style.height = '100vh';
+        vFrame.style.width = Math.round(window.innerHeight * targetRatio) + 'px';
       } else {
-        vContainer.style.width = '100vw';
-        vContainer.style.height = Math.round(window.innerWidth / targetRatio) + 'px';
+        vFrame.style.width = '100vw';
+        vFrame.style.height = Math.round(window.innerWidth / targetRatio) + 'px';
       }
     }
 
@@ -464,4 +469,13 @@
         if (dist === 'auto') {
           videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
         } else {
-          videoT
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
+        }
+      }
+    }
+
+    async function startApp() {
+      btnStart.textContent = "⏳ Підключення камери...";
+      btnStart.style.background = "#fff";
+
+  
