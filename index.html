@@ -61,6 +61,27 @@
       color: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
 
+    /* Модальне вікно налаштувань */
+    #settings-modal {
+      position: fixed; bottom: 0; left: 0; width: 100%;
+      background: rgba(15, 15, 15, 0.98); border-top: 1px solid #333;
+      padding: 16px; display: none; flex-direction: column; gap: 14px;
+      z-index: 900; max-height: 80vh; overflow-y: auto;
+    }
+    .setting-title { font-size: 11px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+    .setting-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .opt-btn {
+      padding: 8px 4px; background: #222; color: #aaa; border: 1px solid #333;
+      border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace;
+    }
+    .opt-btn.active { background: #fff; color: #000; font-weight: bold; }
+    .slider-container { display: flex; align-items: center; gap: 12px; }
+    input[type=range] { flex: 1; accent-color: #ffb642; }
+    #close-settings-btn {
+      width: 100%; padding: 12px; background: #333; color: #fff; border: none;
+      border-radius: 4px; font-size: 13px; cursor: pointer;
+    }
+
     #shutter {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: #000; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.08s;
@@ -95,7 +116,7 @@
 
   <div id="shutter"></div>
 
-  <!-- Оверлей стелс-режиму -->
+  <!-- Стелс-оверлей -->
   <div id="stealth-overlay" onclick="takePhoto(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
@@ -108,6 +129,33 @@
     <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
     <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Далекомір</button>
     <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
+    <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
+  </div>
+
+  <!-- Модальне вікно налаштувань -->
+  <div id="settings-modal">
+    <div>
+      <div class="setting-title">ЕКСПОКОРЕКЦІЯ (EV)</div>
+      <div class="slider-container">
+        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="setEV(this.value)">
+        <span id="ev-val" style="min-width: 45px; color: #ffb642;">0.0 EV</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="setting-title">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
+      <div class="setting-grid" id="focus-group">
+        <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
+        <button class="opt-btn" onclick="setFocus('0.7', this)">0.7 m</button>
+        <button class="opt-btn" onclick="setFocus('1.2', this)">1.2 m</button>
+        <button class="opt-btn" onclick="setFocus('2.0', this)">2.0 m</button>
+        <button class="opt-btn" onclick="setFocus('3.0', this)">3.0 m</button>
+        <button class="opt-btn" onclick="setFocus('5.0', this)">5.0 m</button>
+        <button class="opt-btn" onclick="setFocus('100.0', this)" style="grid-column: span 2;">∞ Нескінченність</button>
+      </div>
+    </div>
+
+    <button id="close-settings-btn" onclick="closeSettings()">Закрити</button>
   </div>
 
   <canvas id="c"></canvas>
@@ -124,8 +172,12 @@
     const btnGrid = document.getElementById('btn-grid');
     const btnRange = document.getElementById('btn-range');
     const stealthOverlay = document.getElementById('stealth-overlay');
+    const settingsModal = document.getElementById('settings-modal');
+    const evVal = document.getElementById('ev-val');
 
+    let videoTrack = null;
     let isRangeActive = false;
+    let currentEV = 0.0;
 
     const films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
@@ -155,6 +207,7 @@
           audio: false
         });
         v.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
         applyFilmFilter();
@@ -165,10 +218,11 @@
 
     function applyFilmFilter() {
       const preset = films[filmIdx];
+      const brightnessFactor = Math.pow(2, currentEV);
       if (preset.isBW) {
-        v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%)';
+        v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
       } else {
-        v.style.filter = preset.filter;
+        v.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
       }
     }
 
@@ -218,7 +272,35 @@
       if (navigator.vibrate) navigator.vibrate([20, 20]);
     }
 
+    function openSettings() {
+      settingsModal.style.display = 'flex';
+    }
+
+    function closeSettings() {
+      settingsModal.style.display = 'none';
+    }
+
+    function setEV(val) {
+      currentEV = parseFloat(val);
+      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      applyFilmFilter();
+    }
+
+    function setFocus(dist, el) {
+      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      if (videoTrack && videoTrack.applyConstraints) {
+        if (dist === 'auto') {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        } else {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
+        }
+      }
+    }
+
     function takePhoto(isSilent = false) {
+      if (settingsModal.style.display === 'flex') return;
+
       if (!isSilent) {
         shutter.classList.add('flash');
         setTimeout(() => shutter.classList.remove('flash'), 100);
@@ -233,6 +315,7 @@
       canvas.height = h;
       const ctx = canvas.getContext('2d');
       const preset = films[filmIdx];
+      const evFactor = Math.pow(2, currentEV);
 
       if (preset.isBW) {
         ctx.filter = 'none';
@@ -242,14 +325,18 @@
         const contrast = preset.contrast;
 
         for (let i = 0; i < d.length; i += 4) {
-          let y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          let r = d[i] * evFactor;
+          let g = d[i + 1] * evFactor;
+          let b = d[i + 2] * evFactor;
+
+          let y = 0.299 * r + 0.587 * g + 0.114 * b;
           y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
           y = Math.min(255, Math.max(0, y));
           d[i] = y; d[i + 1] = y; d[i + 2] = y;
         }
         ctx.putImageData(imgData, 0, 0);
       } else {
-        ctx.filter = preset.filter;
+        ctx.filter = preset.filter + ' brightness(' + (evFactor * 100) + '%)';
         ctx.drawImage(v, 0, 0, w, h);
       }
 
