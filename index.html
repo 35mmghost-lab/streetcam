@@ -2,11 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,7 +71,7 @@
       color: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
 
-    /* Меню налаштувань */
+    /* Модальне вікно налаштувань */
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(15, 15, 15, 0.98); border-top: 1px solid #333;
@@ -115,7 +111,7 @@
 
   <div id="grid"></div>
 
-  <!-- Далекомір -->
+  <!-- Стадіометричний далекомір -->
   <div id="rangefinder">
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="390" y1="120" x2="430" y2="120" />
@@ -166,7 +162,7 @@
     <div>
       <div class="setting-title" id="t-save">ФОРМАТ ЗБЕРЕЖЕННЯ</div>
       <div class="setting-grid" id="save-group" style="grid-template-columns: repeat(2, 1fr);">
-        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Grain)</button>
+        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Look)</button>
         <button class="opt-btn" onclick="setSaveFormat('raw', this)">RAW / DNG (Негатив)</button>
       </div>
     </div>
@@ -235,7 +231,7 @@
     let currentEV = 0.0;
     let saveFormat = 'jpg';
 
-    // Базовий старт камери
+    // Базовий старт камери (1-в-1 з робочої версії)
     async function startApp() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -330,14 +326,13 @@
     ];
     let currentFrameIdx = 0;
 
-    // Параметри плівок із каліброваним зерном (grain)
     const films = [
-      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
-      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
-      { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
-      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 8 },
-      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
-      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
+      { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
+      { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
+      { name: 'T-Max 3200', isBW: true, contrast: 1.90 },
+      { name: 'Neopan 100', isBW: true, contrast: 1.35 },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)' },
+      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)' }
     ];
     let filmIdx = 0;
 
@@ -425,7 +420,6 @@
       document.getElementById('t-focus').textContent = dict.tFocus;
       document.getElementById('opt-inf').textContent = dict.optInf;
       document.getElementById('close-settings-btn').textContent = dict.close;
-
       renderGrid();
     }
 
@@ -476,4 +470,10 @@
     }
 
     function setFocus(dist, el) {
-      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove
+      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      if (videoTrack && videoTrack.applyConstraints) {
+        if (dist === 'auto') {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        } else {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDi
