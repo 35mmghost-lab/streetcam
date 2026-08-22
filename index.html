@@ -18,16 +18,8 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
       overflow: hidden;
     }
-    #app-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #000;
-    }
-    video {
+
+    #viewfinder {
       position: fixed;
       top: 0;
       left: 0;
@@ -35,10 +27,10 @@
       height: 100%;
       object-fit: cover;
       z-index: 1;
-      filter: grayscale(100%) contrast(150%);
+      filter: grayscale(100%) contrast(155%);
     }
 
-    /* Стартовий екран запуску */
+    /* Стартовий екран */
     #start-screen {
       position: fixed;
       top: 0;
@@ -50,8 +42,8 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 20px;
-      z-index: 1000;
+      gap: 16px;
+      z-index: 999;
     }
     #start-btn {
       padding: 18px 36px;
@@ -62,7 +54,54 @@
       border: 2px solid #fff;
       border-radius: 8px;
       cursor: pointer;
-      box-shadow: 0 0 24px rgba(255, 182, 66, 0.8);
+      box-shadow: 0 0 20px rgba(255, 182, 66, 0.9);
+      touch-action: manipulation;
+    }
+
+    /* Рядок статусу */
+    #status-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      font-family: monospace;
+      color: #00ff66;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      padding: 3px 0;
+      pointer-events: none;
+    }
+
+    /* Верхня панель HUD */
+    #top-hud {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      width: 100%;
+      display: none;
+      justify-content: space-around;
+      align-items: center;
+      padding: 6px 8px;
+      z-index: 30;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+    }
+    .hud-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #eee;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .hud-btn.active {
+      background: rgba(255, 182, 66, 0.3);
+      border-color: #ffb642;
+      color: #ffb642;
     }
 
     /* Сітки композиції */
@@ -111,7 +150,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Бурштиновий рівень Pip-Boy */
+    /* Бурштиновий рівень горизонту */
     #spirit-level {
       position: fixed;
       top: 50%;
@@ -139,7 +178,7 @@
       box-shadow: 0 0 3px #000, 0 0 16px #ffb642, 0 0 24px rgba(255, 182, 66, 0.95);
     }
 
-    /* Далекомір */
+    /* Стадіаметричний далекомір */
     #rangefinder-overlay {
       position: fixed;
       top: 0;
@@ -179,7 +218,7 @@
       font-family: monospace;
     }
 
-    /* Анімація спуску затвора */
+    /* Механічний затвор */
     #iris-shutter {
       position: fixed;
       top: 0;
@@ -210,36 +249,6 @@
       50% { opacity: 1; transform: scale(0.28) rotate(60deg); }
       80% { opacity: 1; }
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
-    }
-
-    /* Верхній HUD */
-    #top-hud {
-      position: fixed;
-      top: 10px;
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 6px 8px;
-      z-index: 30;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(4px);
-    }
-    .hud-btn {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      color: #eee;
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-    }
-    .hud-btn.active {
-      background: rgba(255, 182, 66, 0.3);
-      border-color: #ffb642;
-      color: #ffb642;
     }
 
     /* Модальне вікно налаштувань */
@@ -281,6 +290,7 @@
       cursor: pointer;
       text-align: center;
       font-family: monospace;
+      touch-action: manipulation;
     }
     .opt-btn.active {
       background: #fff;
@@ -315,6 +325,7 @@
       font-size: 12px;
       margin-top: 4px;
       cursor: pointer;
+      touch-action: manipulation;
     }
     canvas {
       display: none;
@@ -322,115 +333,115 @@
   </style>
 </head>
 <body>
+  <div id="status-bar">Готовий до запуску</div>
+
   <div id="start-screen">
     <div style="font-size: 22px; font-weight: bold; color: #ffb642; letter-spacing: 1px;">STREETCAM</div>
-    <div style="font-size: 13px; color: #888; text-align: center; max-width: 280px;">Натисніть для запуску видошукача</div>
-    <button id="start-btn">▶ УВІМКНУТИ КАМЕРУ</button>
+    <div style="font-size: 13px; color: #888; text-align: center; max-width: 280px;">Натисніть для запуску оптичного видошукача</div>
+    <button id="start-btn" onclick="startStreetCam()">▶ УВІМКНУТИ КАМЕРУ</button>
   </div>
 
-  <div id="app-container">
-    <video id="viewfinder" autoplay playsinline muted></video>
-    <div id="grid-overlay"></div>
-    
-    <div id="spirit-level">
-      <div class="level-line"></div>
+  <video id="viewfinder" autoplay playsinline muted></video>
+  <div id="grid-overlay"></div>
+
+  <div id="spirit-level">
+    <div class="level-line"></div>
+  </div>
+
+  <div id="rangefinder-overlay">
+    <div class="rangefinder-hud-val" id="rangefinder-text">DIST: -- m (H: 1.6m)</div>
+    <svg class="stadiametric-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+      <line x1="420" y1="120" x2="440" y2="120" />
+      <line x1="420" y1="880" x2="440" y2="880" />
+      <text x="380" y="505" class="stadia-text">1.2m</text>
+      
+      <line x1="460" y1="260" x2="475" y2="260" />
+      <line x1="460" y1="740" x2="475" y2="740" />
+      <text x="425" y="505" class="stadia-text">2.0m</text>
+
+      <line x1="485" y1="340" x2="495" y2="340" />
+      <line x1="485" y1="660" x2="495" y2="660" />
+      <text x="505" y="505" class="stadia-text">3.0m</text>
+    </svg>
+  </div>
+
+  <div id="iris-shutter">
+    <div class="iris-blade-container"></div>
+  </div>
+
+  <div id="top-hud">
+    <button class="hud-btn" id="shutter-hud-btn" onclick="triggerShutter(event)">📷 SNAP</button>
+    <button class="hud-btn" id="level-btn" onclick="toggleLevel(event)">🧭 Рівень</button>
+    <button class="hud-btn" id="range-btn" onclick="toggleRange(event)">🎯 Далекомір</button>
+    <button class="hud-btn" id="lens-btn" onclick="toggleLens(event)">🔍 1.0x</button>
+    <button class="hud-btn" id="grid-btn" onclick="toggleGrid(event)">🌐 Третини</button>
+    <button class="hud-btn" id="film-btn" onclick="toggleFilm(event)">🎞️ Tri-X 400</button>
+    <button class="hud-btn" id="open-settings-btn" onclick="openSettings(event)">⚙️</button>
+  </div>
+
+  <div id="settings-modal">
+    <div>
+      <div class="setting-title">Висота точки зйомки далекоміра</div>
+      <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="height-group">
+        <button class="opt-btn active" onclick="setHeight(1.6, this)">👁️ Рівень очей (1.60 м)</button>
+        <button class="opt-btn" onclick="setHeight(1.3, this)">🥋 Рівень пояса (1.30 м)</button>
+      </div>
     </div>
 
-    <div id="rangefinder-overlay">
-      <div class="rangefinder-hud-val" id="rangefinder-text">DIST: -- m (H: 1.6m)</div>
-      <svg class="stadiametric-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-        <line x1="420" y1="120" x2="440" y2="120" />
-        <line x1="420" y1="880" x2="440" y2="880" />
-        <text x="380" y="505" class="stadia-text">1.2m</text>
-        
-        <line x1="460" y1="260" x2="475" y2="260" />
-        <line x1="460" y1="740" x2="475" y2="740" />
-        <text x="425" y="505" class="stadia-text">2.0m</text>
-
-        <line x1="485" y1="340" x2="495" y2="340" />
-        <line x1="485" y1="660" x2="495" y2="660" />
-        <text x="505" y="505" class="stadia-text">3.0m</text>
-      </svg>
-    </div>
-    
-    <div id="iris-shutter">
-      <div class="iris-blade-container"></div>
+    <div>
+      <div class="setting-title">Тактильний відгук горизонту (Вібрація)</div>
+      <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="haptic-group">
+        <button class="opt-btn active" onclick="setHaptic(true, this)">📳 Увімк</button>
+        <button class="opt-btn" onclick="setHaptic(false, this)">🔕 Вимк</button>
+      </div>
     </div>
 
-    <div id="top-hud">
-      <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
-      <button class="hud-btn" id="level-btn">🧭 Рівень</button>
-      <button class="hud-btn" id="range-btn">🎯 Далекомір</button>
-      <button class="hud-btn" id="lens-btn">🔍 1.0x</button>
-      <button class="hud-btn" id="grid-btn">🌐 Третини</button>
-      <button class="hud-btn" id="film-btn">🎞️ Tri-X 400</button>
-      <button class="hud-btn" id="open-settings-btn">⚙️</button>
+    <div>
+      <div class="setting-title">Експокорекція (EV)</div>
+      <div class="slider-container">
+        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="changeEV(this.value)">
+        <span class="slider-val" id="ev-val">0.0 EV</span>
+      </div>
     </div>
 
-    <div id="settings-modal">
-      <div>
-        <div class="setting-title">Висота точки зйомки далекоміра</div>
-        <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="height-group">
-          <button class="opt-btn active" data-h="1.6">👁️ Рівень очей (1.60 м)</button>
-          <button class="opt-btn" data-h="1.3">🥋 Рівень пояса (1.30 м)</button>
-        </div>
+    <div>
+      <div class="setting-title">Фокусна відстань (Leica Zone Focus)</div>
+      <div class="setting-grid" id="focus-group">
+        <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
+        <button class="opt-btn" onclick="setFocus(0.7, this)">0.7 m</button>
+        <button class="opt-btn" onclick="setFocus(1.0, this)">1.0 m</button>
+        <button class="opt-btn" onclick="setFocus(1.2, this)">1.2 m</button>
+        <button class="opt-btn" onclick="setFocus(1.5, this)">1.5 m</button>
+        <button class="opt-btn" onclick="setFocus(2.0, this)">2.0 m</button>
+        <button class="opt-btn" onclick="setFocus(3.0, this)">3.0 m</button>
+        <button class="opt-btn" onclick="setFocus(5.0, this)">5.0 m</button>
+        <button class="opt-btn" onclick="setFocus(100.0, this)" style="grid-column: span 4;">∞ Нескінченність</button>
       </div>
-
-      <div>
-        <div class="setting-title">Тактильний відгук горизонту (Вібрація)</div>
-        <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="haptic-group">
-          <button class="opt-btn active" data-haptic="on">📳 Увімк</button>
-          <button class="opt-btn" data-haptic="off">🔕 Вимк</button>
-        </div>
-      </div>
-
-      <div>
-        <div class="setting-title">Експокорекція (EV)</div>
-        <div class="slider-container">
-          <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0">
-          <span class="slider-val" id="ev-val">0.0 EV</span>
-        </div>
-      </div>
-
-      <div>
-        <div class="setting-title">Фокусна відстань (Leica Zone Focus)</div>
-        <div class="setting-grid" id="focus-group">
-          <button class="opt-btn active" data-dist="auto">AF Auto</button>
-          <button class="opt-btn" data-dist="0.7">0.7 m</button>
-          <button class="opt-btn" data-dist="1.0">1.0 m</button>
-          <button class="opt-btn" data-dist="1.2">1.2 m</button>
-          <button class="opt-btn" data-dist="1.5">1.5 m</button>
-          <button class="opt-btn" data-dist="2.0">2.0 m</button>
-          <button class="opt-btn" data-dist="3.0">3.0 m</button>
-          <button class="opt-btn" data-dist="5.0">5.0 m</button>
-          <button class="opt-btn" data-dist="100.0" style="grid-column: span 4;">∞ Нескінченність</button>
-        </div>
-      </div>
-
-      <div>
-        <div class="setting-title">Світлочутливість (ISO)</div>
-        <div class="setting-grid" id="iso-group">
-          <button class="opt-btn active" data-val="auto">Auto</button>
-          <button class="opt-btn" data-val="400">400</button>
-          <button class="opt-btn" data-val="800">800</button>
-          <button class="opt-btn" data-val="1600">1600</button>
-        </div>
-      </div>
-
-      <button id="close-settings-btn">Закрити налаштування</button>
     </div>
+
+    <div>
+      <div class="setting-title">Світлочутливість (ISO)</div>
+      <div class="setting-grid" id="iso-group">
+        <button class="opt-btn active" onclick="setISO('auto', this)">Auto</button>
+        <button class="opt-btn" onclick="setISO(400, this)">400</button>
+        <button class="opt-btn" onclick="setISO(800, this)">800</button>
+        <button class="opt-btn" onclick="setISO(1600, this)">1600</button>
+      </div>
+    </div>
+
+    <button id="close-settings-btn" onclick="closeSettings()">Закрити налаштування</button>
   </div>
 
   <canvas id="capture-canvas"></canvas>
 
   <script>
+    const statusBar = document.getElementById('status-bar');
     const startScreen = document.getElementById('start-screen');
-    const startBtn = document.getElementById('start-btn');
     const video = document.getElementById('viewfinder');
+    const topHud = document.getElementById('top-hud');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
     const settingsModal = document.getElementById('settings-modal');
-    const evSlider = document.getElementById('ev-slider');
     const evVal = document.getElementById('ev-val');
     const gridOverlay = document.getElementById('grid-overlay');
     const gridBtn = document.getElementById('grid-btn');
@@ -442,7 +453,6 @@
     const rangefinderOverlay = document.getElementById('rangefinder-overlay');
     const rangefinderText = document.getElementById('rangefinder-text');
     const levelLine = document.querySelector('.level-line');
-    const shutterHudBtn = document.getElementById('shutter-hud-btn');
 
     let videoTrack = null;
     let currentStream = null;
@@ -482,8 +492,9 @@
     };
     let currentGridIdx = 0;
 
-    // Запуск камери за кліком на стартову кнопку
-    startBtn.addEventListener('click', () => {
+    // Головна функція запуску StreetCam
+    window.startStreetCam = function() {
+      statusBar.textContent = "⏳ Підключення сенсора...";
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
@@ -492,14 +503,19 @@
         video.srcObject = stream;
         videoTrack = stream.getVideoTracks()[0];
         video.play();
+
         startScreen.style.display = 'none';
+        topHud.style.display = 'flex';
+        statusBar.textContent = "🟢 StreetCam активна";
+
         updateFilters();
         renderGrid();
         checkSensorPermission();
       }).catch(err => {
-        alert("Помилка доступу до камери: " + err.message);
+        statusBar.textContent = "❌ Помилка: " + err.name + " - " + err.message;
+        statusBar.style.color = "#ff4444";
       });
-    });
+    };
 
     function renderGrid() {
       const mode = gridModes[currentGridIdx];
@@ -568,46 +584,23 @@
       }
     }
 
-    levelBtn.onclick = (e) => {
-      e.stopPropagation();
+    window.toggleLevel = function(e) {
+      if (e) e.stopPropagation();
       isLevelActive = !isLevelActive;
       spiritLevel.style.display = isLevelActive ? 'flex' : 'none';
       levelBtn.classList.toggle('active', isLevelActive);
       checkSensorPermission();
     };
 
-    rangeBtn.onclick = (e) => {
-      e.stopPropagation();
+    window.toggleRange = function(e) {
+      if (e) e.stopPropagation();
       isRangeActive = !isRangeActive;
       rangefinderOverlay.style.display = isRangeActive ? 'block' : 'none';
       rangeBtn.classList.toggle('active', isRangeActive);
       checkSensorPermission();
     };
 
-    filmBtn.onclick = (e) => {
-      e.stopPropagation();
+    window.toggleFilm = function(e) {
+      if (e) e.stopPropagation();
       currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
-      filmBtn.textContent = '🎞️ ' + filmPresets[currentFilmIdx].name;
-      updateFilters();
-    };
-
-    gridBtn.onclick = (e) => {
-      e.stopPropagation();
-      currentGridIdx = (currentGridIdx + 1) % gridModes.length;
-      renderGrid();
-    };
-
-    lensBtn.onclick = (e) => {
-      e.stopPropagation();
-      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
-      if (videoTrack && videoTrack.applyConstraints && videoTrack.getCapabilities) {
-        const caps = videoTrack.getCapabilities();
-        if (caps && caps.zoom) {
-          const targetZoom = zoomLevels[currentZoomIdx].zoom;
-          videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max) }] }).catch(() => {});
-        }
-      }
-    };
-
-    document.getElementBy
+      filmBtn.textContent = '🎞️ ' + filmPres
