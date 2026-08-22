@@ -24,7 +24,6 @@
       -webkit-user-select: none;
     }
 
-    /* Адаптивний видошукач */
     #viewfinder-box {
       position: fixed;
       top: 0;
@@ -191,6 +190,32 @@
       opacity: 0.9;
     }
 
+    /* Стелс-оверлей */
+    #stealth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 950;
+      display: none;
+      cursor: pointer;
+    }
+    #btn-stealth-exit {
+      position: absolute;
+      top: env(safe-area-inset-top, 14px);
+      right: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.4);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      z-index: 960;
+    }
+
     /* Налаштування */
     #settings-modal {
       position: fixed;
@@ -285,6 +310,11 @@
 
   <div id="shutter"></div>
 
+  <!-- Стелс-оверлей -->
+  <div id="stealth-overlay">
+    <button id="btn-stealth-exit">✕ ВИЙТИ</button>
+  </div>
+
   <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
@@ -292,6 +322,7 @@
     <button class="hud-btn" id="btn-film">🎞️ Tri-X 400</button>
     <button class="hud-btn" id="btn-grid">🌐 Третини</button>
     <button class="hud-btn" id="btn-range">🎯 Далекомір</button>
+    <button class="hud-btn" id="btn-stealth">🕶️ Стелс</button>
     <button class="hud-btn" id="btn-settings">⚙️</button>
   </div>
 
@@ -339,11 +370,14 @@
     const shutter = document.getElementById('shutter');
     const canvas = document.getElementById('c');
     const settingsModal = document.getElementById('settings-modal');
+    const stealthOverlay = document.getElementById('stealth-overlay');
+    const btnStealthExit = document.getElementById('btn-stealth-exit');
 
     const btnSnap = document.getElementById('btn-snap');
     const btnFilm = document.getElementById('btn-film');
     const btnGrid = document.getElementById('btn-grid');
     const btnRange = document.getElementById('btn-range');
+    const btnStealth = document.getElementById('btn-stealth');
     const btnSettings = document.getElementById('btn-settings');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
     const evSlider = document.getElementById('ev-slider');
@@ -351,6 +385,7 @@
 
     let videoTrack = null;
     let isRangeActive = false;
+    let isStealthActive = false;
     let currentEV = 0.0;
 
     const films = [
@@ -402,9 +437,8 @@
       }
     }
 
-    // 1. ЗАПУСК КАМЕРИ ТА ПОВНОЕКРАННОГО РЕЖИМУ
+    // 1. ЗАПУСК КАМЕРИ
     btnStart.addEventListener('click', () => {
-      // Запит повного екрана (ховає рядок браузера)
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
@@ -448,7 +482,27 @@
       btnRange.classList.toggle('active', isRangeActive);
     });
 
-    // 5. НАЛАШТУВАННЯ
+    // 5. СТЕЛС-РЕЖИМ
+    btnStealth.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isStealthActive = true;
+      stealthOverlay.style.display = 'block';
+      if (navigator.vibrate) navigator.vibrate(40);
+    });
+
+    btnStealthExit.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isStealthActive = false;
+      stealthOverlay.style.display = 'none';
+      if (navigator.vibrate) navigator.vibrate([20, 20]);
+    });
+
+    stealthOverlay.addEventListener('click', (e) => {
+      if (e.target === btnStealthExit) return;
+      capturePhoto(true);
+    });
+
+    // 6. НАЛАШТУВАННЯ
     btnSettings.addEventListener('click', (e) => {
       e.stopPropagation();
       settingsModal.style.display = 'flex';
@@ -479,13 +533,23 @@
       });
     });
 
-    // 6. ЗЙОМКА ТА ЗБЕРЕЖЕННЯ
-    function capturePhoto() {
+    // 7. ЗЙОМКА ТА ЗБЕРЕЖЕННЯ
+    function capturePhoto(isSilentStealth = false) {
       if (settingsModal.style.display === 'flex') return;
 
-      shutter.classList.add('flash');
-      setTimeout(() => shutter.classList.remove('flash'), 100);
-      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+      if (!isSilentStealth) {
+        shutter.classList.add('flash');
+        setTimeout(() => shutter.classList.remove('flash'), 100);
+      }
+
+      // Тактильний відгук
+      if (navigator.vibrate) {
+        if (isSilentStealth) {
+          navigator.vibrate(35); // Короткий тактильний клік у стелсі
+        } else {
+          navigator.vibrate([30, 20, 30]);
+        }
+      }
 
       const w = v.videoWidth || 1920;
       const h = v.videoHeight || 1080;
@@ -529,10 +593,18 @@
 
     btnSnap.addEventListener('click', (e) => {
       e.stopPropagation();
-      capturePhoto();
+      capturePhoto(false);
     });
 
-    v.addEventListener('click', capturePhoto);
+    v.addEventListener('click', () => capturePhoto(false));
+
+    // Спуск затвора фізичними кнопками гучності (на підтримуваних пристроях)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'VolumeDown' || e.key === 'VolumeUp' || e.code === 'VolumeDown' || e.code === 'VolumeUp') {
+        e.preventDefault();
+        capturePhoto(isStealthActive);
+      }
+    });
   </script>
 </body>
 </html>
