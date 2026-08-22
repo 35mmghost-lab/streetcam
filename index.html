@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>StreetCam</title>
+  <title>StreetCam v2.4</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
@@ -20,9 +20,13 @@
     
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 1000; padding: 20px 32px; font-size: 16px; font-weight: bold;
-      background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 182, 66, 0.6);
+      z-index: 1000; padding: 22px 30px; font-size: 15px; font-weight: bold;
+      background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
+      box-shadow: 0 0 25px rgba(255, 182, 66, 0.7); text-align: center; max-width: 85vw;
+    }
+    #ver-tag {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: #666; z-index: 1001;
     }
     
     #hud {
@@ -129,51 +133,52 @@
   <div id="shutter"></div>
 
   <!-- Стелс-оверлей -->
-  <div id="stealth-overlay" onclick="takePhoto(true)">
-    <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
+  <div id="stealth-overlay">
+    <button id="btn-stealth-exit">✕ EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
+  <div id="ver-tag">StreetCam v2.4</div>
 
   <div id="hud">
-    <button class="hud-btn" id="btn-lang" onclick="nextLang()">🌐 UA</button>
-    <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
-    <button class="hud-btn" id="btn-film" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="hud-btn" id="btn-ratio" onclick="nextRatio()">📐 3:2</button>
-    <button class="hud-btn" id="btn-grid" onclick="nextGrid()">⊞ Сітка: Вимк</button>
-    <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Далекомір</button>
-    <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
-    <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
+    <button class="hud-btn" id="btn-lang">🌐 UA</button>
+    <button class="hud-btn" id="btn-snap">📷 СПУСК</button>
+    <button class="hud-btn" id="btn-film">🎞️ Tri-X 400</button>
+    <button class="hud-btn" id="btn-ratio">📐 3:2</button>
+    <button class="hud-btn" id="btn-grid">⊞ Сітка: Вимк</button>
+    <button class="hud-btn" id="btn-range">🎯 Далекомір</button>
+    <button class="hud-btn" id="btn-stealth">🕶️ Стелс</button>
+    <button class="hud-btn" id="btn-settings">⚙️</button>
   </div>
 
-  <!-- Модальне вікно налаштувань -->
+  <!-- Меню налаштувань -->
   <div id="settings-modal">
     <div>
       <div class="setting-title" id="t-lang">МОВА / LANGUAGE</div>
       <div class="setting-grid" id="lang-group">
-        <button class="opt-btn active" onclick="setLanguage('ua')">UA Українська</button>
-        <button class="opt-btn" onclick="setLanguage('en')">EN English</button>
-        <button class="opt-btn" onclick="setLanguage('ja')">JA 日本語</button>
+        <button class="opt-btn active" data-lang="ua">UA Українська</button>
+        <button class="opt-btn" data-lang="en">EN English</button>
+        <button class="opt-btn" data-lang="ja">JA 日本語</button>
       </div>
     </div>
 
     <div>
       <div class="setting-title" id="t-ratio">ФОРМАТ КАДРУ (ASPECT RATIO)</div>
       <div class="setting-grid" id="ratio-group" style="grid-template-columns: repeat(4, 1fr);">
-        <button class="opt-btn active" onclick="selectRatio(0)">3:2 (35mm)</button>
-        <button class="opt-btn" onclick="selectRatio(1)">4:3 (645)</button>
-        <button class="opt-btn" onclick="selectRatio(2)">4:5 (Insta)</button>
-        <button class="opt-btn" onclick="selectRatio(3)">1:1 (6x6)</button>
-        <button class="opt-btn" onclick="selectRatio(4)">16:9</button>
-        <button class="opt-btn" onclick="selectRatio(5)" style="grid-column: span 2;">65:24 (XPan)</button>
-        <button class="opt-btn" onclick="selectRatio(6)">Full</button>
+        <button class="opt-btn active" data-ratio="0">3:2 (35mm)</button>
+        <button class="opt-btn" data-ratio="1">4:3 (645)</button>
+        <button class="opt-btn" data-ratio="2">4:5 (Insta)</button>
+        <button class="opt-btn" data-ratio="3">1:1 (6x6)</button>
+        <button class="opt-btn" data-ratio="4">16:9</button>
+        <button class="opt-btn" data-ratio="5" style="grid-column: span 2;">65:24 (XPan)</button>
+        <button class="opt-btn" data-ratio="6">Full</button>
       </div>
     </div>
 
     <div>
       <div class="setting-title" id="t-ev">ЕКСПОКОРЕКЦІЯ (EV)</div>
       <div class="slider-container">
-        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="setEV(this.value)">
+        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0">
         <span id="ev-val" style="min-width: 45px; color: #ffb642;">0.0 EV</span>
       </div>
     </div>
@@ -181,17 +186,17 @@
     <div>
       <div class="setting-title" id="t-zone-focus">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
       <div class="setting-grid" id="focus-group" style="grid-template-columns: repeat(4, 1fr);">
-        <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
-        <button class="opt-btn" onclick="setFocus('0.7', this)">0.7 m</button>
-        <button class="opt-btn" onclick="setFocus('1.2', this)">1.2 m</button>
-        <button class="opt-btn" onclick="setFocus('2.0', this)">2.0 m</button>
-        <button class="opt-btn" onclick="setFocus('3.0', this)">3.0 m</button>
-        <button class="opt-btn" onclick="setFocus('5.0', this)">5.0 m</button>
-        <button class="opt-btn" onclick="setFocus('100.0', this)" id="opt-inf" style="grid-column: span 2;">∞ Нескінченність</button>
+        <button class="opt-btn active" data-focus="auto">AF Auto</button>
+        <button class="opt-btn" data-focus="0.7">0.7 m</button>
+        <button class="opt-btn" data-focus="1.2">1.2 m</button>
+        <button class="opt-btn" data-focus="2.0">2.0 m</button>
+        <button class="opt-btn" data-focus="3.0">3.0 m</button>
+        <button class="opt-btn" data-focus="5.0">5.0 m</button>
+        <button class="opt-btn" data-focus="100.0" id="opt-inf" style="grid-column: span 2;">∞ Нескінченність</button>
       </div>
     </div>
 
-    <button id="close-settings-btn" onclick="closeSettings()">Закрити</button>
+    <button id="close-settings-btn">Закрити</button>
   </div>
 
   <canvas id="c"></canvas>
@@ -212,16 +217,19 @@
     const btnGrid = document.getElementById('btn-grid');
     const btnRange = document.getElementById('btn-range');
     const btnStealth = document.getElementById('btn-stealth');
+    const btnSettings = document.getElementById('btn-settings');
     const stealthOverlay = document.getElementById('stealth-overlay');
     const btnStealthExit = document.getElementById('btn-stealth-exit');
     const settingsModal = document.getElementById('settings-modal');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const evSlider = document.getElementById('ev-slider');
     const evVal = document.getElementById('ev-val');
     const tLang = document.getElementById('t-lang');
     const tRatio = document.getElementById('t-ratio');
     const tEv = document.getElementById('t-ev');
     const tZoneFocus = document.getElementById('t-zone-focus');
     const optInf = document.getElementById('opt-inf');
+    const verTag = document.getElementById('ver-tag');
 
     let videoTrack = null;
     let isRangeActive = false;
@@ -299,42 +307,6 @@
     const langKeys = ['ua', 'en', 'ja'];
     let langIdx = 0;
 
-    function applyLanguage() {
-      const currentLang = langKeys[langIdx];
-      const dict = i18n[currentLang];
-
-      if (btnLang) btnLang.textContent = dict.tag;
-      if (btnStart) btnStart.textContent = dict.startBtn;
-      if (btnSnap) btnSnap.textContent = dict.snap;
-      if (btnRange) btnRange.textContent = dict.range;
-      if (btnStealth) btnStealth.textContent = dict.stealth;
-      if (btnStealthExit) btnStealthExit.textContent = dict.stealthExit;
-
-      if (tLang) tLang.textContent = dict.langTitle;
-      if (tRatio) tRatio.textContent = dict.ratioTitle;
-      if (tEv) tEv.textContent = dict.evTitle;
-      if (tZoneFocus) tZoneFocus.textContent = dict.focusTitle;
-      if (optInf) optInf.textContent = dict.optInf;
-      if (closeSettingsBtn) closeSettingsBtn.textContent = dict.closeSettings;
-
-      document.querySelectorAll('#lang-group .opt-btn').forEach((b, idx) => {
-        b.classList.toggle('active', idx === langIdx);
-      });
-
-      renderGrid();
-    }
-
-    function setLanguage(lang) {
-      langIdx = langKeys.indexOf(lang);
-      if (langIdx === -1) langIdx = 0;
-      applyLanguage();
-    }
-
-    function nextLang() {
-      langIdx = (langIdx + 1) % langKeys.length;
-      applyLanguage();
-    }
-
     const films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
       { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
@@ -359,10 +331,40 @@
     const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
     let gridIdx = 0;
 
+    function applyLanguage() {
+      const dict = i18n[langKeys[langIdx]];
+      btnLang.textContent = dict.tag;
+      btnSnap.textContent = dict.snap;
+      btnRange.textContent = dict.range;
+      btnStealth.textContent = dict.stealth;
+      btnStealthExit.textContent = dict.stealthExit;
+
+      tLang.textContent = dict.langTitle;
+      tRatio.textContent = dict.ratioTitle;
+      tEv.textContent = dict.evTitle;
+      tZoneFocus.textContent = dict.focusTitle;
+      optInf.textContent = dict.optInf;
+      closeSettingsBtn.textContent = dict.closeSettings;
+
+      document.querySelectorAll('#lang-group .opt-btn').forEach((b, idx) => {
+        b.classList.toggle('active', idx === langIdx);
+      });
+      renderGrid();
+    }
+
+    function applyFilmFilter() {
+      const preset = films[filmIdx];
+      const brightnessFactor = Math.pow(2, currentEV);
+      if (preset.isBW) {
+        v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
+      } else {
+        v.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
+      }
+    }
+
     function applyRatioFrame() {
       const r = ratios[ratioIdx];
-      if (btnRatio) btnRatio.textContent = '📐 ' + r.name;
-
+      btnRatio.textContent = '📐 ' + r.name;
       document.querySelectorAll('#ratio-group .opt-btn').forEach((b, idx) => {
         b.classList.toggle('active', idx === ratioIdx);
       });
@@ -372,7 +374,6 @@
         vFrame.style.height = '100vh';
         return;
       }
-
       const isPortrait = window.innerHeight >= window.innerWidth;
       const targetRatio = isPortrait ? r.p : r.l;
       const screenRatio = window.innerWidth / window.innerHeight;
@@ -386,64 +387,10 @@
       }
     }
 
-    function selectRatio(idx) {
-      ratioIdx = idx;
-      applyRatioFrame();
-    }
-
-    function nextRatio() {
-      ratioIdx = (ratioIdx + 1) % ratios.length;
-      applyRatioFrame();
-    }
-
-    window.addEventListener('resize', applyRatioFrame);
-
-    async function startApp() {
-      btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" }
-          },
-          audio: false
-        });
-        v.srcObject = stream;
-        await v.play();
-        videoTrack = stream.getVideoTracks()[0];
-
-        btnStart.style.display = 'none';
-        hud.style.display = 'flex';
-        applyLanguage();
-        applyFilmFilter();
-        applyRatioFrame();
-      } catch (err) {
-        btnStart.textContent = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка камери: " + err.name + " - " + err.message);
-      }
-    }
-
-    function applyFilmFilter() {
-      const preset = films[filmIdx];
-      const brightnessFactor = Math.pow(2, currentEV);
-      if (preset.isBW) {
-        v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
-      } else {
-        v.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
-      }
-    }
-
-    function nextFilm() {
-      filmIdx = (filmIdx + 1) % films.length;
-      btnFilm.textContent = '🎞️ ' + films[filmIdx].name;
-      applyFilmFilter();
-    }
-
     function renderGrid() {
       const mode = grids[gridIdx];
-      const currentLang = langKeys[langIdx];
-      if (btnGrid) btnGrid.textContent = i18n[currentLang].grids[mode];
+      btnGrid.textContent = i18n[langKeys[langIdx]].grids[mode];
       grid.innerHTML = '';
-
       if (mode === 'thirds') {
         grid.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
       } else if (mode === 'golden') {
@@ -457,31 +404,72 @@
       }
     }
 
-    function nextGrid() {
-      gridIdx = (gridIdx + 1) % grids.length;
-      renderGrid();
+    async function initCamera() {
+      btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
+      try {
+        let stream = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false
+          });
+        } catch (e1) {
+          // Якщо environment недоступний, пробуємо звичайний запит відео
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+
+        v.srcObject = stream;
+        await v.play();
+        videoTrack = stream.getVideoTracks()[0];
+
+        btnStart.style.display = 'none';
+        verTag.style.display = 'none';
+        hud.style.display = 'flex';
+        applyLanguage();
+        applyFilmFilter();
+        applyRatioFrame();
+      } catch (err) {
+        btnStart.innerHTML = "⚠️ ПОМИЛКА ДОСТУПУ<br><small style='font-size:11px;'>" + err.name + ": перевірте дозвіл камери у Brave</small>";
+      }
     }
 
-    function toggleRange() {
-      isRangeActive = !isRangeActive;
-      rangefinder.style.display = isRangeActive ? 'block' : 'none';
-      btnRange.classList.toggle('active', isRangeActive);
-    }
+    function takePhoto(isSilent = false) {
+      if (settingsModal.style.display === 'flex') return;
+      if (!isSilent) {
+        shutter.classList.add('flash');
+        setTimeout(() => shutter.classList.remove('flash'), 100);
+      }
+      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 30);
 
-    function enterStealth() {
-      stealthOverlay.style.display = 'block';
-      if (navigator.vibrate) navigator.vibrate(40);
-    }
+      const rawW = v.videoWidth || 1920;
+      const rawH = v.videoHeight || 1080;
+      const r = ratios[ratioIdx];
+      let cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
 
-    function exitStealth(e) {
-      if (e) e.stopPropagation();
-      stealthOverlay.style.display = 'none';
-      if (navigator.vibrate) navigator.vibrate([20, 20]);
-    }
+      if (r.p) {
+        const isVideoPortrait = rawH > rawW;
+        const targetRatio = isVideoPortrait ? r.p : r.l;
+        const currentRatio = rawW / rawH;
+        if (currentRatio > targetRatio) {
+          cropH = rawH; cropW = rawH * targetRatio; cropX = (rawW - cropW) / 2;
+        } else {
+          cropW = rawW; cropH = rawW / targetRatio; cropY = (rawH - cropH) / 2;
+        }
+      }
 
-    function openSettings() {
-      settingsModal.style.display = 'flex';
-    }
+      canvas.width = Math.round(cropW);
+      canvas.height = Math.round(cropH);
+      const ctx = canvas.getContext('2d');
+      const preset = films[filmIdx];
+      const evFactor = Math.pow(2, currentEV);
 
-    function closeSettings() {
-      settingsModal.style.display = 'none'
+      if (preset.isBW) {
+        ctx.filter = 'none';
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        const contrast = preset.contrast;
+
+        for (let i = 0; i < d.length; i += 4) {
+          let y = 0.299 * (d[i] * evFactor) + 0.587 * (d[i+1] * evFactor) + 0.114 * (d[i+2] * evFactor);
+          y = Math.min(255, Math.max(0, ((y / 255 -
