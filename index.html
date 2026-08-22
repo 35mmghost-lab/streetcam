@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,10 +12,18 @@
     
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 1000; padding: 20px 32px; font-size: 16px; font-weight: bold;
-      background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
+      z-index: 1000; padding: 22px 30px; font-size: 15px; font-weight: bold;
+      background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 182, 66, 0.6); text-align: center; max-width: 90vw;
     }
     
+    #error-log {
+      position: fixed; bottom: 20px; left: 10px; right: 10px;
+      background: rgba(200, 0, 0, 0.9); color: #fff; padding: 12px;
+      border-radius: 6px; font-size: 12px; z-index: 2000; display: none;
+      word-break: break-all;
+    }
+
     #hud {
       position: fixed; top: 12px; left: 0; width: 100%; display: none;
       justify-content: space-around; align-items: center; padding: 6px 4px;
@@ -111,7 +119,7 @@
 
   <div id="grid"></div>
 
-  <!-- Стадіометричний далекомір -->
+  <!-- Далекомір -->
   <div id="rangefinder">
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="390" y1="120" x2="430" y2="120" />
@@ -136,6 +144,7 @@
   </div>
 
   <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <div id="error-log"></div>
 
   <div id="hud">
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
@@ -146,7 +155,7 @@
     <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
   </div>
 
-  <!-- Модальне вікно налаштувань -->
+  <!-- Меню налаштувань -->
   <div id="settings-modal">
     <!-- МОВА -->
     <div>
@@ -162,7 +171,7 @@
     <div>
       <div class="setting-title" id="t-save">ФОРМАТ ЗБЕРЕЖЕННЯ</div>
       <div class="setting-grid" id="save-group" style="grid-template-columns: repeat(2, 1fr);">
-        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Look)</button>
+        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Grain)</button>
         <button class="opt-btn" onclick="setSaveFormat('raw', this)">RAW / DNG (Негатив)</button>
       </div>
     </div>
@@ -212,6 +221,7 @@
   <script>
     const v = document.getElementById('v');
     const btnStart = document.getElementById('btn-start');
+    const errorLog = document.getElementById('error-log');
     const hud = document.getElementById('hud');
     const grid = document.getElementById('grid');
     const rangefinder = document.getElementById('rangefinder');
@@ -231,20 +241,45 @@
     let currentEV = 0.0;
     let saveFormat = 'jpg';
 
-    // Базовий старт камери (1-в-1 з робочої версії)
+    function showError(msg) {
+      errorLog.style.display = 'block';
+      errorLog.innerHTML = '<strong>Помилка:</strong> ' + msg;
+      btnStart.textContent = '⚠️ СПРОБУВАТИ ЗНОВУ';
+    }
+
     async function startApp() {
+      btnStart.textContent = '⏳ ПІДКЛЮЧЕННЯ КАМЕРИ...';
+      errorLog.style.display = 'none';
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showError('Ваш браузер не підтримує доступ до камери через Web API.');
+        return;
+      }
+
+      let stream = null;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
           audio: false
         });
+      } catch (err1) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } catch (err2) {
+          showError(err2.name + ': ' + err2.message + '<br><small>Перевірте дозвіл на камеру в налаштуваннях Brave для цього сайту.</small>');
+          return;
+        }
+      }
+
+      try {
         v.srcObject = stream;
+        await v.play();
         videoTrack = stream.getVideoTracks()[0];
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
         applyFilmFilter();
-      } catch (err) {
-        alert("Помилка камери: " + err.message);
+      } catch (err3) {
+        showError('Помилка відтворення відео: ' + err3.message);
       }
     }
 
@@ -327,12 +362,12 @@
     let currentFrameIdx = 0;
 
     const films = [
-      { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
-      { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
-      { name: 'T-Max 3200', isBW: true, contrast: 1.90 },
-      { name: 'Neopan 100', isBW: true, contrast: 1.35 },
-      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)' },
-      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)' }
+      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
+      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
+      { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
+      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 8 },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
+      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
     ];
     let filmIdx = 0;
 
@@ -420,6 +455,7 @@
       document.getElementById('t-focus').textContent = dict.tFocus;
       document.getElementById('opt-inf').textContent = dict.optInf;
       document.getElementById('close-settings-btn').textContent = dict.close;
+
       renderGrid();
     }
 
@@ -443,37 +479,4 @@
         return;
       }
       frameline.style.display = 'block';
-      const isPortrait = window.innerHeight >= window.innerWidth;
-      const targetRatio = isPortrait ? f.p : f.l;
-      const screenRatio = window.innerWidth / window.innerHeight;
-
-      let w, h;
-      if (screenRatio > targetRatio) {
-        h = window.innerHeight;
-        w = Math.round(h * targetRatio);
-      } else {
-        w = window.innerWidth;
-        h = Math.round(w / targetRatio);
-      }
-
-      frameBox.style.width = w + 'px';
-      frameBox.style.height = h + 'px';
-      frameBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
-      frameBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
-    }
-    window.addEventListener('resize', renderFrameline);
-
-    function setEV(val) {
-      currentEV = parseFloat(val);
-      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      applyFilmFilter();
-    }
-
-    function setFocus(dist, el) {
-      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      if (videoTrack && videoTrack.applyConstraints) {
-        if (dist === 'auto') {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
-        } else {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDi
+    
