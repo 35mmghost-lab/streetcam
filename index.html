@@ -437,14 +437,18 @@
       }
     }
 
-    // 1. ЗАПУСК КАМЕРИ
+    // 1. ЗАПУСК КАМЕРИ З ВИСОКОЮ РОЗДІЛЬНОЮ ЗДАТНІСТЮ
     btnStart.addEventListener('click', () => {
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
 
       navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: { 
+          facingMode: { ideal: "environment" },
+          width: { ideal: 3840, min: 1920 },
+          height: { ideal: 2160, min: 1080 }
+        },
         audio: false
       }).then(stream => {
         v.srcObject = stream;
@@ -455,7 +459,19 @@
         renderGrid();
         updateFilters();
       }).catch(err => {
-        alert("Помилка камери: " + err.message);
+        // Fallback, якщо пристрій не підтримує 4K/FullHD
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        }).then(stream => {
+          v.srcObject = stream;
+          videoTrack = stream.getVideoTracks()[0];
+          v.play();
+          btnStart.style.display = 'none';
+          hud.style.display = 'flex';
+          renderGrid();
+          updateFilters();
+        }).catch(e => alert("Помилка камери: " + e.message));
       });
     });
 
@@ -533,7 +549,7 @@
       });
     });
 
-    // 7. ЗЙОМКА ТА ЗБЕРЕЖЕННЯ
+    // 7. ЗЙОМКА ТА ЗБЕРЕЖЕННЯ У ПОВНІЙ ЯКОСТІ
     function capturePhoto(isSilentStealth = false) {
       if (settingsModal.style.display === 'flex') return;
 
@@ -542,10 +558,9 @@
         setTimeout(() => shutter.classList.remove('flash'), 100);
       }
 
-      // Тактильний відгук
       if (navigator.vibrate) {
         if (isSilentStealth) {
-          navigator.vibrate(35); // Короткий тактильний клік у стелсі
+          navigator.vibrate(35);
         } else {
           navigator.vibrate([30, 20, 30]);
         }
@@ -598,7 +613,6 @@
 
     v.addEventListener('click', () => capturePhoto(false));
 
-    // Спуск затвора фізичними кнопками гучності (на підтримуваних пристроях)
     window.addEventListener('keydown', (e) => {
       if (e.key === 'VolumeDown' || e.key === 'VolumeUp' || e.code === 'VolumeDown' || e.code === 'VolumeUp') {
         e.preventDefault();
