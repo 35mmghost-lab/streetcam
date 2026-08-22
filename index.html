@@ -14,7 +14,7 @@
       margin: 0;
       background: #000;
       color: #fff;
-      font-family: monospace;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
       height: 100vh;
       overflow: hidden;
       user-select: none;
@@ -49,6 +49,7 @@
       color: #000;
       cursor: pointer;
       box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
+      touch-action: manipulation;
     }
 
     /* Верхня панель HUD */
@@ -74,6 +75,7 @@
       font-size: 11px;
       cursor: pointer;
       white-space: nowrap;
+      touch-action: manipulation;
     }
     .hud-btn.active {
       background: rgba(255, 182, 66, 0.3);
@@ -147,7 +149,6 @@
       background: #ffb642;
       box-shadow: 0 0 10px rgba(255, 182, 66, 0.95);
       transform-origin: center center;
-      transition: transform 0.04s ease-out;
     }
     #level-line.aligned {
       height: 3.5px;
@@ -168,7 +169,7 @@
     }
     #range-text {
       position: absolute;
-      top: 56px;
+      top: 54px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.85);
@@ -178,6 +179,7 @@
       border-radius: 6px;
       font-size: 13px;
       font-weight: bold;
+      font-family: monospace;
       letter-spacing: 0.5px;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(0,0,0,0.8);
@@ -195,7 +197,6 @@
       font-size: 15px;
       font-weight: bold;
       font-family: monospace;
-      filter: drop-shadow(0 0 2px #000);
     }
 
     /* Механічний затвор */
@@ -308,17 +309,14 @@
   <div id="rangefinder">
     <div id="range-text">DIST: -- m (H: 1.60m)</div>
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <!-- 1.2m -->
       <line x1="390" y1="120" x2="430" y2="120" />
       <line x1="390" y1="880" x2="430" y2="880" />
-      <text x="330" y="505" class="stadia-label">1.2m</text>
+      <text x="325" y="505" class="stadia-label">1.2m</text>
       
-      <!-- 2.0m -->
       <line x1="440" y1="260" x2="470" y2="260" />
       <line x1="440" y1="740" x2="470" y2="740" />
-      <text x="400" y="505" class="stadia-label">2.0m</text>
+      <text x="395" y="505" class="stadia-label">2.0m</text>
 
-      <!-- 3.0m -->
       <line x1="475" y1="340" x2="495" y2="340" />
       <line x1="475" y1="660" x2="495" y2="660" />
       <text x="515" y="505" class="stadia-label">3.0m</text>
@@ -364,7 +362,7 @@
     </div>
 
     <div>
-      <div class="setting-title">Зонне фокусування Leica (Шкала глибини)</div>
+      <div class="setting-title">Зонне фокусування Leica</div>
       <div class="setting-grid" id="focus-group">
         <button class="opt-btn active" data-dist="auto">AF Auto</button>
         <button class="opt-btn" data-dist="0.7">0.7 m</button>
@@ -405,16 +403,6 @@
     const shutter = document.getElementById('shutter');
     const canvas = document.getElementById('c');
     const settingsModal = document.getElementById('settings-modal');
-    const evSlider = document.getElementById('ev-slider');
-    const evVal = document.getElementById('ev-val');
-
-    const btnSnap = document.getElementById('btn-snap');
-    const btnFilm = document.getElementById('btn-film');
-    const btnGrid = document.getElementById('btn-grid');
-    const btnLevel = document.getElementById('btn-level');
-    const btnRange = document.getElementById('btn-range');
-    const btnSettings = document.getElementById('btn-settings');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
 
     let videoTrack = null;
     let isLevelActive = false;
@@ -445,26 +433,6 @@
     };
     let gridIdx = 0;
 
-    // 1. ЗАПУСК КАМЕРИ
-    btnStart.addEventListener('click', () => {
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      }).then(stream => {
-        v.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-        v.play();
-        btnStart.style.display = 'none';
-        hud.style.display = 'flex';
-        renderGrid();
-        updateFilters();
-        initSensors();
-      }).catch(err => {
-        alert("Помилка камери: " + err.message);
-      });
-    });
-
-    // 2. ФІЛЬТРИ ТА EV
     function updateFilters() {
       const brightnessFactor = Math.pow(2, currentEV);
       const preset = films[filmIdx];
@@ -475,17 +443,9 @@
       }
     }
 
-    btnFilm.addEventListener('click', (e) => {
-      e.stopPropagation();
-      filmIdx = (filmIdx + 1) % films.length;
-      btnFilm.textContent = '🎞️ ' + films[filmIdx].name;
-      updateFilters();
-    });
-
-    // 3. СІТКИ
     function renderGrid() {
       const mode = grids[gridIdx];
-      btnGrid.textContent = gridNames[mode];
+      document.getElementById('btn-grid').textContent = gridNames[mode];
       grid.innerHTML = '';
 
       if (mode === 'thirds') {
@@ -501,14 +461,41 @@
       }
     }
 
-    btnGrid.addEventListener('click', (e) => {
+    // 1. ЗАПУСК КАМЕРИ
+    btnStart.addEventListener('click', () => {
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      }).then(stream => {
+        v.srcObject = stream;
+        videoTrack = stream.getVideoTracks()[0];
+        v.play();
+        btnStart.style.display = 'none';
+        hud.style.display = 'flex';
+        renderGrid();
+        updateFilters();
+      }).catch(err => {
+        alert("Помилка камери: " + err.message);
+      });
+    });
+
+    // 2. ПЛІВКИ
+    document.getElementById('btn-film').addEventListener('click', (e) => {
+      e.stopPropagation();
+      filmIdx = (filmIdx + 1) % films.length;
+      document.getElementById('btn-film').textContent = '🎞️ ' + films[filmIdx].name;
+      updateFilters();
+    });
+
+    // 3. СІТКИ
+    document.getElementById('btn-grid').addEventListener('click', (e) => {
       e.stopPropagation();
       gridIdx = (gridIdx + 1) % grids.length;
       renderGrid();
     });
 
-    // 4. СЕНСОРИ ОРІЄНТАЦІЇ (РІВЕНЬ + ДАЛЕКОМІР)
-    function onOrientation(e) {
+    // 4. СЕНСОРИ (РІВЕНЬ І ДАЛЕКОМІР)
+    window.addEventListener('deviceorientation', (e) => {
       const isLandscape = window.innerWidth > window.innerHeight;
       const roll = isLandscape ? (e.beta || 0) : (e.gamma || 0);
       const pitch = isLandscape ? (e.gamma || 0) : (e.beta || 0);
@@ -533,48 +520,34 @@
         dist = Math.min(Math.max(dist, 0.5), 50.0);
         rangeText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
       }
-    }
+    }, true);
 
-    function initSensors() {
-      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(state => {
-          if (state === 'granted') {
-            window.addEventListener('deviceorientation', onOrientation, true);
-          }
-        }).catch(console.error);
-      } else {
-        window.addEventListener('deviceorientation', onOrientation, true);
-      }
-    }
-
-    btnLevel.addEventListener('click', (e) => {
+    document.getElementById('btn-level').addEventListener('click', (e) => {
       e.stopPropagation();
       isLevelActive = !isLevelActive;
       level.style.display = isLevelActive ? 'flex' : 'none';
-      btnLevel.classList.toggle('active', isLevelActive);
-      initSensors();
+      document.getElementById('btn-level').classList.toggle('active', isLevelActive);
     });
 
-    btnRange.addEventListener('click', (e) => {
+    document.getElementById('btn-range').addEventListener('click', (e) => {
       e.stopPropagation();
       isRangeActive = !isRangeActive;
       rangefinder.style.display = isRangeActive ? 'block' : 'none';
-      btnRange.classList.toggle('active', isRangeActive);
-      initSensors();
+      document.getElementById('btn-range').classList.toggle('active', isRangeActive);
     });
 
     // 5. НАЛАШТУВАННЯ
-    btnSettings.addEventListener('click', (e) => {
+    document.getElementById('btn-settings').addEventListener('click', (e) => {
       e.stopPropagation();
       settingsModal.style.display = 'flex';
     });
-    closeSettingsBtn.addEventListener('click', () => {
+    document.getElementById('close-settings-btn').addEventListener('click', () => {
       settingsModal.style.display = 'none';
     });
 
-    evSlider.addEventListener('input', (e) => {
+    document.getElementById('ev-slider').addEventListener('input', (e) => {
       currentEV = parseFloat(e.target.value);
-      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      document.getElementById('ev-val').textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
       updateFilters();
     });
 
@@ -615,4 +588,28 @@
         btn.classList.add('active');
         const val = btn.getAttribute('data-val');
         if (videoTrack && videoTrack.applyConstraints) {
-          const caps = videoTrack.getCapabilities ? videoTra
+          const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
+          if (caps.iso) {
+            videoTrack.applyConstraints({ advanced: [{ iso: val === 'auto' ? caps.iso.min : parseInt(val) }] }).catch(() => {});
+          }
+        }
+      });
+    });
+
+    // 6. ЗЙОМКА (SNAP)
+    function capturePhoto() {
+      if (settingsModal.style.display === 'flex') return;
+
+      shutter.classList.add('flash');
+      setTimeout(() => shutter.classList.remove('flash'), 100);
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+
+      const w = v.videoWidth || 1920;
+      const h = v.videoHeight || 1080;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(v, 0, 0, w, h);
+
+      const activePreset = films[filmIdx];
+    
