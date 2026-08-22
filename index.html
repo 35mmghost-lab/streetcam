@@ -2,12 +2,22 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
   <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
-    #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    body, html {
+      width: 100%; height: 100%; background: #000; color: #fff;
+      font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none;
+    }
+    #viewfinder-box {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+    }
     video { width: 100%; height: 100%; object-fit: cover; }
     
     #btn-start {
@@ -16,12 +26,12 @@
       background: #ffb642; border: 2px solid #fff; border-radius: 10px; color: #000; cursor: pointer;
     }
     
-    /* Оптимізована верхня панель із прокручуванням */
+    /* Верхня панель HUD */
     #hud {
-      position: fixed; top: 12px; left: 0; width: 100%; display: none;
-      justify-content: flex-start; align-items: center; padding: 6px 8px;
-      gap: 5px; z-index: 500; background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px); overflow-x: auto; -webkit-overflow-scrolling: touch;
+      position: fixed; top: 12px; left: 8px; right: 54px; display: none;
+      align-items: center; padding: 4px 6px; gap: 6px; z-index: 500;
+      background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);
+      border-radius: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
     }
     #hud::-webkit-scrollbar { display: none; }
@@ -35,6 +45,15 @@
       background: rgba(255, 182, 66, 0.3);
       border-color: #ffb642;
       color: #ffb642;
+    }
+
+    /* Окрема плаваюча кнопка налаштувань */
+    #btn-settings-floating {
+      position: fixed; top: 12px; right: 8px; width: 38px; height: 38px;
+      display: none; justify-content: center; align-items: center;
+      background: rgba(0, 0, 0, 0.85); border: 1.5px solid #ffb642;
+      color: #ffb642; border-radius: 6px; font-size: 18px; cursor: pointer;
+      z-index: 550; backdrop-filter: blur(4px);
     }
 
     /* Сітки */
@@ -129,6 +148,7 @@
 
   <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
 
+  <!-- Верхня панель -->
   <div id="hud">
     <button class="hud-btn" id="btn-lang" onclick="nextLang()">🌐 UA</button>
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
@@ -136,8 +156,10 @@
     <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
     <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Далекомір</button>
     <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
-    <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
   </div>
+
+  <!-- Окрема кнопка налаштувань у правому кутку -->
+  <button id="btn-settings-floating" onclick="openSettings()">⚙️</button>
 
   <!-- Модальне вікно налаштувань -->
   <div id="settings-modal">
@@ -171,6 +193,7 @@
     const v = document.getElementById('v');
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
+    const btnSettingsFloating = document.getElementById('btn-settings-floating');
     const grid = document.getElementById('grid');
     const rangefinder = document.getElementById('rangefinder');
     const shutter = document.getElementById('shutter');
@@ -299,6 +322,12 @@
 
     async function startApp() {
       try {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } catch(e) {}
+
+      try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
           audio: false
@@ -307,6 +336,7 @@
         videoTrack = stream.getVideoTracks()[0];
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
+        btnSettingsFloating.style.display = 'flex';
         applyLanguage();
         applyFilmFilter();
       } catch (err) {
