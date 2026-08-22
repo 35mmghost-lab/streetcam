@@ -13,25 +13,27 @@
     body, html {
       width: 100%;
       height: 100%;
-      background-color: #000;
+      background: #000;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
       overflow: hidden;
     }
 
-    #viewfinder {
+    #log {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 1;
-      filter: grayscale(100%) contrast(155%);
+      text-align: center;
+      font-size: 11px;
+      font-family: monospace;
+      color: #00ff66;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      padding: 4px;
     }
 
-    /* Стартовий екран */
-    #start-screen {
+    #start-box {
       position: fixed;
       top: 0;
       left: 0;
@@ -43,9 +45,9 @@
       justify-content: center;
       align-items: center;
       gap: 16px;
-      z-index: 999;
+      z-index: 1000;
     }
-    #start-btn {
+    #btn-start {
       padding: 18px 36px;
       font-size: 16px;
       font-weight: bold;
@@ -54,49 +56,42 @@
       border: 2px solid #fff;
       border-radius: 8px;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 182, 66, 0.9);
-      touch-action: manipulation;
+      box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
     }
 
-    /* Рядок статусу */
-    #status-bar {
+    video {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      text-align: center;
-      font-size: 11px;
-      font-family: monospace;
-      color: #00ff66;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      padding: 3px 0;
-      pointer-events: none;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+      filter: grayscale(100%) contrast(150%);
     }
 
-    /* Верхня панель HUD */
+    /* HUD */
     #top-hud {
       position: fixed;
-      top: 20px;
+      top: 22px;
       left: 0;
       width: 100%;
       display: none;
       justify-content: space-around;
       align-items: center;
       padding: 6px 8px;
-      z-index: 30;
-      background: rgba(0, 0, 0, 0.6);
+      z-index: 50;
+      background: rgba(0, 0, 0, 0.65);
       backdrop-filter: blur(4px);
     }
     .hud-btn {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       color: #eee;
       padding: 6px 8px;
       border-radius: 4px;
       font-size: 11px;
       cursor: pointer;
-      touch-action: manipulation;
     }
     .hud-btn.active {
       background: rgba(255, 182, 66, 0.3);
@@ -104,7 +99,7 @@
       color: #ffb642;
     }
 
-    /* Сітки композиції */
+    /* Сітка */
     #grid-overlay {
       position: fixed;
       top: 0;
@@ -117,40 +112,11 @@
     .grid-line-v, .grid-line-h {
       position: absolute;
       background: rgba(255, 255, 255, 0.4);
-      box-shadow: 0 0 1px rgba(0, 0, 0, 0.8);
     }
     .grid-line-v { top: 0; bottom: 0; width: 1px; }
     .grid-line-h { left: 0; right: 0; height: 1px; }
 
-    .grid-svg {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      stroke: rgba(255, 255, 255, 0.5);
-      stroke-width: 1.5;
-      fill: none;
-      filter: drop-shadow(0 0 1px rgba(0,0,0,0.9));
-    }
-    .center-cross {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 32px;
-      height: 32px;
-    }
-    .center-cross::before, .center-cross::after {
-      content: '';
-      position: absolute;
-      background: rgba(255, 255, 255, 0.6);
-      box-shadow: 0 0 1px rgba(0, 0, 0, 0.9);
-    }
-    .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
-    .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
-
-    /* Бурштиновий рівень горизонту */
+    /* Бурштиновий рівень */
     #spirit-level {
       position: fixed;
       top: 50%;
@@ -168,17 +134,17 @@
       width: 100%;
       height: 2px;
       background-color: #ffb642;
-      box-shadow: 0 0 2px #000, 0 0 8px rgba(255, 182, 66, 0.9);
+      box-shadow: 0 0 8px rgba(255, 182, 66, 0.9);
       transition: transform 0.04s ease-out;
       transform-origin: center center;
     }
     .level-line.aligned {
       height: 3px;
       background-color: #ffe082;
-      box-shadow: 0 0 3px #000, 0 0 16px #ffb642, 0 0 24px rgba(255, 182, 66, 0.95);
+      box-shadow: 0 0 20px rgba(255, 182, 66, 1);
     }
 
-    /* Стадіаметричний далекомір */
+    /* Далекомір */
     #rangefinder-overlay {
       position: fixed;
       top: 0;
@@ -191,18 +157,16 @@
     }
     .rangefinder-hud-val {
       position: absolute;
-      top: 58px;
+      top: 60px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.8);
       border: 1px solid #ffb642;
       color: #ffb642;
       padding: 4px 12px;
       border-radius: 4px;
       font-size: 11px;
       font-family: monospace;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
     }
     .stadiametric-svg {
       width: 100%;
@@ -210,15 +174,9 @@
       stroke: #ffb642;
       stroke-width: 1.5;
       fill: none;
-      filter: drop-shadow(0 0 2px #000);
-    }
-    .stadia-text {
-      fill: #ffb642;
-      font-size: 11px;
-      font-family: monospace;
     }
 
-    /* Механічний затвор */
+    /* Затвор */
     #iris-shutter {
       position: fixed;
       top: 0;
@@ -226,7 +184,7 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 25;
+      z-index: 40;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -237,7 +195,6 @@
       height: 140vmax;
       border-radius: 50%;
       background: radial-gradient(circle, transparent 18%, rgba(12,12,12,0.98) 22%);
-      box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
       transform: scale(2.8);
     }
     .iris-anim {
@@ -263,7 +220,7 @@
       display: none;
       flex-direction: column;
       gap: 12px;
-      z-index: 50;
+      z-index: 60;
       max-height: 80vh;
       overflow-y: auto;
     }
@@ -290,7 +247,6 @@
       cursor: pointer;
       text-align: center;
       font-family: monospace;
-      touch-action: manipulation;
     }
     .opt-btn.active {
       background: #fff;
@@ -325,7 +281,6 @@
       font-size: 12px;
       margin-top: 4px;
       cursor: pointer;
-      touch-action: manipulation;
     }
     canvas {
       display: none;
@@ -333,15 +288,15 @@
   </style>
 </head>
 <body>
-  <div id="status-bar">Готовий до запуску</div>
+  <div id="log">Натисніть кнопку нижче</div>
 
-  <div id="start-screen">
+  <div id="start-box">
     <div style="font-size: 22px; font-weight: bold; color: #ffb642; letter-spacing: 1px;">STREETCAM</div>
     <div style="font-size: 13px; color: #888; text-align: center; max-width: 280px;">Натисніть для запуску оптичного видошукача</div>
-    <button id="start-btn" onclick="startStreetCam()">▶ УВІМКНУТИ КАМЕРУ</button>
+    <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
   </div>
 
-  <video id="viewfinder" autoplay playsinline muted></video>
+  <video id="v" autoplay playsinline muted></video>
   <div id="grid-overlay"></div>
 
   <div id="spirit-level">
@@ -353,15 +308,15 @@
     <svg class="stadiametric-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="420" y1="120" x2="440" y2="120" />
       <line x1="420" y1="880" x2="440" y2="880" />
-      <text x="380" y="505" class="stadia-text">1.2m</text>
+      <text x="380" y="505" fill="#ffb642" font-size="11" font-family="monospace">1.2m</text>
       
       <line x1="460" y1="260" x2="475" y2="260" />
       <line x1="460" y1="740" x2="475" y2="740" />
-      <text x="425" y="505" class="stadia-text">2.0m</text>
+      <text x="425" y="505" fill="#ffb642" font-size="11" font-family="monospace">2.0m</text>
 
       <line x1="485" y1="340" x2="495" y2="340" />
       <line x1="485" y1="660" x2="495" y2="660" />
-      <text x="505" y="505" class="stadia-text">3.0m</text>
+      <text x="505" y="505" fill="#ffb642" font-size="11" font-family="monospace">3.0m</text>
     </svg>
   </div>
 
@@ -370,89 +325,81 @@
   </div>
 
   <div id="top-hud">
-    <button class="hud-btn" id="shutter-hud-btn" onclick="triggerShutter(event)">📷 SNAP</button>
-    <button class="hud-btn" id="level-btn" onclick="toggleLevel(event)">🧭 Рівень</button>
-    <button class="hud-btn" id="range-btn" onclick="toggleRange(event)">🎯 Далекомір</button>
-    <button class="hud-btn" id="lens-btn" onclick="toggleLens(event)">🔍 1.0x</button>
-    <button class="hud-btn" id="grid-btn" onclick="toggleGrid(event)">🌐 Третини</button>
-    <button class="hud-btn" id="film-btn" onclick="toggleFilm(event)">🎞️ Tri-X 400</button>
-    <button class="hud-btn" id="open-settings-btn" onclick="openSettings(event)">⚙️</button>
+    <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
+    <button class="hud-btn" id="level-btn">🧭 Рівень</button>
+    <button class="hud-btn" id="range-btn">🎯 Далекомір</button>
+    <button class="hud-btn" id="lens-btn">🔍 1.0x</button>
+    <button class="hud-btn" id="grid-btn">🌐 Третини</button>
+    <button class="hud-btn" id="film-btn">🎞️ Tri-X 400</button>
+    <button class="hud-btn" id="open-settings-btn">⚙️</button>
   </div>
 
   <div id="settings-modal">
     <div>
-      <div class="setting-title">Висота точки зйомки далекоміра</div>
+      <div class="setting-title">Висота далекоміра</div>
       <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="height-group">
-        <button class="opt-btn active" onclick="setHeight(1.6, this)">👁️ Рівень очей (1.60 м)</button>
-        <button class="opt-btn" onclick="setHeight(1.3, this)">🥋 Рівень пояса (1.30 м)</button>
+        <button class="opt-btn active" data-h="1.6">👁️ Очі (1.60 м)</button>
+        <button class="opt-btn" data-h="1.3">🥋 Пояс (1.30 м)</button>
       </div>
     </div>
 
     <div>
-      <div class="setting-title">Тактильний відгук горизонту (Вібрація)</div>
+      <div class="setting-title">Вібрація горизонту</div>
       <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="haptic-group">
-        <button class="opt-btn active" onclick="setHaptic(true, this)">📳 Увімк</button>
-        <button class="opt-btn" onclick="setHaptic(false, this)">🔕 Вимк</button>
+        <button class="opt-btn active" data-haptic="on">📳 Увімк</button>
+        <button class="opt-btn" data-haptic="off">🔕 Вимк</button>
       </div>
     </div>
 
     <div>
       <div class="setting-title">Експокорекція (EV)</div>
       <div class="slider-container">
-        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="changeEV(this.value)">
+        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0">
         <span class="slider-val" id="ev-val">0.0 EV</span>
       </div>
     </div>
 
     <div>
-      <div class="setting-title">Фокусна відстань (Leica Zone Focus)</div>
+      <div class="setting-title">Зонне фокусування Leica</div>
       <div class="setting-grid" id="focus-group">
-        <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
-        <button class="opt-btn" onclick="setFocus(0.7, this)">0.7 m</button>
-        <button class="opt-btn" onclick="setFocus(1.0, this)">1.0 m</button>
-        <button class="opt-btn" onclick="setFocus(1.2, this)">1.2 m</button>
-        <button class="opt-btn" onclick="setFocus(1.5, this)">1.5 m</button>
-        <button class="opt-btn" onclick="setFocus(2.0, this)">2.0 m</button>
-        <button class="opt-btn" onclick="setFocus(3.0, this)">3.0 m</button>
-        <button class="opt-btn" onclick="setFocus(5.0, this)">5.0 m</button>
-        <button class="opt-btn" onclick="setFocus(100.0, this)" style="grid-column: span 4;">∞ Нескінченність</button>
+        <button class="opt-btn active" data-dist="auto">AF Auto</button>
+        <button class="opt-btn" data-dist="0.7">0.7 m</button>
+        <button class="opt-btn" data-dist="1.0">1.0 m</button>
+        <button class="opt-btn" data-dist="1.2">1.2 m</button>
+        <button class="opt-btn" data-dist="1.5">1.5 m</button>
+        <button class="opt-btn" data-dist="2.0">2.0 m</button>
+        <button class="opt-btn" data-dist="3.0">3.0 m</button>
+        <button class="opt-btn" data-dist="5.0">5.0 m</button>
+        <button class="opt-btn" data-dist="100.0" style="grid-column: span 4;">∞ Нескінченність</button>
       </div>
     </div>
 
     <div>
-      <div class="setting-title">Світлочутливість (ISO)</div>
+      <div class="setting-title">ISO</div>
       <div class="setting-grid" id="iso-group">
-        <button class="opt-btn active" onclick="setISO('auto', this)">Auto</button>
-        <button class="opt-btn" onclick="setISO(400, this)">400</button>
-        <button class="opt-btn" onclick="setISO(800, this)">800</button>
-        <button class="opt-btn" onclick="setISO(1600, this)">1600</button>
+        <button class="opt-btn active" data-val="auto">Auto</button>
+        <button class="opt-btn" data-val="400">400</button>
+        <button class="opt-btn" data-val="800">800</button>
+        <button class="opt-btn" data-val="1600">1600</button>
       </div>
     </div>
 
-    <button id="close-settings-btn" onclick="closeSettings()">Закрити налаштування</button>
+    <button id="close-settings-btn">Закрити налаштування</button>
   </div>
 
   <canvas id="capture-canvas"></canvas>
 
   <script>
-    const statusBar = document.getElementById('status-bar');
-    const startScreen = document.getElementById('start-screen');
-    const video = document.getElementById('viewfinder');
+    const log = document.getElementById('log');
+    window.onerror = function(msg, url, line) {
+      log.textContent = "❌ Err: " + msg + " (L:" + line + ")";
+      log.style.color = "#ff4444";
+    };
+
+    const btnStart = document.getElementById('btn-start');
+    const startBox = document.getElementById('start-box');
+    const v = document.getElementById('v');
     const topHud = document.getElementById('top-hud');
-    const irisShutter = document.getElementById('iris-shutter');
-    const canvas = document.getElementById('capture-canvas');
-    const settingsModal = document.getElementById('settings-modal');
-    const evVal = document.getElementById('ev-val');
-    const gridOverlay = document.getElementById('grid-overlay');
-    const gridBtn = document.getElementById('grid-btn');
-    const filmBtn = document.getElementById('film-btn');
-    const lensBtn = document.getElementById('lens-btn');
-    const levelBtn = document.getElementById('level-btn');
-    const rangeBtn = document.getElementById('range-btn');
-    const spiritLevel = document.getElementById('spirit-level');
-    const rangefinderOverlay = document.getElementById('rangefinder-overlay');
-    const rangefinderText = document.getElementById('rangefinder-text');
-    const levelLine = document.querySelector('.level-line');
 
     let videoTrack = null;
     let currentStream = null;
@@ -481,41 +428,44 @@
     ];
     let currentZoomIdx = 0;
 
-    const gridModes = ['thirds', 'golden', 'fibonacci', 'diagonals', 'center', 'off'];
+    const gridModes = ['thirds', 'golden', 'diagonals', 'center', 'off'];
     const gridLabels = {
       'thirds': '🌐 Третини',
       'golden': '🌐 Золотий перетин',
-      'fibonacci': '🌐 Спіраль Фібоначчі',
       'diagonals': '🌐 Діагоналі',
       'center': '🌐 Центр',
       'off': '🌐 Сітка: Вимк'
     };
     let currentGridIdx = 0;
 
-    // Головна функція запуску StreetCam
-    window.startStreetCam = function() {
-      statusBar.textContent = "⏳ Підключення сенсора...";
+    // 1. БЕЗВІДМОВНИЙ ЗАПУСК КАМЕРИ (ЯК У ТЕСТІ)
+    btnStart.addEventListener('click', function() {
+      log.textContent = "⏳ Підключення камери...";
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
-      }).then(stream => {
+      }).then(function(stream) {
         currentStream = stream;
-        video.srcObject = stream;
+        v.srcObject = stream;
         videoTrack = stream.getVideoTracks()[0];
-        video.play();
+        v.play();
 
-        startScreen.style.display = 'none';
+        startBox.style.display = 'none';
         topHud.style.display = 'flex';
-        statusBar.textContent = "🟢 StreetCam активна";
+        log.textContent = "🟢 StreetCam активна";
 
-        updateFilters();
         renderGrid();
-        checkSensorPermission();
-      }).catch(err => {
-        statusBar.textContent = "❌ Помилка: " + err.name + " - " + err.message;
-        statusBar.style.color = "#ff4444";
+        updateFilters();
+        initSensors();
+      }).catch(function(err) {
+        log.textContent = "❌ Помилка: " + err.name + " - " + err.message;
+        log.style.color = "#ff4444";
       });
-    };
+    });
+
+    // 2. СІТКА
+    const gridOverlay = document.getElementById('grid-overlay');
+    const gridBtn = document.getElementById('grid-btn');
 
     function renderGrid() {
       const mode = gridModes[currentGridIdx];
@@ -526,81 +476,137 @@
         gridOverlay.innerHTML = '<div class="grid-line-v" style="left:33.33%;"></div><div class="grid-line-v" style="left:66.66%;"></div><div class="grid-line-h" style="top:33.33%;"></div><div class="grid-line-h" style="top:66.66%;"></div>';
       } else if (mode === 'golden') {
         gridOverlay.innerHTML = '<div class="grid-line-v" style="left:38.2%;"></div><div class="grid-line-v" style="left:61.8%;"></div><div class="grid-line-h" style="top:38.2%;"></div><div class="grid-line-h" style="top:61.8%;"></div>';
-      } else if (mode === 'fibonacci') {
-        gridOverlay.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382" /></svg>';
       } else if (mode === 'diagonals') {
-        gridOverlay.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /></svg>';
+        gridOverlay.innerHTML = '<svg style="width:100%;height:100%;position:absolute;top:0;left:0;stroke:rgba(255,255,255,0.4);stroke-width:1.5;fill:none;" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /></svg>';
       } else if (mode === 'center') {
-        gridOverlay.innerHTML = '<div class="center-cross"></div><div class="grid-line-h" style="top:50%;"></div><div class="grid-line-v" style="left:50%;"></div>';
+        gridOverlay.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;"><div style="position:absolute;top:15px;left:0;width:32px;height:1px;background:rgba(255,255,255,0.6);"></div><div style="position:absolute;top:0;left:15px;width:1px;height:32px;background:rgba(255,255,255,0.6);"></div></div>';
       }
     }
 
-    function handleOrientation(event) {
-      const isLandscape = window.innerWidth > window.innerHeight;
-      const roll = isLandscape ? (event.beta || 0) : (event.gamma || 0);
-      const pitch = isLandscape ? (event.gamma || 0) : (event.beta || 0);
+    gridBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      currentGridIdx = (currentGridIdx + 1) % gridModes.length;
+      renderGrid();
+    });
 
-      if (isLevelActive) {
-        levelLine.style.transform = 'rotate(' + roll + 'deg)';
-        const isAligned = Math.abs(roll) <= 0.5;
-        if (isAligned) {
-          levelLine.classList.add('aligned');
-          if (!wasAligned && hapticsEnabled && navigator.vibrate) navigator.vibrate(20);
-          wasAligned = true;
-        } else {
-          levelLine.classList.remove('aligned');
-          wasAligned = false;
-        }
-      }
-
-      if (isRangeActive) {
-        const declination = Math.max(1, 90 - Math.abs(pitch));
-        const rad = declination * (Math.PI / 180);
-        let dist = cameraHeight / Math.tan(rad);
-        dist = Math.min(Math.max(dist, 0.5), 50.0);
-        rangefinderText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
-      }
-    }
-
-    function checkSensorPermission() {
-      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(state => {
-          if (state === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
-          }
-        }).catch(console.error);
-      } else {
-        window.addEventListener('deviceorientation', handleOrientation, true);
-      }
-    }
-
+    // 3. ФІЛЬТРИ ТА ПЛІВКИ
+    const filmBtn = document.getElementById('film-btn');
     function updateFilters() {
       const brightnessFactor = Math.pow(2, currentEV);
       const preset = filmPresets[currentFilmIdx];
       if (preset.isBW) {
-        video.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
+        v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
       } else {
-        video.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
+        v.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
       }
     }
 
-    window.toggleLevel = function(e) {
-      if (e) e.stopPropagation();
+    filmBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
+      filmBtn.textContent = '🎞️ ' + filmPresets[currentFilmIdx].name;
+      updateFilters();
+    });
+
+    // 4. РІВЕНЬ ТА ДАЛЕКОМІР
+    const levelBtn = document.getElementById('level-btn');
+    const spiritLevel = document.getElementById('spirit-level');
+    const levelLine = document.querySelector('.level-line');
+    const rangeBtn = document.getElementById('range-btn');
+    const rangeOverlay = document.getElementById('rangefinder-overlay');
+    const rangeText = document.getElementById('rangefinder-text');
+
+    levelBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
       isLevelActive = !isLevelActive;
       spiritLevel.style.display = isLevelActive ? 'flex' : 'none';
       levelBtn.classList.toggle('active', isLevelActive);
-      checkSensorPermission();
-    };
+    });
 
-    window.toggleRange = function(e) {
-      if (e) e.stopPropagation();
+    rangeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
       isRangeActive = !isRangeActive;
-      rangefinderOverlay.style.display = isRangeActive ? 'block' : 'none';
+      rangeOverlay.style.display = isRangeActive ? 'block' : 'none';
       rangeBtn.classList.toggle('active', isRangeActive);
-      checkSensorPermission();
-    };
+    });
 
-    window.toggleFilm = function(e) {
-      if (e) e.stopPropagation();
-      currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
-      filmBtn.textContent = '🎞️ ' + filmPres
+    function initSensors() {
+      window.addEventListener('deviceorientation', function(event) {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        const roll = isLandscape ? (event.beta || 0) : (event.gamma || 0);
+        const pitch = isLandscape ? (event.gamma || 0) : (event.beta || 0);
+
+        if (isLevelActive) {
+          levelLine.style.transform = 'rotate(' + roll + 'deg)';
+          const isAligned = Math.abs(roll) <= 0.5;
+          if (isAligned) {
+            levelLine.classList.add('aligned');
+            if (!wasAligned && hapticsEnabled && navigator.vibrate) navigator.vibrate(20);
+            wasAligned = true;
+          } else {
+            levelLine.classList.remove('aligned');
+            wasAligned = false;
+          }
+        }
+
+        if (isRangeActive) {
+          const declination = Math.max(1, 90 - Math.abs(pitch));
+          const rad = declination * (Math.PI / 180);
+          let dist = cameraHeight / Math.tan(rad);
+          dist = Math.min(Math.max(dist, 0.5), 50.0);
+          rangeText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
+        }
+      }, true);
+    }
+
+    // 5. ОПТИЧНИЙ ЗУМ
+    const lensBtn = document.getElementById('lens-btn');
+    lensBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
+      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
+      if (videoTrack && videoTrack.applyConstraints && videoTrack.getCapabilities) {
+        const caps = videoTrack.getCapabilities();
+        if (caps && caps.zoom) {
+          const targetZoom = zoomLevels[currentZoomIdx].zoom;
+          videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max) }] }).catch(function(){});
+        }
+      }
+    });
+
+    // 6. НАЛАШТУВАННЯ
+    const settingsModal = document.getElementById('settings-modal');
+    document.getElementById('open-settings-btn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      settingsModal.style.display = 'flex';
+    });
+    document.getElementById('close-settings-btn').addEventListener('click', function() {
+      settingsModal.style.display = 'none';
+    });
+
+    const evSlider = document.getElementById('ev-slider');
+    const evVal = document.getElementById('ev-val');
+    evSlider.addEventListener('input', function(e) {
+      currentEV = parseFloat(e.target.value);
+      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      updateFilters();
+    });
+
+    document.querySelectorAll('#height-group .opt-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#height-group .opt-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        cameraHeight = parseFloat(btn.getAttribute('data-h'));
+      });
+    });
+
+    document.querySelectorAll('#haptic-group .opt-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#haptic-group .opt-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        hapticsEnabled = btn.getAttribute('data-haptic') === 'on';
+      });
+    });
+
+    document.querySelectorAll('#focus-group .opt-btn').forEach(function(btn) {
+      btn.addEventListener('cli
