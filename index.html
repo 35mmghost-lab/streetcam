@@ -12,7 +12,7 @@
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 18px 28px; font-size: 16px; font-weight: bold; background: #ffb642;
-      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 10000; cursor: pointer;
+      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 1000; cursor: pointer;
     }
 
     #top-bar {
@@ -56,7 +56,7 @@
 
     /* Радієвий далекомір */
     #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; display: none; }
-    .radium-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 3px #39ff14); }
+    .rad-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 4px #39ff14); }
 
     #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 2000; display: none; cursor: pointer; }
     #btn-stealth-exit { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #888; padding: 8px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; }
@@ -81,38 +81,38 @@
     </div>
   </div>
 
-  <!-- Стадіометричний далекомір із силуетами -->
+  <!-- Далекомір: радієва світломаса з силуетами людини -->
   <div id="rangefinder">
-    <svg class="radium-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+    <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <!-- 1.2m -->
-      <line x1="200" y1="120" x2="280" y2="120" stroke="#39ff14" stroke-width="2.5" stroke-linecap="round" />
-      <line x1="200" y1="880" x2="280" y2="880" stroke="#39ff14" stroke-width="2.5" stroke-linecap="round" />
-      <text x="130" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">1.2m</text>
-      <circle cx="240" cy="190" r="40" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" fill="none" />
-      <line x1="240" y1="230" x2="240" y2="560" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="180" y1="330" x2="300" y2="330" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="240" y1="560" x2="190" y2="880" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="240" y1="560" x2="290" y2="880" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
+      <line x1="180" y1="120" x2="260" y2="120" stroke="#39ff14" stroke-width="3" />
+      <line x1="180" y1="880" x2="260" y2="880" stroke="#39ff14" stroke-width="3" />
+      <text x="110" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">1.2m</text>
+      <circle cx="220" cy="200" r="45" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
+      <line x1="220" y1="245" x2="220" y2="560" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="150" y1="340" x2="290" y2="340" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="220" y1="560" x2="160" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="220" y1="560" x2="280" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
       <!-- 2.0m -->
-      <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="2.5" stroke-linecap="round" />
-      <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="3" />
+      <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="3" />
       <text x="545" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">2.0m</text>
-      <circle cx="500" cy="310" r="26" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" fill="none" />
-      <line x1="500" y1="336" x2="500" y2="540" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="460" y1="400" x2="540" y2="400" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="500" y1="540" x2="470" y2="740" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="500" y1="540" x2="530" y2="740" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
+      <circle cx="500" cy="310" r="28" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
+      <line x1="500" y1="338" x2="500" y2="540" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="450" y1="400" x2="550" y2="400" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="500" y1="540" x2="465" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="500" y1="540" x2="535" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
       <!-- 3.0m -->
-      <line x1="720" y1="340" x2="760" y2="340" stroke="#39ff14" stroke-width="2.5" stroke-linecap="round" />
-      <line x1="720" y1="660" x2="760" y2="660" stroke="#39ff14" stroke-width="2.5" stroke-linecap="round" />
-      <text x="775" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">3.0m</text>
-      <circle cx="740" cy="375" r="18" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" fill="none" />
-      <line x1="740" y1="393" x2="740" y2="535" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="715" y1="440" x2="765" y2="440" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="740" y1="535" x2="720" y2="660" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
-      <line x1="740" y1="535" x2="760" y2="660" stroke="rgba(57,255,20,0.7)" stroke-width="1.5" stroke-dasharray="4,3" />
+      <line x1="740" y1="340" x2="780" y2="340" stroke="#39ff14" stroke-width="3" />
+      <line x1="740" y1="660" x2="780" y2="660" stroke="#39ff14" stroke-width="3" />
+      <text x="795" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">3.0m</text>
+      <circle cx="760" cy="375" r="18" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
+      <line x1="760" y1="393" x2="760" y2="535" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="730" y1="440" x2="790" y2="440" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="760" y1="535" x2="735" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="760" y1="535" x2="785" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
     </svg>
   </div>
 
@@ -146,29 +146,30 @@
   <canvas id="c"></canvas>
 
   <script>
-    var v = document.getElementById('v');
-    var btnStart = document.getElementById('btn-start');
-    var topBar = document.getElementById('top-bar');
-    var controlStrip = document.getElementById('control-strip');
-    var evLabel = document.getElementById('ev-label');
-    var hud = document.getElementById('hud');
-    var c = document.getElementById('c');
-    var filmBtn = document.getElementById('film-btn');
-    var isoBtn = document.getElementById('iso-btn');
-    var focusBtn = document.getElementById('focus-btn');
-    var frameBtn = document.getElementById('frame-btn');
-    var gridBtn = document.getElementById('grid-btn');
-    var rangeBtn = document.getElementById('range-btn');
-    var formatBtn = document.getElementById('format-btn');
-    var frameline = document.getElementById('frameline');
-    var frameBox = document.getElementById('frame-box');
-    var gridEl = document.getElementById('grid');
-    var rangeEl = document.getElementById('rangefinder');
-    var stealthEl = document.getElementById('stealth-overlay');
+    const v = document.getElementById('v');
+    const btnStart = document.getElementById('btn-start');
+    const topBar = document.getElementById('top-bar');
+    const controlStrip = document.getElementById('control-strip');
+    const evSlider = document.getElementById('ev-slider');
+    const evLabel = document.getElementById('ev-label');
+    const hud = document.getElementById('hud');
+    const c = document.getElementById('c');
+    const filmBtn = document.getElementById('film-btn');
+    const isoBtn = document.getElementById('iso-btn');
+    const focusBtn = document.getElementById('focus-btn');
+    const frameBtn = document.getElementById('frame-btn');
+    const gridBtn = document.getElementById('grid-btn');
+    const rangeBtn = document.getElementById('range-btn');
+    const formatBtn = document.getElementById('format-btn');
+    const frameline = document.getElementById('frameline');
+    const frameBox = document.getElementById('frame-box');
+    const gridEl = document.getElementById('grid');
+    const rangeEl = document.getElementById('rangefinder');
+    const stealthEl = document.getElementById('stealth-overlay');
 
-    var activeStream = null;
+    let activeStream = null;
 
-    var films = [
+    const films = [
       { name: 'Tri-X 400', base: 'grayscale(100%) contrast(150%)' },
       { name: 'T-Max 3200', base: 'grayscale(100%) contrast(190%)' },
       { name: 'HP5 Plus', base: 'grayscale(100%) contrast(125%)' },
@@ -176,13 +177,13 @@
       { name: 'Portra 400', base: 'saturate(85%) contrast(110%) sepia(15%)' },
       { name: 'Cinestill 800T', base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
     ];
-    var fIdx = 0;
-    var currentEV = 0.0;
+    let fIdx = 0;
+    let currentEV = 0.0;
 
-    var isoList = ['Auto', '100', '200', '400', '800', '1600', '3200'];
-    var isoIdx = 0;
+    const isoList = ['Auto', '100', '200', '400', '800', '1600', '3200'];
+    let isoIdx = 0;
 
-    var focusZones = [
+    const focusZones = [
       { name: 'Auto', val: 'auto' },
       { name: '0.7m', val: 0.7 },
       { name: '1.2m', val: 1.2 },
@@ -191,19 +192,19 @@
       { name: '5.0m', val: 5.0 },
       { name: '∞ Нескінч', val: 100.0 }
     ];
-    var focusIdx = 0;
+    let focusIdx = 0;
 
-    var frames = [
+    const frames = [
       { name: 'Full', ratio: null },
       { name: '3:2 (35mm)', ratio: 2/3 },
       { name: '4:3 (645)', ratio: 3/4 },
       { name: '1:1 (6x6)', ratio: 1.0 },
       { name: '65:24 (XPan)', ratio: 24/65 }
     ];
-    var rIdx = 0;
+    let rIdx = 0;
 
-    var grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    var gridLabels = {
+    const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
+    const gridLabels = {
       'off': '🌐 Сітка: Вимк',
       'thirds': '🌐 Третини',
       'golden': '🌐 Золотий перетин',
@@ -211,18 +212,18 @@
       'diagonals': '🌐 Діагоналі',
       'center': '🌐 Центр'
     };
-    var gIdx = 0;
+    let gIdx = 0;
 
-    var isRangeOn = false;
-    var formats = ['JPG', 'DNG / RAW'];
-    var fmtIdx = 0;
+    let isRangeOn = false;
+    const formats = ['JPG', 'DNG / RAW'];
+    let fmtIdx = 0;
 
-    function startCam() {
-      btnStart.innerText = "⏳ Запуск...";
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false
-      }).then(function(stream) {
+    async function startCam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
         activeStream = stream;
         v.srcObject = stream;
         btnStart.style.display = 'none';
@@ -231,14 +232,13 @@
         hud.style.display = 'flex';
         applyFilm();
         renderLayout();
-      }).catch(function(err) {
-        btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка камери: " + err.message);
-      });
+      } catch (err) {
+        alert("Помилка: " + err.message);
+      }
     }
 
     function applyFilm() {
-      var bFactor = Math.pow(2, currentEV);
+      const bFactor = Math.pow(2, currentEV);
       v.style.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
     }
 
@@ -256,16 +256,16 @@
 
     function nextISO() {
       isoIdx = (isoIdx + 1) % isoList.length;
-      var curISO = isoList[isoIdx];
+      const curISO = isoList[isoIdx];
       isoBtn.textContent = '⚡ ISO: ' + curISO;
 
       if (activeStream) {
-        var track = activeStream.getVideoTracks()[0];
+        const track = activeStream.getVideoTracks()[0];
         if (track && track.applyConstraints) {
           if (curISO === 'Auto') {
-            track.applyConstraints({ advanced: [{ exposureMode: 'continuous' }] }).catch(function() {});
+            track.applyConstraints({ advanced: [{ exposureMode: 'continuous' }] }).catch(() => {});
           } else {
-            track.applyConstraints({ advanced: [{ iso: parseInt(curISO) }] }).catch(function() {});
+            track.applyConstraints({ advanced: [{ iso: parseInt(curISO) }] }).catch(() => {});
           }
         }
       }
@@ -273,16 +273,16 @@
 
     function nextFocus() {
       focusIdx = (focusIdx + 1) % focusZones.length;
-      var zone = focusZones[focusIdx];
+      const zone = focusZones[focusIdx];
       focusBtn.textContent = '🔍 Фокус: ' + zone.name;
 
       if (activeStream) {
-        var track = activeStream.getVideoTracks()[0];
+        const track = activeStream.getVideoTracks()[0];
         if (track && track.applyConstraints) {
           if (zone.val === 'auto') {
-            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function() {});
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
           } else {
-            track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: zone.val }] }).catch(function() {});
+            track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: zone.val }] }).catch(() => {});
           }
         }
       }
@@ -323,7 +323,7 @@
     }
 
     function renderLayout() {
-      var cur = frames[rIdx];
+      const cur = frames[rIdx];
       frameline.style.display = 'block';
 
       if (!cur.ratio) {
@@ -336,8 +336,8 @@
       } else {
         frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
         frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
-        var screenRatio = window.innerWidth / window.innerHeight;
-        var w, h;
+        const screenRatio = window.innerWidth / window.innerHeight;
+        let w, h;
         if (screenRatio > cur.ratio) {
           h = window.innerHeight;
           w = Math.round(h * cur.ratio);
@@ -355,11 +355,11 @@
     window.addEventListener('resize', renderLayout);
 
     function renderGrid() {
-      var mode = grids[gIdx];
+      const mode = grids[gIdx];
       gridEl.innerHTML = '';
       if (mode === 'off') return;
 
-      var isPortrait = frameBox.clientHeight >= frameBox.clientWidth;
+      const isPortrait = frameBox.clientHeight >= frameBox.clientWidth;
 
       if (mode === 'thirds') {
         gridEl.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
@@ -391,23 +391,23 @@
     }
 
     function buildDNG(width, height, rgba) {
-      var imageBytes = width * height * 3;
-      var headerSize = 8;
-      var ifdOffset = headerSize + imageBytes;
-      var numEntries = 9;
-      var ifdSize = 2 + (numEntries * 12) + 4;
-      var totalSize = ifdOffset + ifdSize + 64;
+      const imageBytes = width * height * 3;
+      const headerSize = 8;
+      const ifdOffset = headerSize + imageBytes;
+      const numEntries = 9;
+      const ifdSize = 2 + (numEntries * 12) + 4;
+      const totalSize = ifdOffset + ifdSize + 64;
 
-      var buffer = new ArrayBuffer(totalSize);
-      var view = new DataView(buffer);
-      var p = 0;
+      const buffer = new ArrayBuffer(totalSize);
+      const view = new DataView(buffer);
+      let p = 0;
 
       view.setUint16(p, 0x4949, true); p += 2;
       view.setUint16(p, 42, true); p += 2;
       view.setUint32(p, ifdOffset, true); p += 4;
 
-      var imgBytes = new Uint8Array(buffer, p, imageBytes);
-      for (var i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
+      const imgBytes = new Uint8Array(buffer, p, imageBytes);
+      for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
         imgBytes[j] = rgba[i];
         imgBytes[j + 1] = rgba[i + 1];
         imgBytes[j + 2] = rgba[i + 2];
@@ -415,13 +415,13 @@
       p = ifdOffset;
 
       view.setUint16(p, numEntries, true); p += 2;
-      function writeTag(tag, type, count, val) {
+      const writeTag = (tag, type, count, val) => {
         view.setUint16(p, tag, true);
         view.setUint16(p + 2, type, true);
         view.setUint32(p + 4, count, true);
         view.setUint32(p + 8, val, true);
         p += 12;
-      }
+      };
 
       writeTag(0x0100, 4, 1, width);
       writeTag(0x0101, 4, 1, height);
@@ -441,5 +441,14 @@
       return new Blob([buffer], { type: 'image/x-adobe-dng' });
     }
 
-    function snap(isSilent) {
-      if (naviga
+    function snap(isSilent = false) {
+      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
+
+      const rawW = v.videoWidth || 1920;
+      const rawH = v.videoHeight || 1080;
+      const curFrame = frames[rIdx];
+
+      let cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
+
+      if (curFrame.ratio) {
+        if (
