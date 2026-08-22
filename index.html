@@ -93,7 +93,7 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Бурштиновий рівень горизонту */
+    /* Бурштиновий рівень Pip-Boy */
     #spirit-level {
       position: absolute;
       top: 50%;
@@ -195,6 +195,7 @@
       100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
     }
 
+    /* HUD */
     #top-hud {
       position: absolute;
       top: 12px;
@@ -222,6 +223,19 @@
       background: rgba(255, 182, 66, 0.25);
       border-color: #ffb642;
       color: #ffb642;
+    }
+
+    #debug-log {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      color: #ff5555;
+      font-size: 10px;
+      font-family: monospace;
+      z-index: 99;
+      pointer-events: none;
+      word-break: break-all;
     }
 
     #settings-modal {
@@ -335,6 +349,8 @@
       </div>
     </div>
 
+    <div id="debug-log"></div>
+
     <div id="top-hud">
       <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
       <button class="hud-btn" id="level-btn">🧭 Рівень</button>
@@ -380,7 +396,6 @@
           <button class="opt-btn" data-dist="1.5">1.5 m</button>
           <button class="opt-btn" data-dist="2.0">2.0 m</button>
           <button class="opt-btn" data-dist="3.0">3.0 m</button>
-          <button class="opt-dist" data-dist="5.0" style="display:none;"></button>
           <button class="opt-btn" data-dist="5.0">5.0 m</button>
           <button class="opt-btn" data-dist="100.0" style="grid-column: span 4;">∞ Нескінченність</button>
         </div>
@@ -403,6 +418,11 @@
   <canvas id="capture-canvas"></canvas>
 
   <script>
+    const debugEl = document.getElementById('debug-log');
+    window.onerror = function(msg, url, line) {
+      debugEl.textContent = 'Err: ' + msg + ' (L:' + line + ')';
+    };
+
     const video = document.getElementById('camera-stream');
     const irisShutter = document.getElementById('iris-shutter');
     const canvas = document.getElementById('capture-canvas');
@@ -420,6 +440,8 @@
     const rangefinderText = document.getElementById('rangefinder-text');
     const levelLine = document.querySelector('.level-line');
     const shutterHudBtn = document.getElementById('shutter-hud-btn');
+    const openSettingsBtn = document.getElementById('open-settings-btn');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
 
     let videoTrack = null;
     let currentStream = null;
@@ -543,7 +565,9 @@
           if (state === 'granted') {
             window.addEventListener('deviceorientation', handleOrientation, true);
           }
-        }).catch(console.error);
+        }).catch(err => {
+          debugEl.textContent = 'Sensor: ' + err.message;
+        });
       } else {
         window.addEventListener('deviceorientation', handleOrientation, true);
       }
@@ -563,7 +587,6 @@
       video.style.filter = getCombinedFilter();
     }
 
-    // Прив'язка кнопок інтерфейсу
     levelBtn.onclick = (e) => {
       e.stopPropagation();
       isLevelActive = !isLevelActive;
@@ -595,13 +618,4 @@
 
     lensBtn.onclick = (e) => {
       e.stopPropagation();
-      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
-
-      if (videoTrack && typeof videoTrack.applyConstraints === 'function' && typeof videoTrack.getCapabilities === 'function') {
-        const caps = videoTrack.getCapabilities();
-        if (caps && caps.zoom) {
-          const targetZoom = zoomLevels[currentZoomIdx].zoom;
-          const clampedZoom = Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max);
-          videoTrack.applyConstraints({ advanced: [{ zoom: clampedZoom }] }).catch(() => {});
-        }
+      currentZoomIdx = (c
