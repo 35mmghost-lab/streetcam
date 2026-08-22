@@ -12,9 +12,10 @@
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 18px 28px; font-size: 16px; font-weight: bold; background: #ffb642;
-      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 1000; cursor: pointer;
+      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 10000; cursor: pointer;
     }
 
+    /* Верхня панель зі скролом */
     #top-bar {
       position: fixed; top: 10px; left: 0; width: 100%; display: none;
       z-index: 999; background: rgba(0,0,0,0.75); padding: 8px 6px;
@@ -28,6 +29,7 @@
     }
     .t-btn.active { background: #39ff14; color: #000; border-color: #39ff14; font-weight: bold; }
 
+    /* Рядок експокорекції */
     #control-strip {
       position: fixed; top: 58px; left: 0; width: 100%; display: none;
       justify-content: center; align-items: center; gap: 10px; z-index: 998;
@@ -37,12 +39,14 @@
     #ev-slider { accent-color: #ffb642; width: 140px; height: 20px; }
     #ev-label { font-size: 12px; color: #ffb642; min-width: 50px; text-align: right; }
 
+    /* Рамка кадрування */
     #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
     #frame-box {
       position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85);
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55); overflow: hidden;
     }
 
+    /* Сітки композиції */
     #grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.45); }
     .grid-v { top: 0; bottom: 0; width: 1px; }
@@ -54,10 +58,11 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Радієвий далекомір */
+    /* Радієвий далекомір зі світломасою */
     #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; display: none; }
     .rad-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 4px #39ff14); }
 
+    /* Стелс */
     #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 2000; display: none; cursor: pointer; }
     #btn-stealth-exit { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #888; padding: 8px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; }
 
@@ -81,38 +86,38 @@
     </div>
   </div>
 
-  <!-- Далекомір: радієва світломаса з силуетами людини -->
+  <!-- Радієвий далекомір із силуетами -->
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <!-- 1.2m -->
-      <line x1="180" y1="120" x2="260" y2="120" stroke="#39ff14" stroke-width="3" />
-      <line x1="180" y1="880" x2="260" y2="880" stroke="#39ff14" stroke-width="3" />
-      <text x="110" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">1.2m</text>
-      <circle cx="220" cy="200" r="45" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
-      <line x1="220" y1="245" x2="220" y2="560" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="150" y1="340" x2="290" y2="340" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="220" y1="560" x2="160" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="220" y1="560" x2="280" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <!-- 1.2m (Ближній план / погруддя) -->
+      <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3" />
+      <line x1="160" y1="880" x2="240" y2="880" stroke="#39ff14" stroke-width="3" />
+      <text x="100" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">1.2m</text>
+      <circle cx="200" cy="210" r="45" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
+      <line x1="200" y1="255" x2="200" y2="560" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="140" y1="350" x2="260" y2="350" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="200" y1="560" x2="150" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="200" y1="560" x2="250" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
-      <!-- 2.0m -->
+      <!-- 2.0m (Середній план) -->
       <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="3" />
       <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="3" />
-      <text x="545" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">2.0m</text>
-      <circle cx="500" cy="310" r="28" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
-      <line x1="500" y1="338" x2="500" y2="540" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="450" y1="400" x2="550" y2="400" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="500" y1="540" x2="465" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="500" y1="540" x2="535" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <text x="545" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">2.0m</text>
+      <circle cx="500" cy="315" r="26" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
+      <line x1="500" y1="341" x2="500" y2="540" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="460" y1="400" x2="540" y2="400" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="500" y1="540" x2="470" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="500" y1="540" x2="530" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
-      <!-- 3.0m -->
-      <line x1="740" y1="340" x2="780" y2="340" stroke="#39ff14" stroke-width="3" />
-      <line x1="740" y1="660" x2="780" y2="660" stroke="#39ff14" stroke-width="3" />
-      <text x="795" y="505" fill="#39ff14" font-size="15" font-weight="bold" font-family="monospace">3.0m</text>
-      <circle cx="760" cy="375" r="18" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
-      <line x1="760" y1="393" x2="760" y2="535" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="730" y1="440" x2="790" y2="440" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="760" y1="535" x2="735" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
-      <line x1="760" y1="535" x2="785" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <!-- 3.0m (Загальний план / повний зріст) -->
+      <line x1="750" y1="340" x2="790" y2="340" stroke="#39ff14" stroke-width="3" />
+      <line x1="750" y1="660" x2="790" y2="660" stroke="#39ff14" stroke-width="3" />
+      <text x="805" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">3.0m</text>
+      <circle cx="770" cy="375" r="18" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none" />
+      <line x1="770" y1="393" x2="770" y2="535" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="740" y1="440" x2="800" y2="440" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="770" y1="535" x2="745" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
+      <line x1="770" y1="535" x2="795" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
     </svg>
   </div>
 
@@ -150,7 +155,6 @@
     const btnStart = document.getElementById('btn-start');
     const topBar = document.getElementById('top-bar');
     const controlStrip = document.getElementById('control-strip');
-    const evSlider = document.getElementById('ev-slider');
     const evLabel = document.getElementById('ev-label');
     const hud = document.getElementById('hud');
     const c = document.getElementById('c');
@@ -219,6 +223,7 @@
     let fmtIdx = 0;
 
     async function startCam() {
+      btnStart.innerText = "⏳ Запуск...";
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
@@ -233,7 +238,8 @@
         applyFilm();
         renderLayout();
       } catch (err) {
-        alert("Помилка: " + err.message);
+        btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
+        alert("Помилка камери: " + err.message);
       }
     }
 
@@ -442,13 +448,4 @@
     }
 
     function snap(isSilent = false) {
-      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
-
-      const rawW = v.videoWidth || 1920;
-      const rawH = v.videoHeight || 1080;
-      const curFrame = frames[rIdx];
-
-      let cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
-
-      if (curFrame.ratio) {
-        if (
+      if (navigator.vibrate) navigator.vib
