@@ -2,391 +2,72 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>StreetCam Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { width: 100%; height: 100%; background: #000; color: #fff; font-family: monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
-    
-    #viewfinder-box { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; z-index: 1; }
-    video { width: 100%; height: 100%; object-fit: cover; will-change: filter; transform: translateZ(0); }
-
+    body, html { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: monospace; }
+    #v { width: 100vw; height: 100vh; object-fit: cover; filter: grayscale(100%) contrast(150%); }
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 10000; padding: 22px 34px; font-size: 16px; font-weight: bold;
-      background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
-      box-shadow: 0 0 25px rgba(255, 182, 66, 0.7); text-align: center;
+      padding: 18px 28px; font-size: 16px; font-weight: bold; background: #ffb642;
+      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 999;
     }
-
-    /* Верхня панель HUD — найвищий пріоритет дотиків */
     #hud {
-      position: fixed; top: 12px; left: 0; width: 100%; display: none;
-      justify-content: space-around; align-items: center; padding: 6px 4px;
-      z-index: 9000; background: rgba(0, 0, 0, 0.85); pointer-events: auto;
+      position: fixed; bottom: 25px; left: 0; width: 100%; display: none;
+      justify-content: center; z-index: 999;
     }
-    .hud-btn {
-      background: #1a1a1a; border: 1px solid rgba(255, 255, 255, 0.5);
-      color: #eee; padding: 8px 6px; border-radius: 5px; font-size: 11px; cursor: pointer;
-      touch-action: manipulation;
+    #btn-snap {
+      width: 75px; height: 75px; border-radius: 50%; background: #ffb642;
+      border: 4px solid #fff; font-size: 14px; font-weight: bold; color: #000;
     }
-    .hud-btn.active { background: rgba(255, 182, 66, 0.35); border-color: #ffb642; color: #ffb642; }
-
-    #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
-    #frame-box { position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); pointer-events: none; }
-
-    #grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
-    .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.4); pointer-events: none; }
-    .grid-v { top: 0; bottom: 0; width: 1px; }
-    .grid-h { left: 0; right: 0; height: 1px; }
-    .grid-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; stroke: rgba(255,255,255,0.45); stroke-width: 1.5; fill: none; pointer-events: none; }
-    .center-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 32px; height: 32px; pointer-events: none; }
-    .center-cross::before, .center-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.7); }
-    .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
-    .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
-
-    #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; display: none; }
-    .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; pointer-events: none; }
-    .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
-
-    #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 9500; display: none; cursor: pointer; }
-    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; padding: 10px 14px; border-radius: 4px; font-size: 12px; }
-
-    #settings-modal {
-      position: fixed; bottom: 0; left: 0; width: 100%;
-      background: rgba(15, 15, 15, 0.98); border-top: 1px solid #333;
-      padding: 16px; display: none; flex-direction: column; gap: 14px;
-      z-index: 9600; max-height: 80vh; overflow-y: auto; pointer-events: auto;
-    }
-    .setting-title { font-size: 11px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
-    .setting-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .opt-btn { padding: 10px 4px; background: #222; color: #aaa; border: 1px solid #333; border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; font-family: monospace; touch-action: manipulation; }
-    .opt-btn.active { background: #ffb642; color: #000; font-weight: bold; border-color: #ffb642; }
-    .slider-container { display: flex; align-items: center; gap: 12px; }
-    input[type=range] { flex: 1; accent-color: #ffb642; height: 28px; }
-    #close-settings-btn { width: 100%; padding: 14px; background: #333; color: #fff; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; }
-
-    #shutter { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 8000; opacity: 0; pointer-events: none; transition: opacity 0.08s; }
-    #shutter.flash { opacity: 0.9; }
     canvas { display: none; }
   </style>
 </head>
 <body>
-  <div id="viewfinder-box">
-    <video id="v" autoplay playsinline muted></video>
-  </div>
-
-  <div id="frameline"><div id="frame-box"></div></div>
-  <div id="grid"></div>
-
-  <div id="rangefinder">
-    <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <line x1="390" y1="120" x2="430" y2="120" /><line x1="390" y1="880" x2="430" y2="880" />
-      <text x="320" y="505" class="stadia-label">1.2m</text>
-      <line x1="440" y1="260" x2="470" y2="260" /><line x1="440" y1="740" x2="470" y2="740" />
-      <text x="390" y="505" class="stadia-label">2.0m</text>
-      <line x1="475" y1="340" x2="495" y2="340" /><line x1="475" y1="660" x2="495" y2="660" />
-      <text x="515" y="505" class="stadia-label">3.0m</text>
-    </svg>
-  </div>
-
-  <div id="shutter"></div>
-
-  <div id="stealth-overlay" onclick="takePhoto(true)">
-    <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
-  </div>
-
-  <button id="btn-start" onclick="initStreetCam()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <video id="v" autoplay playsinline muted></video>
+  <button id="btn-start" onclick="startCam()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
-    <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
-    <button class="hud-btn" id="btn-film" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
-    <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Далекомір</button>
-    <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
-    <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
-  </div>
-
-  <div id="settings-modal">
-    <div>
-      <div class="setting-title" id="t-lang">МОВА / LANGUAGE</div>
-      <div class="setting-grid" id="lang-group" style="grid-template-columns: repeat(3, 1fr);">
-        <button class="opt-btn active" onclick="setLanguage('ua', this)">UA Українська</button>
-        <button class="opt-btn" onclick="setLanguage('en', this)">EN English</button>
-        <button class="opt-btn" onclick="setLanguage('ja', this)">JA 日本語</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title" id="t-save">ФОРМАТ ЗБЕРЕЖЕННЯ</div>
-      <div class="setting-grid" id="save-group" style="grid-template-columns: repeat(2, 1fr);">
-        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Grain)</button>
-        <button class="opt-btn" onclick="setSaveFormat('raw', this)">RAW / DNG (Негатив)</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title" id="t-frames">КЛАСИЧНІ РАМКИ (FRAMELINES)</div>
-      <div class="setting-grid" id="frames-group">
-        <button class="opt-btn" onclick="setFrame(0, this)">Full</button>
-        <button class="opt-btn active" onclick="setFrame(1, this)">3:2 (35mm)</button>
-        <button class="opt-btn" onclick="setFrame(2, this)">4:3 (645)</button>
-        <button class="opt-btn" onclick="setFrame(3, this)">4:5 (Insta)</button>
-        <button class="opt-btn" onclick="setFrame(4, this)">1:1 (6x6)</button>
-        <button class="opt-btn" onclick="setFrame(5, this)">16:9</button>
-        <button class="opt-btn" onclick="setFrame(6, this)" style="grid-column: span 2;">65:24 (XPan)</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title" id="t-ev">ЕКСПОКОРЕКЦІЯ (EV)</div>
-      <div class="slider-container">
-        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="setEV(this.value)">
-        <span id="ev-val" style="min-width: 45px; color: #ffb642;">0.0 EV</span>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title" id="t-focus">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
-      <div class="setting-grid" id="focus-group">
-        <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
-        <button class="opt-btn" onclick="setFocus('0.7', this)">0.7 m</button>
-        <button class="opt-btn" onclick="setFocus('1.2', this)">1.2 m</button>
-        <button class="opt-btn" onclick="setFocus('2.0', this)">2.0 m</button>
-        <button class="opt-btn" onclick="setFocus('3.0', this)">3.0 m</button>
-        <button class="opt-btn" onclick="setFocus('5.0', this)">5.0 m</button>
-        <button class="opt-btn" onclick="setFocus('100.0', this)" id="opt-inf" style="grid-column: span 2;">∞ Нескінченність</button>
-      </div>
-    </div>
-
-    <button id="close-settings-btn" onclick="closeSettings()">Закрити</button>
+    <button id="btn-snap" onclick="snap()">📷 СПУСК</button>
   </div>
 
   <canvas id="c"></canvas>
 
   <script>
-    var films = [
-      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
-      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
-      { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
-      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 8 },
-      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
-      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
-    ];
-    var filmIdx = 0;
+    const v = document.getElementById('v');
+    const btnStart = document.getElementById('btn-start');
+    const hud = document.getElementById('hud');
+    const c = document.getElementById('c');
 
-    var frameList = [
-      { name: 'Full', p: null, l: null },
-      { name: '3:2', p: 2 / 3, l: 3 / 2 },
-      { name: '4:3', p: 3 / 4, l: 4 / 3 },
-      { name: '4:5', p: 4 / 5, l: 5 / 4 },
-      { name: '1:1', p: 1.0, l: 1.0 },
-      { name: '16:9', p: 9 / 16, l: 16 / 9 },
-      { name: '65:24', p: 24 / 65, l: 65 / 24 }
-    ];
-    var currentFrameIdx = 1;
-
-    var grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    var gridIdx = 0;
-
-    var i18n = {
-      ua: {
-        snap: '📷 СПУСК', range: '🎯 Далекомір', stealth: '🕶️ Стелс', stealthExit: '✕ ВИЙТИ',
-        tLang: 'МОВА / LANGUAGE', tSave: 'ФОРМАТ ЗБЕРЕЖЕННЯ', tFrames: 'КЛАСИЧНІ РАМКИ (FRAMELINES)',
-        tEv: 'ЕКСПОКОРЕКЦІЯ (EV)', tFocus: 'ЗОННЕ ФОКУСУВАННЯ LEICA', optInf: '∞ Нескінченність', close: 'Закрити',
-        grids: { 'off': '🌐 Сітка: Вимк', 'thirds': '🌐 Третини', 'golden': '🌐 Золотий', 'fibonacci': '🌐 Фібоначчі', 'diagonals': '🌐 Діагоналі', 'center': '🌐 Центр' }
-      },
-      en: {
-        snap: '📷 SNAP', range: '🎯 Rangefinder', stealth: '🕶️ Stealth', stealthExit: '✕ EXIT',
-        tLang: 'LANGUAGE', tSave: 'SAVE FORMAT', tFrames: 'FRAMELINES (ASPECT RATIO)',
-        tEv: 'EXPOSURE (EV)', tFocus: 'LEICA ZONE FOCUS', optInf: '∞ Infinity', close: 'Close',
-        grids: { 'off': '🌐 Grid: Off', 'thirds': '🌐 Thirds', 'golden': '🌐 Golden', 'fibonacci': '🌐 Fibonacci', 'diagonals': '🌐 Diagonals', 'center': '🌐 Center' }
-      },
-      ja: {
-        snap: '📷 シャッター', range: '🎯 距離計', stealth: '🕶️ ステルス', stealthExit: '✕ 終了',
-        tLang: '言語設定', tSave: '保存形式', tFrames: 'フレーム枠 (アスペクト比)',
-        tEv: '露出補正 (EV)', tFocus: 'ゾーンフォーカス', optInf: '∞ 無限遠', close: '閉じる',
-        grids: { 'off': '🌐 グリッド: 切', 'thirds': '🌐 三分割', 'golden': '🌐 黄金比', 'fibonacci': '🌐 フィボナッチ', 'diagonals': '🌐 対角線', 'center': '🌐 中央クロス' }
-      }
-    };
-    var currentLang = 'ua';
-
-    var currentEV = 0.0;
-    var saveFormat = 'jpg';
-    var activeStream = null;
-
-    var v = document.getElementById('v');
-    var btnStart = document.getElementById('btn-start');
-    var hud = document.getElementById('hud');
-    var grid = document.getElementById('grid');
-    var rangefinder = document.getElementById('rangefinder');
-    var shutter = document.getElementById('shutter');
-    var canvas = document.getElementById('c');
-    var btnFilm = document.getElementById('btn-film');
-    var btnGrid = document.getElementById('btn-grid');
-    var btnRange = document.getElementById('btn-range');
-    var stealthOverlay = document.getElementById('stealth-overlay');
-    var settingsModal = document.getElementById('settings-modal');
-    var evVal = document.getElementById('ev-val');
-    var frameline = document.getElementById('frameline');
-    var frameBox = document.getElementById('frame-box');
-
-    function initStreetCam() {
-      btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
-        .then(function(stream) {
-          activeStream = stream;
-          v.srcObject = stream;
-          btnStart.style.display = 'none';
-          hud.style.display = 'flex';
-          applyFilmFilter();
-          renderFrameline();
-        })
-        .catch(function(err) {
-          btnStart.textContent = "▶ УВІМКНУТИ КАМЕРУ";
-          alert("Помилка камери: " + err.message);
+    async function startCam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
         });
-    }
-
-    function applyFilmFilter() {
-      var preset = films[filmIdx];
-      var brightnessFactor = Math.pow(2, currentEV);
-      var filterStr = '';
-      if (preset.isBW) {
-        filterStr = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
-      } else {
-        filterStr = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
-      }
-      v.style.filter = filterStr;
-      v.style.webkitFilter = filterStr;
-    }
-
-    function nextFilm() {
-      filmIdx = (filmIdx + 1) % films.length;
-      btnFilm.textContent = '🎞️ ' + films[filmIdx].name;
-      applyFilmFilter();
-    }
-
-    function renderGrid() {
-      var mode = grids[gridIdx];
-      btnGrid.textContent = i18n[currentLang].grids[mode];
-      grid.innerHTML = '';
-      if (mode === 'thirds') {
-        grid.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
-      } else if (mode === 'golden') {
-        grid.innerHTML = '<div class="grid-v" style="left:38.2%;"></div><div class="grid-v" style="left:61.8%;"></div><div class="grid-h" style="top:38.2%;"></div><div class="grid-h" style="top:61.8%;"></div>';
-      } else if (mode === 'fibonacci') {
-        grid.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" /><line x1="618" y1="0" x2="618" y2="618" stroke="rgba(255,255,255,0.3)" /><line x1="618" y1="382" x2="1000" y2="382" stroke="rgba(255,255,255,0.3)" /><line x1="764" y1="382" x2="764" y2="618" stroke="rgba(255,255,255,0.3)" /></svg>';
-      } else if (mode === 'diagonals') {
-        grid.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="1000" y1="0" x2="0" y2="1000" stroke="rgba(255,255,255,0.45)" /><line x1="0" y1="500" x2="500" y2="0" stroke="rgba(255,255,255,0.25)" /><line x1="500" y1="1000" x2="1000" y2="500" stroke="rgba(255,255,255,0.25)" /></svg>';
-      } else if (mode === 'center') {
-        grid.innerHTML = '<div class="center-cross"></div><div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
+        v.srcObject = stream;
+        btnStart.style.display = 'none';
+        hud.style.display = 'flex';
+      } catch (err) {
+        alert("Помилка: " + err.message);
       }
     }
 
-    function nextGrid() {
-      gridIdx = (gridIdx + 1) % grids.length;
-      renderGrid();
+    function snap() {
+      c.width = v.videoWidth || 1920;
+      c.height = v.videoHeight || 1080;
+      const ctx = c.getContext('2d');
+      ctx.filter = 'grayscale(100%) contrast(150%)';
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+      
+      c.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 0.95);
     }
-
-    function toggleRange() {
-      isRangeActive = !isRangeActive;
-      rangefinder.style.display = isRangeActive ? 'block' : 'none';
-      btnRange.classList.toggle('active', isRangeActive);
-    }
-
-    function enterStealth() {
-      stealthOverlay.style.display = 'block';
-      if (navigator.vibrate) navigator.vibrate(40);
-    }
-
-    function exitStealth(e) {
-      if (e) e.stopPropagation();
-      stealthOverlay.style.display = 'none';
-      if (navigator.vibrate) navigator.vibrate([20, 20]);
-    }
-
-    function openSettings() { settingsModal.style.display = 'flex'; }
-    function closeSettings() { settingsModal.style.display = 'none'; }
-
-    function setLanguage(lang, el) {
-      currentLang = lang;
-      var langBtns = document.querySelectorAll('#lang-group .opt-btn');
-      for (var i = 0; i < langBtns.length; i++) { langBtns[i].classList.remove('active'); }
-      el.classList.add('active');
-
-      var dict = i18n[currentLang];
-      document.getElementById('btn-snap').textContent = dict.snap;
-      document.getElementById('btn-range').textContent = dict.range;
-      document.getElementById('btn-stealth').textContent = dict.stealth;
-      document.getElementById('btn-stealth-exit').textContent = dict.stealthExit;
-      document.getElementById('t-lang').textContent = dict.tLang;
-      document.getElementById('t-save').textContent = dict.tSave;
-      document.getElementById('t-frames').textContent = dict.tFrames;
-      document.getElementById('t-ev').textContent = dict.tEv;
-      document.getElementById('t-focus').textContent = dict.tFocus;
-      document.getElementById('opt-inf').textContent = dict.optInf;
-      document.getElementById('close-settings-btn').textContent = dict.close;
-      renderGrid();
-    }
-
-    function setSaveFormat(fmt, el) {
-      saveFormat = fmt;
-      var saveBtns = document.querySelectorAll('#save-group .opt-btn');
-      for (var i = 0; i < saveBtns.length; i++) { saveBtns[i].classList.remove('active'); }
-      el.classList.add('active');
-    }
-
-    function setFrame(idx, el) {
-      currentFrameIdx = idx;
-      var frameBtns = document.querySelectorAll('#frames-group .opt-btn');
-      for (var i = 0; i < frameBtns.length; i++) { frameBtns[i].classList.remove('active'); }
-      el.classList.add('active');
-      renderFrameline();
-    }
-
-    function renderFrameline() {
-      var f = frameList[currentFrameIdx];
-      if (!f.p) {
-        frameline.style.display = 'none';
-        return;
-      }
-      frameline.style.display = 'block';
-      var isPortrait = window.innerHeight >= window.innerWidth;
-      var targetRatio = isPortrait ? f.p : f.l;
-      var screenRatio = window.innerWidth / window.innerHeight;
-
-      var w, h;
-      if (screenRatio > targetRatio) {
-        h = window.innerHeight;
-        w = Math.round(h * targetRatio);
-      } else {
-        w = window.innerWidth;
-        h = Math.round(w / targetRatio);
-      }
-
-      frameBox.style.width = w + 'px';
-      frameBox.style.height = h + 'px';
-      frameBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
-      frameBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
-    }
-    window.addEventListener('resize', renderFrameline);
-
-    function setEV(val) {
-      currentEV = parseFloat(val);
-      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      applyFilmFilter();
-    }
-
-    function setFocus(dist, el) {
-      var focusBtns = document.querySelectorAll('#focus-group .opt-btn');
-      for (var i = 0; i < focusBtns.length; i++) { focusBtns[i].classList.remove('active'); }
-      el.classList.add('active');
-      if (activeStream) {
-        var track = activeStream.getVideoTracks()[0];
-        if (track && track.applyConstraints) {
-          if (dist === 'auto') {
-            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function() {});
-          } else {
-            track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(function() {});
-          }
-        
+  </script>
+</body>
+</html>
