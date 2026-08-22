@@ -14,7 +14,7 @@
       margin: 0;
       background: #000;
       color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      font-family: monospace;
       height: 100vh;
       overflow: hidden;
       user-select: none;
@@ -30,7 +30,7 @@
       height: 100%;
       object-fit: cover;
       z-index: 1;
-      filter: grayscale(100%) contrast(155%);
+      filter: grayscale(100%) contrast(150%);
     }
 
     /* Стартова кнопка */
@@ -49,7 +49,6 @@
       color: #000;
       cursor: pointer;
       box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
-      touch-action: manipulation;
     }
 
     /* Верхня панель HUD */
@@ -75,7 +74,6 @@
       font-size: 11px;
       cursor: pointer;
       white-space: nowrap;
-      touch-action: manipulation;
     }
     .hud-btn.active {
       background: rgba(255, 182, 66, 0.3);
@@ -83,7 +81,7 @@
       color: #ffb642;
     }
 
-    /* Сітки композиції */
+    /* Сітки */
     #grid {
       position: fixed;
       top: 0;
@@ -110,7 +108,6 @@
       stroke: rgba(255, 255, 255, 0.45);
       stroke-width: 1.5;
       fill: none;
-      filter: drop-shadow(0 0 1px rgba(0,0,0,0.8));
     }
     .center-cross {
       position: absolute;
@@ -124,12 +121,11 @@
       content: '';
       position: absolute;
       background: rgba(255, 255, 255, 0.6);
-      box-shadow: 0 0 1px rgba(0, 0, 0, 0.9);
     }
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Бурштиновий рівень горизонту */
+    /* Рівень */
     #level {
       position: fixed;
       top: 50%;
@@ -156,7 +152,7 @@
       box-shadow: 0 0 20px rgba(255, 182, 66, 1);
     }
 
-    /* Стадіаметричний далекомір */
+    /* Далекомір */
     #rangefinder {
       position: fixed;
       top: 0;
@@ -177,12 +173,9 @@
       color: #ffb642;
       padding: 6px 16px;
       border-radius: 6px;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: bold;
-      font-family: monospace;
-      letter-spacing: 0.5px;
       white-space: nowrap;
-      box-shadow: 0 0 10px rgba(0,0,0,0.8);
     }
     .stadia-svg {
       width: 100%;
@@ -190,16 +183,15 @@
       stroke: #ffb642;
       stroke-width: 2;
       fill: none;
-      filter: drop-shadow(0 0 3px rgba(0,0,0,0.9));
     }
     .stadia-label {
       fill: #ffb642;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: bold;
       font-family: monospace;
     }
 
-    /* Механічний затвор */
+    /* Спалах затвора */
     #shutter {
       position: fixed;
       top: 0;
@@ -234,8 +226,6 @@
     }
     .setting-title {
       font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
       color: #888;
       margin-bottom: 6px;
     }
@@ -243,7 +233,6 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
-      width: 100%;
     }
     .opt-btn {
       padding: 8px 4px;
@@ -260,25 +249,16 @@
       background: #fff;
       color: #000;
       font-weight: bold;
-      border-color: #fff;
     }
     .slider-container {
       display: flex;
       align-items: center;
       gap: 12px;
-      width: 100%;
     }
     input[type=range] {
       flex: 1;
       accent-color: #ffb642;
       height: 4px;
-    }
-    .slider-val {
-      font-size: 12px;
-      font-family: monospace;
-      min-width: 45px;
-      text-align: right;
-      color: #ffb642;
     }
     #close-settings-btn {
       width: 100%;
@@ -288,7 +268,6 @@
       border: none;
       border-radius: 4px;
       font-size: 13px;
-      margin-top: 6px;
       cursor: pointer;
     }
 
@@ -311,11 +290,11 @@
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="390" y1="120" x2="430" y2="120" />
       <line x1="390" y1="880" x2="430" y2="880" />
-      <text x="325" y="505" class="stadia-label">1.2m</text>
+      <text x="320" y="505" class="stadia-label">1.2m</text>
       
       <line x1="440" y1="260" x2="470" y2="260" />
       <line x1="440" y1="740" x2="470" y2="740" />
-      <text x="395" y="505" class="stadia-label">2.0m</text>
+      <text x="390" y="505" class="stadia-label">2.0m</text>
 
       <line x1="475" y1="340" x2="495" y2="340" />
       <line x1="475" y1="660" x2="495" y2="660" />
@@ -325,94 +304,72 @@
 
   <div id="shutter"></div>
 
-  <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
+  <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
-    <button class="hud-btn" id="btn-snap">📷 SNAP</button>
-    <button class="hud-btn" id="btn-film">🎞️ Tri-X 400</button>
-    <button class="hud-btn" id="btn-grid">🌐 Третини</button>
-    <button class="hud-btn" id="btn-level">🧭 Рівень</button>
-    <button class="hud-btn" id="btn-range">🎯 Далекомір</button>
-    <button class="hud-btn" id="btn-settings">⚙️</button>
+    <button class="hud-btn" id="btn-snap" onclick="capturePhoto(event)">📷 SNAP</button>
+    <button class="hud-btn" id="btn-film" onclick="nextFilm(event)">🎞️ Tri-X 400</button>
+    <button class="hud-btn" id="btn-grid" onclick="nextGrid(event)">🌐 Третини</button>
+    <button class="hud-btn" id="btn-level" onclick="toggleLevel(event)">🧭 Рівень</button>
+    <button class="hud-btn" id="btn-range" onclick="toggleRange(event)">🎯 Далекомір</button>
+    <button class="hud-btn" id="btn-settings" onclick="openSettings(event)">⚙️</button>
   </div>
 
   <div id="settings-modal">
     <div>
-      <div class="setting-title">Висота зйомки далекоміра</div>
+      <div class="setting-title">ВИСОТА ЗЙОМКИ</div>
       <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="height-group">
-        <button class="opt-btn active" data-h="1.6">👁️ Рівень очей (1.60 м)</button>
-        <button class="opt-btn" data-h="1.3">🥋 Рівень пояса (1.30 м)</button>
+        <button class="opt-btn active" onclick="setHeight(1.6, this)">👁️ Очі (1.60 м)</button>
+        <button class="opt-btn" onclick="setHeight(1.3, this)">🥋 Пояс (1.30 м)</button>
       </div>
     </div>
 
     <div>
-      <div class="setting-title">Тактильний відгук горизонту</div>
-      <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="haptic-group">
-        <button class="opt-btn active" data-haptic="on">📳 Увімк</button>
-        <button class="opt-btn" data-haptic="off">🔕 Вимк</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title">Експокорекція (EV)</div>
+      <div class="setting-title">ЕКСПОКОРЕКЦІЯ (EV)</div>
       <div class="slider-container">
-        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0">
-        <span class="slider-val" id="ev-val">0.0 EV</span>
+        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="changeEV(this.value)">
+        <span id="ev-val" style="min-width: 45px; color: #ffb642;">0.0 EV</span>
       </div>
     </div>
 
     <div>
-      <div class="setting-title">Зонне фокусування Leica</div>
+      <div class="setting-title">ЗОННЕ ФОКУСУВАННЯ LEICA</div>
       <div class="setting-grid" id="focus-group">
-        <button class="opt-btn active" data-dist="auto">AF Auto</button>
-        <button class="opt-btn" data-dist="0.7">0.7 m</button>
-        <button class="opt-btn" data-dist="1.0">1.0 m</button>
-        <button class="opt-btn" data-dist="1.2">1.2 m</button>
-        <button class="opt-btn" data-dist="1.5">1.5 m</button>
-        <button class="opt-btn" data-dist="2.0">2.0 m</button>
-        <button class="opt-btn" data-dist="3.0">3.0 m</button>
-        <button class="opt-btn" data-dist="5.0">5.0 m</button>
-        <button class="opt-btn" data-dist="100.0" style="grid-column: span 4;">∞ Нескінченність</button>
+        <button class="opt-btn active" onclick="setFocus('auto', this)">AF Auto</button>
+        <button class="opt-btn" onclick="setFocus(0.7, this)">0.7 m</button>
+        <button class="opt-btn" onclick="setFocus(1.2, this)">1.2 m</button>
+        <button class="opt-btn" onclick="setFocus(2.0, this)">2.0 m</button>
+        <button class="opt-btn" onclick="setFocus(3.0, this)">3.0 m</button>
+        <button class="opt-btn" onclick="setFocus(5.0, this)">5.0 m</button>
+        <button class="opt-btn" onclick="setFocus(100.0, this)" style="grid-column: span 2;">∞ Нескінченність</button>
       </div>
     </div>
 
-    <div>
-      <div class="setting-title">ISO</div>
-      <div class="setting-grid" id="iso-group">
-        <button class="opt-btn active" data-val="auto">Auto</button>
-        <button class="opt-btn" data-val="400">400</button>
-        <button class="opt-btn" data-val="800">800</button>
-        <button class="opt-btn" data-val="1600">1600</button>
-      </div>
-    </div>
-
-    <button id="close-settings-btn">Закрити налаштування</button>
+    <button id="close-settings-btn" onclick="closeSettings()">Закрити налаштування</button>
   </div>
 
   <canvas id="c"></canvas>
 
   <script>
-    const v = document.getElementById('v');
-    const btnStart = document.getElementById('btn-start');
-    const hud = document.getElementById('hud');
-    const grid = document.getElementById('grid');
-    const level = document.getElementById('level');
-    const levelLine = document.getElementById('level-line');
-    const rangefinder = document.getElementById('rangefinder');
-    const rangeText = document.getElementById('range-text');
-    const shutter = document.getElementById('shutter');
-    const canvas = document.getElementById('c');
-    const settingsModal = document.getElementById('settings-modal');
+    var v = document.getElementById('v');
+    var hud = document.getElementById('hud');
+    var btnStart = document.getElementById('btn-start');
+    var grid = document.getElementById('grid');
+    var level = document.getElementById('level');
+    var levelLine = document.getElementById('level-line');
+    var rangefinder = document.getElementById('rangefinder');
+    var rangeText = document.getElementById('range-text');
+    var shutter = document.getElementById('shutter');
+    var canvas = document.getElementById('c');
+    var settingsModal = document.getElementById('settings-modal');
 
-    let videoTrack = null;
-    let isLevelActive = false;
-    let isRangeActive = false;
-    let hapticsEnabled = true;
-    let wasAligned = false;
-    let cameraHeight = 1.60;
-    let currentEV = 0.0;
+    var videoTrack = null;
+    var isLevelActive = false;
+    var isRangeActive = false;
+    var cameraHeight = 1.60;
+    var currentEV = 0.0;
 
-    const films = [
+    var films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
       { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
       { name: 'T-Max 3200', isBW: true, contrast: 1.90 },
@@ -420,10 +377,10 @@
       { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)' },
       { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)' }
     ];
-    let filmIdx = 0;
+    var filmIdx = 0;
 
-    const grids = ['thirds', 'golden', 'fibonacci', 'diagonals', 'center', 'off'];
-    const gridNames = {
+    var grids = ['thirds', 'golden', 'fibonacci', 'diagonals', 'center', 'off'];
+    var gridNames = {
       'thirds': '🌐 Третини',
       'golden': '🌐 Золотий перетин',
       'fibonacci': '🌐 Спіраль Фібоначчі',
@@ -431,11 +388,11 @@
       'center': '🌐 Центр',
       'off': '🌐 Сітка: Вимк'
     };
-    let gridIdx = 0;
+    var gridIdx = 0;
 
-    function updateFilters() {
-      const brightnessFactor = Math.pow(2, currentEV);
-      const preset = films[filmIdx];
+    function applyFilter() {
+      var brightnessFactor = Math.pow(2, currentEV);
+      var preset = films[filmIdx];
       if (preset.isBW) {
         v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
       } else {
@@ -444,7 +401,7 @@
     }
 
     function renderGrid() {
-      const mode = grids[gridIdx];
+      var mode = grids[gridIdx];
       document.getElementById('btn-grid').textContent = gridNames[mode];
       grid.innerHTML = '';
 
@@ -461,155 +418,155 @@
       }
     }
 
-    // 1. ЗАПУСК КАМЕРИ
-    btnStart.addEventListener('click', () => {
+    window.startApp = function() {
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
-      }).then(stream => {
+      }).then(function(stream) {
         v.srcObject = stream;
         videoTrack = stream.getVideoTracks()[0];
         v.play();
         btnStart.style.display = 'none';
         hud.style.display = 'flex';
         renderGrid();
-        updateFilters();
-      }).catch(err => {
+        applyFilter();
+      }).catch(function(err) {
         alert("Помилка камери: " + err.message);
       });
-    });
+    };
 
-    // 2. ПЛІВКИ
-    document.getElementById('btn-film').addEventListener('click', (e) => {
-      e.stopPropagation();
+    window.nextFilm = function(e) {
+      if (e) e.stopPropagation();
       filmIdx = (filmIdx + 1) % films.length;
       document.getElementById('btn-film').textContent = '🎞️ ' + films[filmIdx].name;
-      updateFilters();
-    });
+      applyFilter();
+    };
 
-    // 3. СІТКИ
-    document.getElementById('btn-grid').addEventListener('click', (e) => {
-      e.stopPropagation();
+    window.nextGrid = function(e) {
+      if (e) e.stopPropagation();
       gridIdx = (gridIdx + 1) % grids.length;
       renderGrid();
-    });
+    };
 
-    // 4. СЕНСОРИ (РІВЕНЬ І ДАЛЕКОМІР)
-    window.addEventListener('deviceorientation', (e) => {
-      const isLandscape = window.innerWidth > window.innerHeight;
-      const roll = isLandscape ? (e.beta || 0) : (e.gamma || 0);
-      const pitch = isLandscape ? (e.gamma || 0) : (e.beta || 0);
+    window.toggleLevel = function(e) {
+      if (e) e.stopPropagation();
+      isLevelActive = !isLevelActive;
+      level.style.display = isLevelActive ? 'flex' : 'none';
+      document.getElementById('btn-level').classList.toggle('active', isLevelActive);
+    };
+
+    window.toggleRange = function(e) {
+      if (e) e.stopPropagation();
+      isRangeActive = !isRangeActive;
+      rangefinder.style.display = isRangeActive ? 'block' : 'none';
+      document.getElementById('btn-range').classList.toggle('active', isRangeActive);
+    };
+
+    window.openSettings = function(e) {
+      if (e) e.stopPropagation();
+      settingsModal.style.display = 'flex';
+    };
+
+    window.closeSettings = function() {
+      settingsModal.style.display = 'none';
+    };
+
+    window.changeEV = function(val) {
+      currentEV = parseFloat(val);
+      document.getElementById('ev-val').textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      applyFilter();
+    };
+
+    window.setHeight = function(h, btn) {
+      document.querySelectorAll('#height-group .opt-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      cameraHeight = parseFloat(h);
+    };
+
+    window.setFocus = function(dist, btn) {
+      document.querySelectorAll('#focus-group .opt-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      if (videoTrack && videoTrack.applyConstraints) {
+        if (dist === 'auto') {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function(){});
+        } else {
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(function(){});
+        }
+      }
+    };
+
+    window.addEventListener('deviceorientation', function(e) {
+      var isLandscape = window.innerWidth > window.innerHeight;
+      var roll = isLandscape ? (e.beta || 0) : (e.gamma || 0);
+      var pitch = isLandscape ? (e.gamma || 0) : (e.beta || 0);
 
       if (isLevelActive) {
         levelLine.style.transform = 'rotate(' + roll + 'deg)';
-        const isAligned = Math.abs(roll) <= 0.6;
-        if (isAligned) {
+        if (Math.abs(roll) <= 0.6) {
           levelLine.classList.add('aligned');
-          if (!wasAligned && hapticsEnabled && navigator.vibrate) navigator.vibrate(20);
-          wasAligned = true;
         } else {
           levelLine.classList.remove('aligned');
-          wasAligned = false;
         }
       }
 
       if (isRangeActive) {
-        const declination = Math.max(1, 90 - Math.abs(pitch));
-        const rad = declination * (Math.PI / 180);
-        let dist = cameraHeight / Math.tan(rad);
+        var declination = Math.max(1, 90 - Math.abs(pitch));
+        var rad = declination * (Math.PI / 180);
+        var dist = cameraHeight / Math.tan(rad);
         dist = Math.min(Math.max(dist, 0.5), 50.0);
         rangeText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
       }
     }, true);
 
-    document.getElementById('btn-level').addEventListener('click', (e) => {
-      e.stopPropagation();
-      isLevelActive = !isLevelActive;
-      level.style.display = isLevelActive ? 'flex' : 'none';
-      document.getElementById('btn-level').classList.toggle('active', isLevelActive);
-    });
-
-    document.getElementById('btn-range').addEventListener('click', (e) => {
-      e.stopPropagation();
-      isRangeActive = !isRangeActive;
-      rangefinder.style.display = isRangeActive ? 'block' : 'none';
-      document.getElementById('btn-range').classList.toggle('active', isRangeActive);
-    });
-
-    // 5. НАЛАШТУВАННЯ
-    document.getElementById('btn-settings').addEventListener('click', (e) => {
-      e.stopPropagation();
-      settingsModal.style.display = 'flex';
-    });
-    document.getElementById('close-settings-btn').addEventListener('click', () => {
-      settingsModal.style.display = 'none';
-    });
-
-    document.getElementById('ev-slider').addEventListener('input', (e) => {
-      currentEV = parseFloat(e.target.value);
-      document.getElementById('ev-val').textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      updateFilters();
-    });
-
-    document.querySelectorAll('#height-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#height-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        cameraHeight = parseFloat(btn.getAttribute('data-h'));
-      });
-    });
-
-    document.querySelectorAll('#haptic-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#haptic-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        hapticsEnabled = btn.getAttribute('data-haptic') === 'on';
-      });
-    });
-
-    document.querySelectorAll('#focus-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const dist = btn.getAttribute('data-dist');
-        if (videoTrack && videoTrack.applyConstraints) {
-          if (dist === 'auto') {
-            videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
-          } else {
-            videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
-          }
-        }
-      });
-    });
-
-    document.querySelectorAll('#iso-group .opt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#iso-group .opt-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const val = btn.getAttribute('data-val');
-        if (videoTrack && videoTrack.applyConstraints) {
-          const caps = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-          if (caps.iso) {
-            videoTrack.applyConstraints({ advanced: [{ iso: val === 'auto' ? caps.iso.min : parseInt(val) }] }).catch(() => {});
-          }
-        }
-      });
-    });
-
-    // 6. ЗЙОМКА (SNAP)
-    function capturePhoto() {
+    window.capturePhoto = function(e) {
+      if (e) e.stopPropagation();
       if (settingsModal.style.display === 'flex') return;
 
       shutter.classList.add('flash');
-      setTimeout(() => shutter.classList.remove('flash'), 100);
+      setTimeout(function() { shutter.classList.remove('flash'); }, 100);
       if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
 
-      const w = v.videoWidth || 1920;
-      const h = v.videoHeight || 1080;
+      var w = v.videoWidth || 1920;
+      var h = v.videoHeight || 1080;
       canvas.width = w;
       canvas.height = h;
-      const ctx = canvas.getContext('2d');
+      var ctx = canvas.getContext('2d');
       ctx.drawImage(v, 0, 0, w, h);
 
-      const activePreset = films[filmIdx];
-    
+      var activePreset = films[filmIdx];
+      var evFactor = Math.pow(2, currentEV);
+
+      if (activePreset.isBW) {
+        var imgData = ctx.getImageData(0, 0, w, h);
+        var d = imgData.data;
+        var contrast = activePreset.contrast || 1.45;
+
+        for (var i = 0; i < d.length; i += 4) {
+          var r = d[i] * evFactor;
+          var g = d[i + 1] * evFactor;
+          var b = d[i + 2] * evFactor;
+
+          var y = 0.299 * r + 0.587 * g + 0.114 * b;
+          y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
+          y = Math.min(255, Math.max(0, y));
+
+          d[i] = y; d[i + 1] = y; d[i + 2] = y;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      canvas.toBlob(function(blob) {
+        if (!blob) return;
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'STREET_' + activePreset.name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 500);
+      }, 'image/jpeg', 0.98);
+    };
+
+    v.addEventListener('click', window.capturePhoto);
+  </script>
+</body>
+</html>
