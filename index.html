@@ -10,55 +10,18 @@
       margin: 0;
       padding: 0;
     }
-    body, html {
-      width: 100%;
-      height: 100%;
+    body {
+      margin: 0;
       background: #000;
       color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-      overflow: hidden;
-    }
-
-    #log {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      font-size: 11px;
       font-family: monospace;
-      color: #00ff66;
-      background: rgba(0,0,0,0.85);
-      z-index: 9999;
-      padding: 4px;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    #start-box {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      z-index: 1000;
-    }
-    #btn-start {
-      padding: 18px 36px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #000;
-      background: #ffb642;
-      border: 2px solid #fff;
-      border-radius: 8px;
-      cursor: pointer;
-      box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
-    }
-
+    /* Відео видошукача */
     video {
       position: fixed;
       top: 0;
@@ -70,27 +33,45 @@
       filter: grayscale(100%) contrast(150%);
     }
 
-    /* HUD */
-    #top-hud {
+    /* Стартова кнопка */
+    #btn-start {
       position: fixed;
-      top: 22px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      padding: 20px 40px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #ffb642;
+      border: 2px solid #fff;
+      border-radius: 10px;
+      color: #000;
+      cursor: pointer;
+      box-shadow: 0 0 24px rgba(255, 182, 66, 0.9);
+    }
+
+    /* Верхня панель інструментів */
+    #hud {
+      position: fixed;
+      top: 12px;
       left: 0;
       width: 100%;
       display: none;
       justify-content: space-around;
       align-items: center;
       padding: 6px 8px;
-      z-index: 50;
-      background: rgba(0, 0, 0, 0.65);
+      z-index: 500;
+      background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
     }
     .hud-btn {
       background: transparent;
       border: 1px solid rgba(255, 255, 255, 0.3);
       color: #eee;
-      padding: 6px 8px;
+      padding: 6px 10px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
     }
     .hud-btn.active {
@@ -99,514 +80,227 @@
       color: #ffb642;
     }
 
-    /* Сітка */
-    #grid-overlay {
+    /* Сітки */
+    #grid {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 5;
+      z-index: 50;
     }
-    .grid-line-v, .grid-line-h {
+    .grid-v, .grid-h {
       position: absolute;
-      background: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.35);
     }
-    .grid-line-v { top: 0; bottom: 0; width: 1px; }
-    .grid-line-h { left: 0; right: 0; height: 1px; }
+    .grid-v { top: 0; bottom: 0; width: 1px; }
+    .grid-h { left: 0; right: 0; height: 1px; }
 
-    /* Бурштиновий рівень */
-    #spirit-level {
+    /* Рівень горизонту */
+    #level {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 220px;
+      width: 200px;
       height: 20px;
       pointer-events: none;
-      z-index: 7;
+      z-index: 60;
       display: none;
       align-items: center;
       justify-content: center;
     }
-    .level-line {
+    #level-line {
       width: 100%;
       height: 2px;
-      background-color: #ffb642;
+      background: #ffb642;
       box-shadow: 0 0 8px rgba(255, 182, 66, 0.9);
-      transition: transform 0.04s ease-out;
       transform-origin: center center;
     }
-    .level-line.aligned {
+    #level-line.aligned {
       height: 3px;
-      background-color: #ffe082;
-      box-shadow: 0 0 20px rgba(255, 182, 66, 1);
+      background: #ffe082;
+      box-shadow: 0 0 16px rgba(255, 182, 66, 1);
     }
 
-    /* Далекомір */
-    #rangefinder-overlay {
+    /* Механічний затвор */
+    #shutter {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      pointer-events: none;
-      z-index: 8;
-      display: none;
-    }
-    .rangefinder-hud-val {
-      position: absolute;
-      top: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.8);
-      border: 1px solid #ffb642;
-      color: #ffb642;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-family: monospace;
-    }
-    .stadiametric-svg {
-      width: 100%;
-      height: 100%;
-      stroke: #ffb642;
-      stroke-width: 1.5;
-      fill: none;
-    }
-
-    /* Затвор */
-    #iris-shutter {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 40;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background: #000;
+      z-index: 800;
       opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.08s ease-out;
     }
-    .iris-blade-container {
-      width: 140vmax;
-      height: 140vmax;
-      border-radius: 50%;
-      background: radial-gradient(circle, transparent 18%, rgba(12,12,12,0.98) 22%);
-      transform: scale(2.8);
-    }
-    .iris-anim {
-      animation: irisMech 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    @keyframes irisMech {
-      0% { opacity: 0; transform: scale(2.8) rotate(0deg); }
-      20% { opacity: 1; }
-      50% { opacity: 1; transform: scale(0.28) rotate(60deg); }
-      80% { opacity: 1; }
-      100% { opacity: 0; transform: scale(2.8) rotate(120deg); }
+    #shutter.flash {
+      opacity: 0.9;
     }
 
-    /* Модальне вікно налаштувань */
-    #settings-modal {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(12, 12, 12, 0.96);
-      border-top: 1px solid #333;
-      padding: 16px;
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-      z-index: 60;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    .setting-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #888;
-      margin-bottom: 6px;
-    }
-    .setting-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      width: 100%;
-    }
-    .opt-btn {
-      padding: 8px 4px;
-      background: #1e1e1e;
-      color: #aaa;
-      border: 1px solid #333;
-      border-radius: 4px;
-      font-size: 11px;
-      cursor: pointer;
-      text-align: center;
-      font-family: monospace;
-    }
-    .opt-btn.active {
-      background: #fff;
-      color: #000;
-      font-weight: bold;
-      border-color: #fff;
-    }
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-    }
-    input[type=range] {
-      flex: 1;
-      accent-color: #fff;
-      height: 4px;
-    }
-    .slider-val {
-      font-size: 12px;
-      font-family: monospace;
-      min-width: 45px;
-      text-align: right;
-    }
-    #close-settings-btn {
-      width: 100%;
-      padding: 11px;
-      background: #222;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      font-size: 12px;
-      margin-top: 4px;
-      cursor: pointer;
-    }
     canvas {
       display: none;
     }
   </style>
 </head>
 <body>
-  <div id="log">Натисніть кнопку нижче</div>
-
-  <div id="start-box">
-    <div style="font-size: 22px; font-weight: bold; color: #ffb642; letter-spacing: 1px;">STREETCAM</div>
-    <div style="font-size: 13px; color: #888; text-align: center; max-width: 280px;">Натисніть для запуску оптичного видошукача</div>
-    <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
-  </div>
-
   <video id="v" autoplay playsinline muted></video>
-  <div id="grid-overlay"></div>
+  <div id="grid"></div>
+  <div id="level"><div id="level-line"></div></div>
+  <div id="shutter"></div>
 
-  <div id="spirit-level">
-    <div class="level-line"></div>
+  <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
+
+  <div id="hud">
+    <button class="hud-btn" id="btn-snap">📷 SNAP</button>
+    <button class="hud-btn" id="btn-film">🎞️ Tri-X 400</button>
+    <button class="hud-btn" id="btn-grid">🌐 Третини</button>
+    <button class="hud-btn" id="btn-level">🧭 Рівень</button>
   </div>
 
-  <div id="rangefinder-overlay">
-    <div class="rangefinder-hud-val" id="rangefinder-text">DIST: -- m (H: 1.6m)</div>
-    <svg class="stadiametric-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <line x1="420" y1="120" x2="440" y2="120" />
-      <line x1="420" y1="880" x2="440" y2="880" />
-      <text x="380" y="505" fill="#ffb642" font-size="11" font-family="monospace">1.2m</text>
-      
-      <line x1="460" y1="260" x2="475" y2="260" />
-      <line x1="460" y1="740" x2="475" y2="740" />
-      <text x="425" y="505" fill="#ffb642" font-size="11" font-family="monospace">2.0m</text>
-
-      <line x1="485" y1="340" x2="495" y2="340" />
-      <line x1="485" y1="660" x2="495" y2="660" />
-      <text x="505" y="505" fill="#ffb642" font-size="11" font-family="monospace">3.0m</text>
-    </svg>
-  </div>
-
-  <div id="iris-shutter">
-    <div class="iris-blade-container"></div>
-  </div>
-
-  <div id="top-hud">
-    <button class="hud-btn" id="shutter-hud-btn">📷 SNAP</button>
-    <button class="hud-btn" id="level-btn">🧭 Рівень</button>
-    <button class="hud-btn" id="range-btn">🎯 Далекомір</button>
-    <button class="hud-btn" id="lens-btn">🔍 1.0x</button>
-    <button class="hud-btn" id="grid-btn">🌐 Третини</button>
-    <button class="hud-btn" id="film-btn">🎞️ Tri-X 400</button>
-    <button class="hud-btn" id="open-settings-btn">⚙️</button>
-  </div>
-
-  <div id="settings-modal">
-    <div>
-      <div class="setting-title">Висота далекоміра</div>
-      <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="height-group">
-        <button class="opt-btn active" data-h="1.6">👁️ Очі (1.60 м)</button>
-        <button class="opt-btn" data-h="1.3">🥋 Пояс (1.30 м)</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title">Вібрація горизонту</div>
-      <div class="setting-grid" style="grid-template-columns: repeat(2, 1fr);" id="haptic-group">
-        <button class="opt-btn active" data-haptic="on">📳 Увімк</button>
-        <button class="opt-btn" data-haptic="off">🔕 Вимк</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title">Експокорекція (EV)</div>
-      <div class="slider-container">
-        <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.1" value="0.0">
-        <span class="slider-val" id="ev-val">0.0 EV</span>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title">Зонне фокусування Leica</div>
-      <div class="setting-grid" id="focus-group">
-        <button class="opt-btn active" data-dist="auto">AF Auto</button>
-        <button class="opt-btn" data-dist="0.7">0.7 m</button>
-        <button class="opt-btn" data-dist="1.0">1.0 m</button>
-        <button class="opt-btn" data-dist="1.2">1.2 m</button>
-        <button class="opt-btn" data-dist="1.5">1.5 m</button>
-        <button class="opt-btn" data-dist="2.0">2.0 m</button>
-        <button class="opt-btn" data-dist="3.0">3.0 m</button>
-        <button class="opt-btn" data-dist="5.0">5.0 m</button>
-        <button class="opt-btn" data-dist="100.0" style="grid-column: span 4;">∞ Нескінченність</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="setting-title">ISO</div>
-      <div class="setting-grid" id="iso-group">
-        <button class="opt-btn active" data-val="auto">Auto</button>
-        <button class="opt-btn" data-val="400">400</button>
-        <button class="opt-btn" data-val="800">800</button>
-        <button class="opt-btn" data-val="1600">1600</button>
-      </div>
-    </div>
-
-    <button id="close-settings-btn">Закрити налаштування</button>
-  </div>
-
-  <canvas id="capture-canvas"></canvas>
+  <canvas id="c"></canvas>
 
   <script>
-    const log = document.getElementById('log');
-    window.onerror = function(msg, url, line) {
-      log.textContent = "❌ Err: " + msg + " (L:" + line + ")";
-      log.style.color = "#ff4444";
-    };
-
-    const btnStart = document.getElementById('btn-start');
-    const startBox = document.getElementById('start-box');
     const v = document.getElementById('v');
-    const topHud = document.getElementById('top-hud');
+    const btnStart = document.getElementById('btn-start');
+    const hud = document.getElementById('hud');
+    const grid = document.getElementById('grid');
+    const level = document.getElementById('level');
+    const levelLine = document.getElementById('level-line');
+    const shutter = document.getElementById('shutter');
+    const canvas = document.getElementById('c');
 
-    let videoTrack = null;
-    let currentStream = null;
-    let currentEV = 0.0;
+    const btnSnap = document.getElementById('btn-snap');
+    const btnFilm = document.getElementById('btn-film');
+    const btnGrid = document.getElementById('btn-grid');
+    const btnLevel = document.getElementById('btn-level');
+
     let isLevelActive = false;
-    let isRangeActive = false;
-    let hapticsEnabled = true;
-    let wasAligned = false;
-    let cameraHeight = 1.6;
 
-    const filmPresets = [
-      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 14 },
-      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 9 },
-      { name: 'T-Max 3200', isBW: true, contrast: 1.85, grain: 24 },
-      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 5 },
-      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 10 },
-      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 16 }
+    const films = [
+      { name: 'Tri-X 400', isBW: true, filter: 'grayscale(100%) contrast(155%)' },
+      { name: 'HP5 Plus', isBW: true, filter: 'grayscale(100%) contrast(125%)' },
+      { name: 'T-Max 3200', isBW: true, filter: 'grayscale(100%) contrast(190%)' },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)' }
     ];
-    let currentFilmIdx = 0;
+    let filmIdx = 0;
 
-    const zoomLevels = [
-      { label: '🔍 1.0x', zoom: 1.0 },
-      { label: '🔍 2.0x', zoom: 2.0 },
-      { label: '🔍 3.0x', zoom: 3.0 },
-      { label: '🔍 0.5x', zoom: 0.5 }
-    ];
-    let currentZoomIdx = 0;
+    const grids = ['thirds', 'center', 'off'];
+    const gridNames = { 'thirds': '🌐 Третини', 'center': '🌐 Центр', 'off': '🌐 Сітка: Вимк' };
+    let gridIdx = 0;
 
-    const gridModes = ['thirds', 'golden', 'diagonals', 'center', 'off'];
-    const gridLabels = {
-      'thirds': '🌐 Третини',
-      'golden': '🌐 Золотий перетин',
-      'diagonals': '🌐 Діагоналі',
-      'center': '🌐 Центр',
-      'off': '🌐 Сітка: Вимк'
-    };
-    let currentGridIdx = 0;
-
-    // 1. БЕЗВІДМОВНИЙ ЗАПУСК КАМЕРИ (ЯК У ТЕСТІ)
-    btnStart.addEventListener('click', function() {
-      log.textContent = "⏳ Підключення камери...";
+    // 1. ЗАПУСК КАМЕРИ
+    btnStart.addEventListener('click', () => {
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
-      }).then(function(stream) {
-        currentStream = stream;
+      }).then(stream => {
         v.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
         v.play();
-
-        startBox.style.display = 'none';
-        topHud.style.display = 'flex';
-        log.textContent = "🟢 StreetCam активна";
-
+        btnStart.style.display = 'none';
+        hud.style.display = 'flex';
         renderGrid();
-        updateFilters();
-        initSensors();
-      }).catch(function(err) {
-        log.textContent = "❌ Помилка: " + err.name + " - " + err.message;
-        log.style.color = "#ff4444";
+        initOrientation();
+      }).catch(err => {
+        alert("Помилка камери: " + err.message);
       });
     });
 
-    // 2. СІТКА
-    const gridOverlay = document.getElementById('grid-overlay');
-    const gridBtn = document.getElementById('grid-btn');
+    // 2. ЗМІНА ПЛІВКИ
+    btnFilm.addEventListener('click', (e) => {
+      e.stopPropagation();
+      filmIdx = (filmIdx + 1) % films.length;
+      btnFilm.textContent = '🎞️ ' + films[filmIdx].name;
+      v.style.filter = films[filmIdx].filter;
+    });
 
+    // 3. СІТКИ
     function renderGrid() {
-      const mode = gridModes[currentGridIdx];
-      gridBtn.textContent = gridLabels[mode];
-      gridOverlay.innerHTML = '';
-
+      const mode = grids[gridIdx];
+      btnGrid.textContent = gridNames[mode];
+      grid.innerHTML = '';
       if (mode === 'thirds') {
-        gridOverlay.innerHTML = '<div class="grid-line-v" style="left:33.33%;"></div><div class="grid-line-v" style="left:66.66%;"></div><div class="grid-line-h" style="top:33.33%;"></div><div class="grid-line-h" style="top:66.66%;"></div>';
-      } else if (mode === 'golden') {
-        gridOverlay.innerHTML = '<div class="grid-line-v" style="left:38.2%;"></div><div class="grid-line-v" style="left:61.8%;"></div><div class="grid-line-h" style="top:38.2%;"></div><div class="grid-line-h" style="top:61.8%;"></div>';
-      } else if (mode === 'diagonals') {
-        gridOverlay.innerHTML = '<svg style="width:100%;height:100%;position:absolute;top:0;left:0;stroke:rgba(255,255,255,0.4);stroke-width:1.5;fill:none;" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /></svg>';
+        grid.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
       } else if (mode === 'center') {
-        gridOverlay.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;"><div style="position:absolute;top:15px;left:0;width:32px;height:1px;background:rgba(255,255,255,0.6);"></div><div style="position:absolute;top:0;left:15px;width:1px;height:32px;background:rgba(255,255,255,0.6);"></div></div>';
+        grid.innerHTML = '<div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
       }
     }
-
-    gridBtn.addEventListener('click', function(e) {
+    btnGrid.addEventListener('click', (e) => {
       e.stopPropagation();
-      currentGridIdx = (currentGridIdx + 1) % gridModes.length;
+      gridIdx = (gridIdx + 1) % grids.length;
       renderGrid();
     });
 
-    // 3. ФІЛЬТРИ ТА ПЛІВКИ
-    const filmBtn = document.getElementById('film-btn');
-    function updateFilters() {
-      const brightnessFactor = Math.pow(2, currentEV);
-      const preset = filmPresets[currentFilmIdx];
-      if (preset.isBW) {
-        v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
-      } else {
-        v.style.filter = preset.filter + ' brightness(' + (brightnessFactor * 100) + '%)';
-      }
-    }
-
-    filmBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      currentFilmIdx = (currentFilmIdx + 1) % filmPresets.length;
-      filmBtn.textContent = '🎞️ ' + filmPresets[currentFilmIdx].name;
-      updateFilters();
-    });
-
-    // 4. РІВЕНЬ ТА ДАЛЕКОМІР
-    const levelBtn = document.getElementById('level-btn');
-    const spiritLevel = document.getElementById('spirit-level');
-    const levelLine = document.querySelector('.level-line');
-    const rangeBtn = document.getElementById('range-btn');
-    const rangeOverlay = document.getElementById('rangefinder-overlay');
-    const rangeText = document.getElementById('rangefinder-text');
-
-    levelBtn.addEventListener('click', function(e) {
+    // 4. РІВЕНЬ ГОРИЗОНТУ
+    btnLevel.addEventListener('click', (e) => {
       e.stopPropagation();
       isLevelActive = !isLevelActive;
-      spiritLevel.style.display = isLevelActive ? 'flex' : 'none';
-      levelBtn.classList.toggle('active', isLevelActive);
+      level.style.display = isLevelActive ? 'flex' : 'none';
+      btnLevel.classList.toggle('active', isLevelActive);
     });
 
-    rangeBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      isRangeActive = !isRangeActive;
-      rangeOverlay.style.display = isRangeActive ? 'block' : 'none';
-      rangeBtn.classList.toggle('active', isRangeActive);
-    });
-
-    function initSensors() {
-      window.addEventListener('deviceorientation', function(event) {
-        const isLandscape = window.innerWidth > window.innerHeight;
-        const roll = isLandscape ? (event.beta || 0) : (event.gamma || 0);
-        const pitch = isLandscape ? (event.gamma || 0) : (event.beta || 0);
-
-        if (isLevelActive) {
-          levelLine.style.transform = 'rotate(' + roll + 'deg)';
-          const isAligned = Math.abs(roll) <= 0.5;
-          if (isAligned) {
-            levelLine.classList.add('aligned');
-            if (!wasAligned && hapticsEnabled && navigator.vibrate) navigator.vibrate(20);
-            wasAligned = true;
-          } else {
-            levelLine.classList.remove('aligned');
-            wasAligned = false;
-          }
-        }
-
-        if (isRangeActive) {
-          const declination = Math.max(1, 90 - Math.abs(pitch));
-          const rad = declination * (Math.PI / 180);
-          let dist = cameraHeight / Math.tan(rad);
-          dist = Math.min(Math.max(dist, 0.5), 50.0);
-          rangeText.textContent = 'DIST: ' + dist.toFixed(1) + ' m (H: ' + cameraHeight.toFixed(2) + 'm)';
+    function initOrientation() {
+      window.addEventListener('deviceorientation', (e) => {
+        if (!isLevelActive) return;
+        const roll = window.innerWidth > window.innerHeight ? (e.beta || 0) : (e.gamma || 0);
+        levelLine.style.transform = 'rotate(' + roll + 'deg)';
+        if (Math.abs(roll) <= 0.6) {
+          levelLine.classList.add('aligned');
+          if (navigator.vibrate) navigator.vibrate(15);
+        } else {
+          levelLine.classList.remove('aligned');
         }
       }, true);
     }
 
-    // 5. ОПТИЧНИЙ ЗУМ
-    const lensBtn = document.getElementById('lens-btn');
-    lensBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
-      lensBtn.textContent = zoomLevels[currentZoomIdx].label;
-      if (videoTrack && videoTrack.applyConstraints && videoTrack.getCapabilities) {
-        const caps = videoTrack.getCapabilities();
-        if (caps && caps.zoom) {
-          const targetZoom = zoomLevels[currentZoomIdx].zoom;
-          videoTrack.applyConstraints({ advanced: [{ zoom: Math.min(Math.max(targetZoom, caps.zoom.min), caps.zoom.max) }] }).catch(function(){});
+    // 5. ЗЙОМКА (SNAP)
+    function capturePhoto() {
+      // Анімація затвора
+      shutter.classList.add('flash');
+      setTimeout(() => shutter.classList.remove('flash'), 100);
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+
+      const w = v.videoWidth || 1920;
+      const h = v.videoHeight || 1080;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(v, 0, 0, w, h);
+
+      // Застосування чорно-білого профілю
+      if (films[filmIdx].isBW) {
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          let y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          y = ((y / 255 - 0.5) * 1.45 + 0.5) * 255;
+          y = Math.min(255, Math.max(0, y));
+          d[i] = y; d[i + 1] = y; d[i + 2] = y;
         }
+        ctx.putImageData(imgData, 0, 0);
       }
-    });
 
-    // 6. НАЛАШТУВАННЯ
-    const settingsModal = document.getElementById('settings-modal');
-    document.getElementById('open-settings-btn').addEventListener('click', function(e) {
+      // Збереження
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'STREET_' + films[filmIdx].name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 500);
+      }, 'image/jpeg', 0.95);
+    }
+
+    btnSnap.addEventListener('click', (e) => {
       e.stopPropagation();
-      settingsModal.style.display = 'flex';
-    });
-    document.getElementById('close-settings-btn').addEventListener('click', function() {
-      settingsModal.style.display = 'none';
+      capturePhoto();
     });
 
-    const evSlider = document.getElementById('ev-slider');
-    const evVal = document.getElementById('ev-val');
-    evSlider.addEventListener('input', function(e) {
-      currentEV = parseFloat(e.target.value);
-      evVal.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      updateFilters();
-    });
-
-    document.querySelectorAll('#height-group .opt-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('#height-group .opt-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        cameraHeight = parseFloat(btn.getAttribute('data-h'));
-      });
-    });
-
-    document.querySelectorAll('#haptic-group .opt-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('#haptic-group .opt-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        hapticsEnabled = btn.getAttribute('data-haptic') === 'on';
-      });
-    });
-
-    document.querySelectorAll('#focus-group .opt-btn').forEach(function(btn) {
-      btn.addEventListener('cli
+    v.addEventListener('click', capturePhoto);
+  </script>
+</body>
+</html>
