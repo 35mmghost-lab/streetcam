@@ -31,7 +31,6 @@
       color: #ffb642;
     }
 
-    /* Рамка кадрування */
     #frameline {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 40; display: none;
@@ -41,7 +40,6 @@
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
     }
 
-    /* Сітки */
     #grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.4); }
     .grid-v { top: 0; bottom: 0; width: 1px; }
@@ -52,7 +50,6 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Далекомір */
     #rangefinder {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 70; display: none;
@@ -60,7 +57,6 @@
     .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; }
     .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
 
-    /* Стелс-оверлей */
     #stealth-overlay {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: #000; z-index: 950; display: none; cursor: pointer;
@@ -71,7 +67,6 @@
       color: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
 
-    /* Модальне вікно налаштувань */
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(15, 15, 15, 0.98); border-top: 1px solid #333;
@@ -111,7 +106,6 @@
 
   <div id="grid"></div>
 
-  <!-- Стадіометричний далекомір -->
   <div id="rangefinder">
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="390" y1="120" x2="430" y2="120" />
@@ -130,7 +124,6 @@
 
   <div id="shutter"></div>
 
-  <!-- Стелс-оверлей -->
   <div id="stealth-overlay" onclick="takePhoto(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
@@ -138,17 +131,15 @@
   <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
-    <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
+    <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 SNAP</button>
     <button class="hud-btn" id="btn-film" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Сітка: Вимк</button>
-    <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Далекомір</button>
-    <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Стелс</button>
+    <button class="hud-btn" id="btn-grid" onclick="nextGrid()">🌐 Diagonals</button>
+    <button class="hud-btn" id="btn-range" onclick="toggleRange()">🎯 Rangefinder</button>
+    <button class="hud-btn" id="btn-stealth" onclick="enterStealth()">🕶️ Stealth</button>
     <button class="hud-btn" id="btn-settings" onclick="openSettings()">⚙️</button>
   </div>
 
-  <!-- Модальне вікно налаштувань -->
   <div id="settings-modal">
-    <!-- МОВА -->
     <div>
       <div class="setting-title" id="t-lang">LANGUAGE</div>
       <div class="setting-grid" id="lang-group" style="grid-template-columns: repeat(3, 1fr);">
@@ -158,7 +149,6 @@
       </div>
     </div>
 
-    <!-- ФОРМАТ ЗБЕРЕЖЕННЯ -->
     <div>
       <div class="setting-title" id="t-save">SAVE FORMAT</div>
       <div class="setting-grid" id="save-group" style="grid-template-columns: repeat(2, 1fr);">
@@ -167,7 +157,6 @@
       </div>
     </div>
 
-    <!-- КЛАСИЧНІ РАМКИ LEICA -->
     <div>
       <div class="setting-title" id="t-frames">FRAMELINES (ASPECT RATIO)</div>
       <div class="setting-grid" id="frames-group">
@@ -181,7 +170,6 @@
       </div>
     </div>
 
-    <!-- ЕКСПОКОРЕКЦІЯ -->
     <div>
       <div class="setting-title" id="t-ev">EXPOSURE (EV)</div>
       <div class="slider-container">
@@ -190,7 +178,6 @@
       </div>
     </div>
 
-    <!-- ЗОННЕ ФОКУСУВАННЯ -->
     <div>
       <div class="setting-title" id="t-focus">LEICA ZONE FOCUS</div>
       <div class="setting-grid" id="focus-group">
@@ -244,73 +231,28 @@
         applyFilmFilter();
         renderFrameline();
       } catch (err) {
-        alert("Помилка камери: " + err.message);
+        alert("Camera error: " + err.message);
       }
     }
 
     const i18n = {
       ua: {
-        snap: '📷 СПУСК',
-        range: '🎯 Далекомір',
-        stealth: '🕶️ Стелс',
-        stealthExit: '✕ ВИЙТИ',
-        tLang: 'МОВА / LANGUAGE',
-        tSave: 'ФОРМАТ ЗБЕРЕЖЕННЯ',
-        tFrames: 'КЛАСИЧНІ РАМКИ (FRAMELINES)',
-        tEv: 'ЕКСПОКОРЕКЦІЯ (EV)',
-        tFocus: 'ЗОННЕ ФОКУСУВАННЯ LEICA',
-        optInf: '∞ Нескінченність',
-        close: 'Закрити',
-        grids: {
-          'off': '🌐 Сітка: Вимк',
-          'thirds': '🌐 Третини',
-          'golden': '🌐 Золотий',
-          'fibonacci': '🌐 Фібоначчі',
-          'diagonals': '🌐 Діагоналі',
-          'center': '🌐 Центр'
-        }
+        snap: '📷 СПУСК', range: '🎯 Далекомір', stealth: '🕶️ Стелс', stealthExit: '✕ ВИЙТИ',
+        tLang: 'МОВА / LANGUAGE', tSave: 'ФОРМАТ ЗБЕРЕЖЕННЯ', tFrames: 'КЛАСИЧНІ РАМКИ (FRAMELINES)',
+        tEv: 'ЕКСПОКОРЕКЦІЯ (EV)', tFocus: 'ЗОННЕ ФОКУСУВАННЯ LEICA', optInf: '∞ Нескінченність', close: 'Закрити',
+        grids: { 'off': '🌐 Сітка: Вимк', 'thirds': '🌐 Третини', 'golden': '🌐 Золотий', 'fibonacci': '🌐 Фібоначчі', 'diagonals': '🌐 Діагоналі', 'center': '🌐 Центр' }
       },
       en: {
-        snap: '📷 SNAP',
-        range: '🎯 Rangefinder',
-        stealth: '🕶️ Stealth',
-        stealthExit: '✕ EXIT',
-        tLang: 'LANGUAGE',
-        tSave: 'SAVE FORMAT',
-        tFrames: 'FRAMELINES (ASPECT RATIO)',
-        tEv: 'EXPOSURE (EV)',
-        tFocus: 'LEICA ZONE FOCUS',
-        optInf: '∞ Infinity',
-        close: 'Close',
-        grids: {
-          'off': '🌐 Grid: Off',
-          'thirds': '🌐 Thirds',
-          'golden': '🌐 Golden',
-          'fibonacci': '🌐 Fibonacci',
-          'diagonals': '🌐 Diagonals',
-          'center': '🌐 Center'
-        }
+        snap: '📷 SNAP', range: '🎯 Rangefinder', stealth: '🕶️ Stealth', stealthExit: '✕ EXIT',
+        tLang: 'LANGUAGE', tSave: 'SAVE FORMAT', tFrames: 'FRAMELINES (ASPECT RATIO)',
+        tEv: 'EXPOSURE (EV)', tFocus: 'LEICA ZONE FOCUS', optInf: '∞ Infinity', close: 'Close',
+        grids: { 'off': '🌐 Grid: Off', 'thirds': '🌐 Thirds', 'golden': '🌐 Golden', 'fibonacci': '🌐 Fibonacci', 'diagonals': '🌐 Diagonals', 'center': '🌐 Center' }
       },
       ja: {
-        snap: '📷 シャッター',
-        range: '🎯 距離計',
-        stealth: '🕶️ ステルス',
-        stealthExit: '✕ 終了',
-        tLang: '言語設定',
-        tSave: '保存形式',
-        tFrames: 'フレーム枠 (アスペクト比)',
-        tEv: '露出補正 (EV)',
-        tFocus: 'ゾーンフォーカス',
-        optInf: '∞ 無限遠',
-        close: '閉じる',
-        grids: {
-          'off': '🌐 グリッド: 切',
-          'thirds': '🌐 三分割',
-          'golden': '🌐 黄金比',
-          'fibonacci': '🌐 フィボナッチ',
-          'diagonals': '🌐 対角線',
-          'center': '🌐 中央クロス'
-        }
+        snap: '📷 シャッター', range: '🎯 距離計', stealth: '🕶️ ステルス', stealthExit: '✕ 終了',
+        tLang: '言語設定', tSave: '保存形式', tFrames: 'フレーム枠 (アスペクト比)',
+        tEv: '露出補正 (EV)', tFocus: 'ゾーンフォーカス', optInf: '∞ 無限遠', close: '閉じる',
+        grids: { 'off': '🌐 グリッド: 切', 'thirds': '🌐 三分割', 'golden': '🌐 黄金比', 'fibonacci': '🌐 フィボナッチ', 'diagonals': '🌐 対角線', 'center': '🌐 中央クロス' }
       }
     };
     let currentLang = 'en';
@@ -359,7 +301,6 @@
       const mode = grids[gridIdx];
       btnGrid.textContent = i18n[currentLang].grids[mode];
       grid.innerHTML = '';
-
       if (mode === 'thirds') {
         grid.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
       } else if (mode === 'golden') {
@@ -395,13 +336,8 @@
       if (navigator.vibrate) navigator.vibrate([20, 20]);
     }
 
-    function openSettings() {
-      settingsModal.style.display = 'flex';
-    }
-
-    function closeSettings() {
-      settingsModal.style.display = 'none';
-    }
+    function openSettings() { settingsModal.style.display = 'flex'; }
+    function closeSettings() { settingsModal.style.display = 'none'; }
 
     function setLanguage(lang, el) {
       currentLang = lang;
@@ -478,4 +414,27 @@
         } else {
           videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
         }
-   
+      }
+    }
+
+    function buildDNG(width, height, rgba) {
+      const imageBytes = width * height * 3;
+      const headerSize = 8;
+      const ifdOffset = headerSize + imageBytes;
+      const numEntries = 9;
+      const ifdSize = 2 + (numEntries * 12) + 4;
+      const totalSize = ifdOffset + ifdSize + 64;
+
+      const buffer = new ArrayBuffer(totalSize);
+      const view = new DataView(buffer);
+      let p = 0;
+
+      view.setUint16(p, 0x4949, true); p += 2;
+      view.setUint16(p, 42, true); p += 2;
+      view.setUint32(p, ifdOffset, true); p += 4;
+
+      const imgBytes = new Uint8Array(buffer, p, imageBytes);
+      for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
+        imgBytes[j] = rgba[i];
+        imgBytes[j + 1] = rgba[i + 1];
+        imgBytes[j + 2] = rgba[i
