@@ -47,7 +47,7 @@
     .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
 
     #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 950; display: none; cursor: pointer; }
-    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
+    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
 
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
@@ -162,7 +162,8 @@
   <canvas id="c"></canvas>
 
   <script>
-    const films = [
+    // 1. Оголошення даних та пресетів
+    var films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
       { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
       { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
@@ -170,9 +171,9 @@
       { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
       { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
     ];
-    let filmIdx = 0;
+    var filmIdx = 0;
 
-    const frameList = [
+    var frameList = [
       { name: 'Full', p: null, l: null },
       { name: '3:2', p: 2 / 3, l: 3 / 2 },
       { name: '4:3', p: 3 / 4, l: 4 / 3 },
@@ -181,12 +182,12 @@
       { name: '16:9', p: 9 / 16, l: 16 / 9 },
       { name: '65:24', p: 24 / 65, l: 65 / 24 }
     ];
-    let currentFrameIdx = 1;
+    var currentFrameIdx = 1;
 
-    const grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    let gridIdx = 0;
+    var grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
+    var gridIdx = 0;
 
-    const i18n = {
+    var i18n = {
       ua: {
         snap: '📷 СПУСК', range: '🎯 Далекомір', stealth: '🕶️ Стелс', stealthExit: '✕ ВИЙТИ',
         tLang: 'МОВА / LANGUAGE', tSave: 'ФОРМАТ ЗБЕРЕЖЕННЯ', tFrames: 'КЛАСИЧНІ РАМКИ (FRAMELINES)',
@@ -206,49 +207,51 @@
         grids: { 'off': '🌐 グリッド: 切', 'thirds': '🌐 三分割', 'golden': '🌐 黄金比', 'fibonacci': '🌐 フィボナッチ', 'diagonals': '🌐 対角線', 'center': '🌐 中央クロス' }
       }
     };
-    let currentLang = 'ua';
+    var currentLang = 'ua';
 
-    let videoTrack = null;
-    let isRangeActive = false;
-    let currentEV = 0.0;
-    let saveFormat = 'jpg';
+    var videoTrack = null;
+    var isRangeActive = false;
+    var currentEV = 0.0;
+    var saveFormat = 'jpg';
 
-    const v = document.getElementById('v');
-    const btnStart = document.getElementById('btn-start');
-    const hud = document.getElementById('hud');
-    const grid = document.getElementById('grid');
-    const rangefinder = document.getElementById('rangefinder');
-    const shutter = document.getElementById('shutter');
-    const canvas = document.getElementById('c');
-    const btnFilm = document.getElementById('btn-film');
-    const btnGrid = document.getElementById('btn-grid');
-    const btnRange = document.getElementById('btn-range');
-    const stealthOverlay = document.getElementById('stealth-overlay');
-    const settingsModal = document.getElementById('settings-modal');
-    const evVal = document.getElementById('ev-val');
-    const frameline = document.getElementById('frameline');
-    const frameBox = document.getElementById('frame-box');
+    // 2. DOM-елементи
+    var v = document.getElementById('v');
+    var btnStart = document.getElementById('btn-start');
+    var hud = document.getElementById('hud');
+    var grid = document.getElementById('grid');
+    var rangefinder = document.getElementById('rangefinder');
+    var shutter = document.getElementById('shutter');
+    var canvas = document.getElementById('c');
+    var btnFilm = document.getElementById('btn-film');
+    var btnGrid = document.getElementById('btn-grid');
+    var btnRange = document.getElementById('btn-range');
+    var stealthOverlay = document.getElementById('stealth-overlay');
+    var settingsModal = document.getElementById('settings-modal');
+    var evVal = document.getElementById('ev-val');
+    var frameline = document.getElementById('frameline');
+    var frameBox = document.getElementById('frame-box');
 
-    async function startApp() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-          audio: false
+    // 3. Запуск камери (перевірений метод)
+    function startApp() {
+      btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+        .then(function(stream) {
+          v.srcObject = stream;
+          videoTrack = stream.getVideoTracks()[0];
+          btnStart.style.display = 'none';
+          hud.style.display = 'flex';
+          applyFilmFilter();
+          renderFrameline();
+        })
+        .catch(function(err) {
+          btnStart.textContent = "▶ УВІМКНУТИ КАМЕРУ";
+          alert("Помилка камери: " + err.message);
         });
-        v.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-        btnStart.style.display = 'none';
-        hud.style.display = 'flex';
-        applyFilmFilter();
-        renderFrameline();
-      } catch (err) {
-        alert("Помилка камери: " + err.message);
-      }
     }
 
     function applyFilmFilter() {
-      const preset = films[filmIdx];
-      const brightnessFactor = Math.pow(2, currentEV);
+      var preset = films[filmIdx];
+      var brightnessFactor = Math.pow(2, currentEV);
       if (preset.isBW) {
         v.style.filter = 'grayscale(100%) contrast(' + (preset.contrast * 100) + '%) brightness(' + (brightnessFactor * 100) + '%)';
       } else {
@@ -263,7 +266,7 @@
     }
 
     function renderGrid() {
-      const mode = grids[gridIdx];
+      var mode = grids[gridIdx];
       btnGrid.textContent = i18n[currentLang].grids[mode];
       grid.innerHTML = '';
       if (mode === 'thirds') {
@@ -306,10 +309,11 @@
 
     function setLanguage(lang, el) {
       currentLang = lang;
-      document.querySelectorAll('#lang-group .opt-btn').forEach(b => b.classList.remove('active'));
+      var langBtns = document.querySelectorAll('#lang-group .opt-btn');
+      for (var i = 0; i < langBtns.length; i++) { langBtns[i].classList.remove('active'); }
       el.classList.add('active');
 
-      const dict = i18n[currentLang];
+      var dict = i18n[currentLang];
       document.getElementById('btn-snap').textContent = dict.snap;
       document.getElementById('btn-range').textContent = dict.range;
       document.getElementById('btn-stealth').textContent = dict.stealth;
@@ -326,29 +330,31 @@
 
     function setSaveFormat(fmt, el) {
       saveFormat = fmt;
-      document.querySelectorAll('#save-group .opt-btn').forEach(b => b.classList.remove('active'));
+      var saveBtns = document.querySelectorAll('#save-group .opt-btn');
+      for (var i = 0; i < saveBtns.length; i++) { saveBtns[i].classList.remove('active'); }
       el.classList.add('active');
     }
 
     function setFrame(idx, el) {
       currentFrameIdx = idx;
-      document.querySelectorAll('#frames-group .opt-btn').forEach(b => b.classList.remove('active'));
+      var frameBtns = document.querySelectorAll('#frames-group .opt-btn');
+      for (var i = 0; i < frameBtns.length; i++) { frameBtns[i].classList.remove('active'); }
       el.classList.add('active');
       renderFrameline();
     }
 
     function renderFrameline() {
-      const f = frameList[currentFrameIdx];
+      var f = frameList[currentFrameIdx];
       if (!f.p) {
         frameline.style.display = 'none';
         return;
       }
       frameline.style.display = 'block';
-      const isPortrait = window.innerHeight >= window.innerWidth;
-      const targetRatio = isPortrait ? f.p : f.l;
-      const screenRatio = window.innerWidth / window.innerHeight;
+      var isPortrait = window.innerHeight >= window.innerWidth;
+      var targetRatio = isPortrait ? f.p : f.l;
+      var screenRatio = window.innerWidth / window.innerHeight;
 
-      let w, h;
+      var w, h;
       if (screenRatio > targetRatio) {
         h = window.innerHeight;
         w = Math.round(h * targetRatio);
@@ -371,35 +377,25 @@
     }
 
     function setFocus(dist, el) {
-      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
+      var focusBtns = document.querySelectorAll('#focus-group .opt-btn');
+      for (var i = 0; i < focusBtns.length; i++) { focusBtns[i].classList.remove('active'); }
       el.classList.add('active');
       if (videoTrack && videoTrack.applyConstraints) {
         if (dist === 'auto') {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function() {});
         } else {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
+          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(function() {});
         }
       }
     }
 
     function buildDNG(width, height, rgba) {
-      const imageBytes = width * height * 3;
-      const headerSize = 8;
-      const ifdOffset = headerSize + imageBytes;
-      const numEntries = 9;
-      const ifdSize = 2 + (numEntries * 12) + 4;
-      const totalSize = ifdOffset + ifdSize + 64;
+      var imageBytes = width * height * 3;
+      var headerSize = 8;
+      var ifdOffset = headerSize + imageBytes;
+      var numEntries = 9;
+      var ifdSize = 2 + (numEntries * 12) + 4;
+      var totalSize = ifdOffset + ifdSize + 64;
 
-      const buffer = new ArrayBuffer(totalSize);
-      const view = new DataView(buffer);
-      let p = 0;
-
-      view.setUint16(p, 0x4949, true); p += 2;
-      view.setUint16(p, 42, true); p += 2;
-      view.setUint32(p, ifdOffset, true); p += 4;
-
-      const imgBytes = new Uint8Array(buffer, p, imageBytes);
-      for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
-        imgBytes[j] = rgba[i];
-        imgBytes[j + 1] = rgba[i + 1];
-        imgBytes[j + 2] = rgba[i 
+      var buffer = new ArrayBuffer(totalSize);
+      var view = new
