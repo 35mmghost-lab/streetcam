@@ -27,9 +27,9 @@
       display: inline-block; background: #222; color: #ffb642; border: 1px solid #ffb642;
       padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
-    .t-btn.active { background: #ffb642; color: #000; font-weight: bold; }
+    .t-btn.active { background: #39ff14; color: #000; border-color: #39ff14; font-weight: bold; }
 
-    /* Окремий зручний блок параметрів (EV / Інфо) */
+    /* Окремий зручний блок параметрів (EV) */
     #control-strip {
       position: fixed; top: 58px; left: 0; width: 100%; display: none;
       justify-content: center; align-items: center; gap: 10px; z-index: 998;
@@ -58,10 +58,12 @@
     .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
     .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
-    /* Далекомір */
+    /* Далекомір — світіння світломаси на солях радію */
     #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; display: none; }
-    .stadia-svg { width: 100%; height: 100%; stroke: #ffb642; stroke-width: 2; fill: none; }
-    .stadia-label { fill: #ffb642; font-size: 14px; font-weight: bold; font-family: monospace; }
+    .radium-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 3px #39ff14); }
+    .radium-line { stroke: #39ff14; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+    .radium-sil { stroke: rgba(57, 255, 20, 0.65); stroke-width: 1.5; stroke-dasharray: 4, 3; fill: none; }
+    .radium-label { fill: #39ff14; font-size: 15px; font-weight: bold; font-family: monospace; }
 
     /* Стелс */
     #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 2000; display: none; cursor: pointer; }
@@ -87,14 +89,51 @@
     </div>
   </div>
 
+  <!-- Стадіометричний далекомір із силуетами людини та радієвим світінням -->
   <div id="rangefinder">
-    <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <line x1="390" y1="120" x2="430" y2="120" /><line x1="390" y1="880" x2="430" y2="880" />
-      <text x="320" y="505" class="stadia-label">1.2m</text>
-      <line x1="440" y1="260" x2="470" y2="260" /><line x1="440" y1="740" x2="470" y2="740" />
-      <text x="390" y="505" class="stadia-label">2.0m</text>
-      <line x1="475" y1="340" x2="495" y2="340" /><line x1="475" y1="660" x2="495" y2="660" />
-      <text x="515" y="505" class="stadia-label">3.0m</text>
+    <svg class="radium-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+      
+      <!-- ДИСТАНЦІЯ 1.2м (Ближня зона) -->
+      <g>
+        <line x1="220" y1="100" x2="300" y2="100" class="radium-line" />
+        <line x1="220" y1="900" x2="300" y2="900" class="radium-line" />
+        <text x="140" y="505" class="radium-label">1.2m</text>
+        
+        <!-- Силует 1.2м (зріст 800px) -->
+        <circle cx="260" cy="180" r="45" class="radium-sil" />
+        <line x1="260" y1="225" x2="260" y2="580" class="radium-sil" />
+        <line x1="200" y1="340" x2="320" y2="340" class="radium-sil" />
+        <line x1="260" y1="580" x2="210" y2="900" class="radium-sil" />
+        <line x1="260" y1="580" x2="310" y2="900" class="radium-sil" />
+      </g>
+
+      <!-- ДИСТАНЦІЯ 2.0м (Середня вулична зона) -->
+      <g>
+        <line x1="470" y1="260" x2="530" y2="260" class="radium-line" />
+        <line x1="470" y1="740" x2="530" y2="740" class="radium-line" />
+        <text x="545" y="505" class="radium-label">2.0m</text>
+        
+        <!-- Силует 2.0м (зріст 480px) -->
+        <circle cx="500" cy="310" r="28" class="radium-sil" />
+        <line x1="500" y1="338" x2="500" y2="550" class="radium-sil" />
+        <line x1="460" y1="410" x2="540" y2="410" class="radium-sil" />
+        <line x1="500" y1="550" x2="470" y2="740" class="radium-sil" />
+        <line x1="500" y1="550" x2="530" y2="740" class="radium-sil" />
+      </g>
+
+      <!-- ДИСТАНЦІЯ 3.0м (Загальний план) -->
+      <g>
+        <line x1="720" y1="340" x2="760" y2="340" class="radium-line" />
+        <line x1="720" y1="660" x2="760" y2="660" class="radium-line" />
+        <text x="775" y="505" class="radium-label">3.0m</text>
+        
+        <!-- Силует 3.0м (зріст 320px) -->
+        <circle cx="740" cy="375" r="18" class="radium-sil" />
+        <line x1="740" y1="393" x2="740" y2="535" class="radium-sil" />
+        <line x1="715" y1="440" x2="765" y2="440" class="radium-sil" />
+        <line x1="740" y1="535" x2="720" y2="660" class="radium-sil" />
+        <line x1="740" y1="535" x2="760" y2="660" class="radium-sil" />
+      </g>
     </svg>
   </div>
 
@@ -116,7 +155,7 @@
     <button class="t-btn" id="format-btn" onclick="nextFormat()">💾 JPG</button>
   </div>
 
-  <!-- Окремий чистий рядок експокорекції -->
+  <!-- Блок експокорекції -->
   <div id="control-strip">
     <span class="strip-label">EV:</span>
     <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
@@ -164,11 +203,9 @@
     let fIdx = 0;
     let currentEV = 0.0;
 
-    // ISO
     const isoList = ['Auto', '100', '200', '400', '800', '1600', '3200'];
     let isoIdx = 0;
 
-    // Фокусні зони Leica
     const focusZones = [
       { name: 'Auto', val: 'auto' },
       { name: '0.7m', val: 0.7 },
@@ -434,45 +471,4 @@
       const rawH = v.videoHeight || 1080;
       const curFrame = frames[rIdx];
 
-      let cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
-
-      if (curFrame.ratio) {
-        if (rawW / rawH > curFrame.ratio) {
-          cropW = rawH * curFrame.ratio;
-          cropX = (rawW - cropW) / 2;
-        } else {
-          cropW = rawW / curFrame.ratio;
-          cropX = 0;
-          cropY = (rawH - cropH) / 2;
-        }
-      }
-
-      c.width = Math.round(cropW);
-      c.height = Math.round(cropH);
-      const ctx = c.getContext('2d');
-      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-
-      if (formats[fmtIdx] === 'DNG / RAW') {
-        const imgData = ctx.getImageData(0, 0, c.width, c.height);
-        const dngBlob = buildDNG(c.width, c.height, imgData.data);
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(dngBlob);
-        a.download = 'RAW_' + Date.now() + '.dng';
-        a.click();
-        return;
-      }
-
-      const bFactor = Math.pow(2, currentEV);
-      ctx.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
-      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-      
-      c.toBlob(blob => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'STREET_' + films[fIdx].name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
-        a.click();
-      }, 'image/jpeg', 0.95);
-    }
-  </script>
-</body>
-</html>
+      let cropW = rawW
