@@ -13,7 +13,7 @@
 
     #btn-start {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 9999; padding: 20px 32px; font-size: 16px; font-weight: bold;
+      z-index: 10000; padding: 20px 32px; font-size: 16px; font-weight: bold;
       background: #ffb642; border: 2px solid #fff; border-radius: 12px; color: #000; cursor: pointer;
       box-shadow: 0 0 25px rgba(255, 182, 66, 0.7); text-align: center;
     }
@@ -47,7 +47,7 @@
     .stadia-label { fill: #ffb642; font-size: 15px; font-weight: bold; font-family: monospace; }
 
     #stealth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 950; display: none; cursor: pointer; }
-    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
+    #btn-stealth-exit { position: absolute; top: 14px; right: 14px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 11px; }
 
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
@@ -93,7 +93,7 @@
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startApp()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <button id="btn-start" onclick="startCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="hud">
     <button class="hud-btn" id="btn-snap" onclick="takePhoto(false)">📷 СПУСК</button>
@@ -162,7 +162,6 @@
   <canvas id="c"></canvas>
 
   <script>
-    // 1. Оголошення даних та пресетів
     var films = [
       { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
       { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
@@ -214,7 +213,6 @@
     var currentEV = 0.0;
     var saveFormat = 'jpg';
 
-    // 2. DOM-елементи
     var v = document.getElementById('v');
     var btnStart = document.getElementById('btn-start');
     var hud = document.getElementById('hud');
@@ -231,8 +229,7 @@
     var frameline = document.getElementById('frameline');
     var frameBox = document.getElementById('frame-box');
 
-    // 3. Запуск камери (перевірений метод)
-    function startApp() {
+    function startCamera() {
       btnStart.textContent = "⏳ ПІДКЛЮЧЕННЯ...";
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
         .then(function(stream) {
@@ -398,4 +395,8 @@
       var totalSize = ifdOffset + ifdSize + 64;
 
       var buffer = new ArrayBuffer(totalSize);
-      var view = new
+      var view = new DataView(buffer);
+      var p = 0;
+
+      view.setUint16(p, 0x4949, true); p += 2;
+      vie
