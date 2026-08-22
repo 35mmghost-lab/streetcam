@@ -2,7 +2,11 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
   <title>StreetCam</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -71,7 +75,7 @@
       color: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
     }
 
-    /* Модальне вікно налаштувань */
+    /* Меню налаштувань */
     #settings-modal {
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(15, 15, 15, 0.98); border-top: 1px solid #333;
@@ -111,7 +115,7 @@
 
   <div id="grid"></div>
 
-  <!-- Стадіометричний далекомір -->
+  <!-- Далекомір -->
   <div id="rangefinder">
     <svg class="stadia-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="390" y1="120" x2="430" y2="120" />
@@ -162,7 +166,7 @@
     <div>
       <div class="setting-title" id="t-save">ФОРМАТ ЗБЕРЕЖЕННЯ</div>
       <div class="setting-grid" id="save-group" style="grid-template-columns: repeat(2, 1fr);">
-        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Look)</button>
+        <button class="opt-btn active" onclick="setSaveFormat('jpg', this)">JPEG (Film Grain)</button>
         <button class="opt-btn" onclick="setSaveFormat('raw', this)">RAW / DNG (Негатив)</button>
       </div>
     </div>
@@ -231,7 +235,7 @@
     let currentEV = 0.0;
     let saveFormat = 'jpg';
 
-    // Базовий старт камери (1-в-1 з робочої версії)
+    // Базовий старт камери
     async function startApp() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -326,13 +330,14 @@
     ];
     let currentFrameIdx = 0;
 
+    // Параметри плівок із каліброваним зерном (grain)
     const films = [
-      { name: 'Tri-X 400', isBW: true, contrast: 1.55 },
-      { name: 'HP5 Plus', isBW: true, contrast: 1.25 },
-      { name: 'T-Max 3200', isBW: true, contrast: 1.90 },
-      { name: 'Neopan 100', isBW: true, contrast: 1.35 },
-      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)' },
-      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)' }
+      { name: 'Tri-X 400', isBW: true, contrast: 1.55, grain: 24 },
+      { name: 'HP5 Plus', isBW: true, contrast: 1.25, grain: 18 },
+      { name: 'T-Max 3200', isBW: true, contrast: 1.90, grain: 46 },
+      { name: 'Neopan 100', isBW: true, contrast: 1.35, grain: 8 },
+      { name: 'Portra 400', isBW: false, filter: 'saturate(85%) contrast(110%) sepia(10%)', grain: 12 },
+      { name: 'Cinestill 800T', isBW: false, filter: 'saturate(115%) contrast(130%) hue-rotate(190deg) sepia(15%)', grain: 20 }
     ];
     let filmIdx = 0;
 
@@ -420,6 +425,7 @@
       document.getElementById('t-focus').textContent = dict.tFocus;
       document.getElementById('opt-inf').textContent = dict.optInf;
       document.getElementById('close-settings-btn').textContent = dict.close;
+
       renderGrid();
     }
 
@@ -470,149 +476,4 @@
     }
 
     function setFocus(dist, el) {
-      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      if (videoTrack && videoTrack.applyConstraints) {
-        if (dist === 'auto') {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
-        } else {
-          videoTrack.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: parseFloat(dist) }] }).catch(() => {});
-        }
-      }
-    }
-
-    // Генерація DNG / Негативу
-    function buildDNG(width, height, rgba) {
-      const imageBytes = width * height * 3;
-      const headerSize = 8;
-      const ifdOffset = headerSize + imageBytes;
-      const numEntries = 9;
-      const ifdSize = 2 + (numEntries * 12) + 4;
-      const totalSize = ifdOffset + ifdSize + 64;
-
-      const buffer = new ArrayBuffer(totalSize);
-      const view = new DataView(buffer);
-      let p = 0;
-
-      view.setUint16(p, 0x4949, true); p += 2;
-      view.setUint16(p, 42, true); p += 2;
-      view.setUint32(p, ifdOffset, true); p += 4;
-
-      const imgBytes = new Uint8Array(buffer, p, imageBytes);
-      for (let i = 0, j = 0; i < rgba.length; i += 4, j += 3) {
-        imgBytes[j] = rgba[i];
-        imgBytes[j + 1] = rgba[i + 1];
-        imgBytes[j + 2] = rgba[i + 2];
-      }
-      p = ifdOffset;
-
-      view.setUint16(p, numEntries, true); p += 2;
-      const writeTag = (tag, type, count, val) => {
-        view.setUint16(p, tag, true);
-        view.setUint16(p + 2, type, true);
-        view.setUint32(p + 4, count, true);
-        view.setUint32(p + 8, val, true);
-        p += 12;
-      };
-
-      writeTag(0x0100, 4, 1, width);
-      writeTag(0x0101, 4, 1, height);
-      writeTag(0x0102, 3, 3, ifdOffset + ifdSize);
-      writeTag(0x0103, 3, 1, 1);
-      writeTag(0x0106, 3, 1, 2);
-      writeTag(0x0111, 4, 1, headerSize);
-      writeTag(0x0115, 3, 1, 3);
-      writeTag(0x0116, 4, 1, height);
-      writeTag(0x0117, 4, 1, imageBytes);
-      view.setUint32(p, 0, true); p += 4;
-
-      view.setUint16(p, 8, true); p += 2;
-      view.setUint16(p, 8, true); p += 2;
-      view.setUint16(p, 8, true); p += 2;
-
-      return new Blob([buffer], { type: 'image/x-adobe-dng' });
-    }
-
-    function takePhoto(isSilent = false) {
-      if (settingsModal.style.display === 'flex') return;
-
-      if (!isSilent) {
-        shutter.classList.add('flash');
-        setTimeout(() => shutter.classList.remove('flash'), 100);
-      }
-      if (navigator.vibrate) {
-        navigator.vibrate(isSilent ? 35 : 30);
-      }
-
-      const rawW = v.videoWidth || 1920;
-      const rawH = v.videoHeight || 1080;
-      const f = frameList[currentFrameIdx];
-
-      let cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
-
-      if (f.p) {
-        const isVideoPortrait = rawH > rawW;
-        const targetRatio = isVideoPortrait ? f.p : f.l;
-        const currentRatio = rawW / rawH;
-
-        if (currentRatio > targetRatio) {
-          cropH = rawH;
-          cropW = rawH * targetRatio;
-          cropX = (rawW - cropW) / 2;
-          cropY = 0;
-        } else {
-          cropW = rawW;
-          cropH = rawW / targetRatio;
-          cropX = 0;
-          cropY = (rawH - cropH) / 2;
-        }
-      }
-
-      canvas.width = Math.round(cropW);
-      canvas.height = Math.round(cropH);
-      const ctx = canvas.getContext('2d');
-      const preset = films[filmIdx];
-      const evFactor = Math.pow(2, currentEV);
-
-      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-      if (saveFormat === 'raw') {
-        const dngBlob = buildDNG(canvas.width, canvas.height, imgData.data);
-        const url = URL.createObjectURL(dngBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'RAW_' + f.name.replace(':', 'x') + '_' + Date.now() + '.dng';
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 500);
-        return;
-      }
-
-      if (preset.isBW) {
-        const d = imgData.data;
-        const contrast = preset.contrast;
-        for (let i = 0; i < d.length; i += 4) {
-          let y = 0.299 * (d[i] * evFactor) + 0.587 * (d[i + 1] * evFactor) + 0.114 * (d[i + 2] * evFactor);
-          y = ((y / 255 - 0.5) * contrast + 0.5) * 255;
-          y = Math.min(255, Math.max(0, y));
-          d[i] = y; d[i + 1] = y; d[i + 2] = y;
-        }
-        ctx.putImageData(imgData, 0, 0);
-      } else {
-        ctx.filter = preset.filter + ' brightness(' + (evFactor * 100) + '%)';
-        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
-      }
-
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'STREET_' + f.name.replace(':', 'x') + '_' + preset.name.replace(/\s+/g, '') + '_' + Date.now() + '.jpg';
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 500);
-      }, 'image/jpeg', 0.95);
-    }
-  </script>
-</body>
-</html>
+      document.querySelectorAll('#focus-group .opt-btn').forEach(b => b.classList.remove
