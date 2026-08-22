@@ -72,7 +72,7 @@
       align-items: center;
       padding: 6px 2px;
       z-index: 500;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(4px);
     }
     .hud-btn {
@@ -207,9 +207,9 @@
       position: absolute;
       top: env(safe-area-inset-top, 14px);
       right: 14px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: rgba(255, 255, 255, 0.6);
       padding: 6px 10px;
       border-radius: 4px;
       font-size: 11px;
@@ -366,6 +366,10 @@
   <canvas id="c"></canvas>
 
   <script>
+    window.onerror = function(msg, url, line) {
+      alert("System Notice: " + msg + " (line " + line + ")");
+    };
+
     const v = document.getElementById('v');
     const btnStart = document.getElementById('btn-start');
     const hud = document.getElementById('hud');
@@ -389,7 +393,6 @@
     const evSlider = document.getElementById('ev-slider');
     const evVal = document.getElementById('ev-val');
 
-    // Текстові елементи налаштувань
     const tShootingHeight = document.getElementById('t-shooting-height');
     const optEye = document.getElementById('opt-eye');
     const optHip = document.getElementById('opt-hip');
@@ -403,7 +406,6 @@
     let currentEV = 0.0;
     let currentHeight = 1.6;
 
-    // --- МОДУЛЬ ЛОКАЛІЗАЦІЇ (UA / EN / JA) ---
     const i18n = {
       ua: {
         langTag: '🌐 UA',
@@ -480,12 +482,18 @@
     };
 
     const langKeys = ['ua', 'en', 'ja'];
-    let currentLang = localStorage.getItem('streetcam_lang') || 'ua';
+    let currentLang = 'ua';
+    try {
+      currentLang = localStorage.getItem('streetcam_lang') || 'ua';
+      if (!i18n[currentLang]) currentLang = 'ua';
+    } catch(e) {
+      currentLang = 'ua';
+    }
 
     function applyLanguage(lang) {
       currentLang = lang;
-      localStorage.setItem('streetcam_lang', lang);
-      const dict = i18n[lang];
+      try { localStorage.setItem('streetcam_lang', lang); } catch(e){}
+      const dict = i18n[lang] || i18n.ua;
 
       btnLang.textContent = dict.langTag;
       btnStart.textContent = dict.startBtn;
@@ -526,7 +534,7 @@
     let gridIdx = 0;
 
     function updateRangeText() {
-      const dict = i18n[currentLang];
+      const dict = i18n[currentLang] || i18n.ua;
       rangeText.textContent = `${dict.distPrefix}: -- m (H: ${currentHeight.toFixed(2)}m)`;
     }
 
@@ -542,7 +550,8 @@
 
     function renderGrid() {
       const mode = grids[gridIdx];
-      btnGrid.textContent = i18n[currentLang].grids[mode];
+      const dict = i18n[currentLang] || i18n.ua;
+      btnGrid.textContent = dict.grids[mode] || mode;
       grid.innerHTML = '';
 
       if (mode === 'thirds') {
@@ -558,32 +567,21 @@
       }
     }
 
-    // 1. ЗАПУСК КАМЕРИ
-    btnStart.addEventListener('click', () => {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-
-      navigator.mediaDevices.getUserMedia({
+    // ЗАПУСК КАМЕРИ
+    function startCameraStream() {
+      btnStart.textContent = "⌛ ЗАПУСК...";
+      
+      const constraints = {
         video: { 
           facingMode: { ideal: "environment" },
-          width: { ideal: 3840, min: 1920 },
-          height: { ideal: 2160, min: 1080 }
+          width: { ideal: 3840 },
+          height: { ideal: 2160 }
         },
         audio: false
-      }).then(stream => {
-        v.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-        v.play();
-        btnStart.style.display = 'none';
-        hud.style.display = 'flex';
-        applyLanguage(currentLang);
-        updateFilters();
-      }).catch(err => {
-        navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false
-        }).then(stream => {
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
           v.srcObject = stream;
           videoTrack = stream.getVideoTracks()[0];
           v.play();
@@ -591,11 +589,35 @@
           hud.style.display = 'flex';
           applyLanguage(currentLang);
           updateFilters();
-        }).catch(e => alert("Camera Error: " + e.message));
-      });
+        })
+        .catch(err => {
+          // Fallback до базового запиту
+          navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(stream => {
+              v.srcObject = stream;
+              videoTrack = stream.getVideoTracks()[0];
+              v.play();
+              btnStart.style.display = 'none';
+              hud.style.display = 'flex';
+              applyLanguage(currentLang);
+              updateFilters();
+            })
+            .catch(e => {
+              alert("Помилка камери: " + e.name + " - " + e.message);
+              btnStart.textContent = i18n[currentLang].startBtn;
+            });
+        });
+    }
+
+    btnStart.addEventListener('click', () => {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } catch(e){}
+      startCameraStream();
     });
 
-    // 2. ПЛІВКИ
     btnFilm.addEventListener('click', (e) => {
       e.stopPropagation();
       filmIdx = (filmIdx + 1) % films.length;
@@ -603,14 +625,12 @@
       updateFilters();
     });
 
-    // 3. СІТКИ
     btnGrid.addEventListener('click', (e) => {
       e.stopPropagation();
       gridIdx = (gridIdx + 1) % grids.length;
       renderGrid();
     });
 
-    // 4. ДАЛЕКОМІР
     btnRange.addEventListener('click', (e) => {
       e.stopPropagation();
       isRangeActive = !isRangeActive;
@@ -618,26 +638,7 @@
       btnRange.classList.toggle('active', isRangeActive);
     });
 
-    // 5. СТЕЛС-РЕЖИМ
     btnStealth.addEventListener('click', (e) => {
       e.stopPropagation();
       isStealthActive = true;
-      stealthOverlay.style.display = 'block';
-      if (navigator.vibrate) navigator.vibrate(40);
-    });
-
-    btnStealthExit.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isStealthActive = false;
-      stealthOverlay.style.display = 'none';
-      if (navigator.vibrate) navigator.vibrate([20, 20]);
-    });
-
-    stealthOverlay.addEventListener('click', (e) => {
-      if (e.target === btnStealthExit) return;
-      capturePhoto(true);
-    });
-
-    // 6. НАЛАШТУВАННЯ
-    btnSettings.addEventListener('click', (e) => {
-      e.sto
+      stealth
