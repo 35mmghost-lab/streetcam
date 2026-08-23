@@ -80,7 +80,6 @@
     </div>
   </div>
 
-  <!-- Радієвий далекомір -->
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3" />
@@ -214,38 +213,6 @@
     var formats = ['JPG', 'DNG / RAW'];
     var fmtIdx = 0;
 
-    // --- Збереження тільки візуальних параметрів ---
-    function saveVisualSettings() {
-      try {
-        localStorage.setItem('sc_film', fIdx);
-        localStorage.setItem('sc_frame', rIdx);
-        localStorage.setItem('sc_grid', gIdx);
-        localStorage.setItem('sc_ev', currentEV);
-      } catch (e) {}
-    }
-
-    function loadVisualSettings() {
-      try {
-        var sf = parseInt(localStorage.getItem('sc_film'), 10);
-        if (!isNaN(sf) && sf >= 0 && sf < films.length) fIdx = sf;
-
-        var sr = parseInt(localStorage.getItem('sc_frame'), 10);
-        if (!isNaN(sr) && sr >= 0 && sr < frames.length) rIdx = sr;
-
-        var sg = parseInt(localStorage.getItem('sc_grid'), 10);
-        if (!isNaN(sg) && sg >= 0 && sg < grids.length) gIdx = sg;
-
-        var sev = parseFloat(localStorage.getItem('sc_ev'));
-        if (!isNaN(sev) && sev >= -2.0 && sev <= 2.0) currentEV = sev;
-      } catch (e) {}
-
-      filmBtn.textContent = '🎞️ ' + films[fIdx].name;
-      frameBtn.textContent = '📐 ' + frames[rIdx].name;
-      gridBtn.textContent = gridLabels[grids[gIdx]];
-      evSlider.value = currentEV;
-      evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-    }
-
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
       navigator.mediaDevices.getUserMedia({
@@ -258,7 +225,6 @@
         topBar.style.display = 'flex';
         controlStrip.style.display = 'flex';
         hud.style.display = 'flex';
-        loadVisualSettings();
         applyFilm();
         renderLayout();
       }).catch(function(err) {
@@ -276,14 +242,12 @@
       currentEV = parseFloat(val);
       evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
       applyFilm();
-      saveVisualSettings();
     }
 
     function nextFilm() {
       fIdx = (fIdx + 1) % films.length;
       filmBtn.textContent = '🎞️ ' + films[fIdx].name;
       applyFilm();
-      saveVisualSettings();
     }
 
     function nextISO() {
@@ -322,14 +286,12 @@
       rIdx = (rIdx + 1) % frames.length;
       frameBtn.textContent = '📐 ' + frames[rIdx].name;
       renderLayout();
-      saveVisualSettings();
     }
 
     function nextGrid() {
       gIdx = (gIdx + 1) % grids.length;
       gridBtn.textContent = gridLabels[grids[gIdx]];
       renderGrid();
-      saveVisualSettings();
     }
 
     function toggleRange() {
@@ -441,4 +403,11 @@
       
       c.toBlob(function(blob) {
         var a = document.createElement('a');
-      
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + films[fIdx].name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 0.95);
+    }
+  </script>
+</body>
+</html>
