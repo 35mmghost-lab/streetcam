@@ -29,13 +29,16 @@
 
     #top-bar {
       position: fixed; top: 10px; left: 0; width: 100%; display: none;
-      z-index: 999; background: rgba(0,0,0,0.8); padding: 8px 12px;
-      justify-content: flex-start; align-items: center; gap: 8px;
+      z-index: 999; background: rgba(0,0,0,0.8); padding: 8px 10px;
+      overflow-x: auto; white-space: nowrap; gap: 8px;
     }
+    #top-bar::-webkit-scrollbar { display: none; }
+
     .t-btn {
-      background: #222; color: #ffb642; border: 1px solid #ffb642;
+      display: inline-block; background: #222; color: #ffb642; border: 1px solid #ffb642;
       padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;
     }
+    .t-btn.active { background: #39ff14; color: #000; border-color: #39ff14; font-weight: bold; }
 
     #grid { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50; }
     .g-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
@@ -48,6 +51,9 @@
     .center-cross::before, .center-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.8); }
     .center-cross::before { top: 17px; left: 0; width: 36px; height: 1px; }
     .center-cross::after { top: 0; left: 17px; width: 1px; height: 36px; }
+
+    #rangefinder { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; display: none; }
+    .rad-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 4px #39ff14); }
 
     #hud {
       position: fixed; bottom: 30px; left: 0; width: 100%; display: none;
@@ -63,28 +69,25 @@
 <body>
   <video id="v" autoplay playsinline muted></video>
 
+  <!-- Сітки -->
   <div id="grid">
-    <!-- 1. Третини -->
     <div class="g-layer" id="layer-thirds">
       <div class="grid-v" style="left:33.33%;"></div>
       <div class="grid-v" style="left:66.66%;"></div>
       <div class="grid-h" style="top:33.33%;"></div>
       <div class="grid-h" style="top:66.66%;"></div>
     </div>
-    <!-- 2. Золотий перетин -->
     <div class="g-layer" id="layer-golden">
       <div class="grid-v" style="left:38.2%;"></div>
       <div class="grid-v" style="left:61.8%;"></div>
       <div class="grid-h" style="top:38.2%;"></div>
       <div class="grid-h" style="top:61.8%;"></div>
     </div>
-    <!-- 3. Центр -->
     <div class="g-layer" id="layer-center">
       <div class="center-cross"></div>
       <div class="grid-v" style="left:50%;"></div>
       <div class="grid-h" style="top:50%;"></div>
     </div>
-    <!-- 4. Діагоналі -->
     <div class="g-layer" id="layer-diagonals">
       <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
         <line x1="0" y1="0" x2="1000" y2="1000"></line>
@@ -95,7 +98,6 @@
         <line x1="1000" y1="0" x2="500" y2="1000" class="grid-sub"></line>
       </svg>
     </div>
-    <!-- 5. Фібоначчі -->
     <div class="g-layer" id="layer-fibonacci">
       <svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none">
         <path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764"></path>
@@ -107,11 +109,48 @@
     </div>
   </div>
 
+  <!-- Далекомір -->
+  <div id="rangefinder">
+    <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+      <!-- 1.2m -->
+      <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3"></line>
+      <line x1="160" y1="880" x2="240" y2="880" stroke="#39ff14" stroke-width="3"></line>
+      <text x="100" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">1.2m</text>
+      <circle cx="200" cy="210" r="45" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none"></circle>
+      <line x1="200" y1="255" x2="200" y2="560" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="140" y1="350" x2="260" y2="350" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="200" y1="560" x2="150" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="200" y1="560" x2="250" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+
+      <!-- 2.0m -->
+      <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="3"></line>
+      <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="3"></line>
+      <text x="545" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">2.0m</text>
+      <circle cx="500" cy="315" r="26" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none"></circle>
+      <line x1="500" y1="341" x2="500" y2="540" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="460" y1="400" x2="540" y2="400" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="500" y1="540" x2="470" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="500" y1="540" x2="530" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+
+      <!-- 3.0m -->
+      <line x1="750" y1="340" x2="790" y2="340" stroke="#39ff14" stroke-width="3"></line>
+      <line x1="750" y1="660" x2="790" y2="660" stroke="#39ff14" stroke-width="3"></line>
+      <text x="805" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">3.0m</text>
+      <circle cx="770" cy="375" r="18" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" fill="none"></circle>
+      <line x1="770" y1="393" x2="770" y2="535" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="740" y1="440" x2="800" y2="440" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="770" y1="535" x2="745" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+      <line x1="770" y1="535" x2="795" y2="660" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
+    </svg>
+  </div>
+
   <button id="btn-start" onclick="initCam()">▶ УВІМКНУТИ КАМЕРУ</button>
   <div id="debug-log">Готово до запуску.</div>
 
   <div id="top-bar">
+    <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Фокус: Auto</button>
     <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
+    <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
   </div>
 
   <div id="hud">
@@ -125,9 +164,28 @@
     var btnStart = document.getElementById('btn-start');
     var debugLog = document.getElementById('debug-log');
     var topBar = document.getElementById('top-bar');
+    var focusBtn = document.getElementById('focus-btn');
     var gridBtn = document.getElementById('grid-btn');
+    var rangeBtn = document.getElementById('range-btn');
+    var rangeEl = document.getElementById('rangefinder');
     var hud = document.getElementById('hud');
     var c = document.getElementById('c');
+
+    var activeStream = null;
+
+    var focusZones = [
+      { name: 'Auto', val: 'auto' },
+      { name: '0.7m', val: 0.7 },
+      { name: '1.0m', val: 1.0 },
+      { name: '1.5m', val: 1.5 },
+      { name: '2.0m', val: 2.0 },
+      { name: '2.5m', val: 2.5 },
+      { name: '3.0m', val: 3.0 },
+      { name: '3.5m', val: 3.5 },
+      { name: '5.0m', val: 5.0 },
+      { name: '∞', val: 100.0 }
+    ];
+    var focusIdx = 0;
 
     var layerIds = ['none', 'layer-thirds', 'layer-golden', 'layer-diagonals', 'layer-fibonacci', 'layer-center'];
     var gridLabels = [
@@ -139,6 +197,7 @@
       '🌐 Центр'
     ];
     var gIdx = 0;
+    var isRangeOn = false;
 
     function initCam() {
       debugLog.innerText = 'Запит сенсора у високій якості...';
@@ -152,6 +211,7 @@
         audio: false
       })
       .then(function(stream) {
+        activeStream = stream;
         v.srcObject = stream;
         v.play();
         v.style.display = 'block';
@@ -166,6 +226,23 @@
       });
     }
 
+    function nextFocus() {
+      focusIdx = (focusIdx + 1) % focusZones.length;
+      var zone = focusZones[focusIdx];
+      focusBtn.textContent = '🔍 Фокус: ' + zone.name;
+
+      if (activeStream) {
+        var track = activeStream.getVideoTracks()[0];
+        if (track && track.applyConstraints) {
+          if (zone.val === 'auto') {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function(){});
+          } else {
+            track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: zone.val }] }).catch(function(){});
+          }
+        }
+      }
+    }
+
     function nextGrid() {
       gIdx = (gIdx + 1) % layerIds.length;
       gridBtn.textContent = gridLabels[gIdx];
@@ -178,6 +255,12 @@
         var activeEl = document.getElementById(layerIds[gIdx]);
         if (activeEl) activeEl.style.display = 'block';
       }
+    }
+
+    function toggleRange() {
+      isRangeOn = !isRangeOn;
+      rangeEl.style.display = isRangeOn ? 'block' : 'none';
+      rangeBtn.classList.toggle('active', isRangeOn);
     }
 
     function takeSnapshot() {
@@ -202,4 +285,5 @@
     }
   </script>
 </body>
-</html>
+  </html>
+  
