@@ -15,6 +15,11 @@
       border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 10000; cursor: pointer;
     }
 
+    #err-msg {
+      position: fixed; top: 0; left: 0; width: 100%; background: red; color: #fff;
+      font-size: 11px; padding: 4px; display: none; z-index: 20000; text-align: center;
+    }
+
     #top-bar {
       position: fixed; top: 10px; left: 0; width: 100%; display: none;
       z-index: 999; background: rgba(0,0,0,0.75); padding: 8px 6px;
@@ -72,6 +77,7 @@
   </style>
 </head>
 <body>
+  <div id="err-msg"></div>
   <video id="v" autoplay playsinline muted></video>
   
   <div id="frameline">
@@ -80,10 +86,8 @@
     </div>
   </div>
 
-  <!-- Радієвий далекомір -->
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <!-- 1.2m -->
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3" />
       <line x1="160" y1="880" x2="240" y2="880" stroke="#39ff14" stroke-width="3" />
       <text x="100" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">1.2m</text>
@@ -93,7 +97,6 @@
       <line x1="200" y1="560" x2="150" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
       <line x1="200" y1="560" x2="250" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
-      <!-- 2.0m -->
       <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="3" />
       <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="3" />
       <text x="545" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">2.0m</text>
@@ -103,7 +106,6 @@
       <line x1="500" y1="540" x2="470" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
       <line x1="500" y1="540" x2="530" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
-      <!-- 3.0m -->
       <line x1="750" y1="340" x2="790" y2="340" stroke="#39ff14" stroke-width="3" />
       <line x1="750" y1="660" x2="790" y2="660" stroke="#39ff14" stroke-width="3" />
       <text x="805" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">3.0m</text>
@@ -145,6 +147,12 @@
   <canvas id="c"></canvas>
 
   <script>
+    function showErr(t) {
+      var d = document.getElementById('err-msg');
+      if (d) { d.textContent = t; d.style.display = 'block'; }
+    }
+    window.onerror = function(msg) { showErr('JS Error: ' + msg); };
+
     var v = document.getElementById('v');
     var btnStart = document.getElementById('btn-start');
     var topBar = document.getElementById('top-bar');
@@ -384,69 +392,43 @@
         var raw = localStorage.getItem('streetcam_settings');
         if (raw) {
           var s = JSON.parse(raw);
-          if (typeof s.fIdx === 'number') fIdx = s.fIdx;
-          if (typeof s.rIdx === 'number') rIdx = s.rIdx;
-          if (typeof s.gIdx === 'number') gIdx = s.gIdx;
-          if (typeof s.isoIdx === 'number') isoIdx = s.isoIdx;
-          if (typeof s.focusIdx === 'number') focusIdx = s.focusIdx;
-          if (typeof s.fmtIdx === 'number') fmtIdx = s.fmtIdx;
+          if (typeof s.fIdx === 'number' && s.fIdx >= 0 && s.fIdx < films.length) fIdx = s.fIdx;
+          if (typeof s.rIdx === 'number' && s.rIdx >= 0 && s.rIdx < frames.length) rIdx = s.rIdx;
+          if (typeof s.gIdx === 'number' && s.gIdx >= 0 && s.gIdx < grids.length) gIdx = s.gIdx;
+          if (typeof s.isoIdx === 'number' && s.isoIdx >= 0 && s.isoIdx < isoList.length) isoIdx = s.isoIdx;
+          if (typeof s.focusIdx === 'number' && s.focusIdx >= 0 && s.focusIdx < focusZones.length) focusIdx = s.focusIdx;
+          if (typeof s.fmtIdx === 'number' && s.fmtIdx >= 0 && s.fmtIdx < formats.length) fmtIdx = s.fmtIdx;
           if (typeof s.currentEV === 'number') currentEV = s.currentEV;
           if (typeof s.isRangeOn === 'boolean') isRangeOn = s.isRangeOn;
         }
       } catch (e) {}
 
-      filmBtn.textContent = '🎞️ ' + films[fIdx].name;
-      isoBtn.textContent = '⚡ ISO: ' + isoList[isoIdx];
-      focusBtn.textContent = '🔍 Фокус: ' + focusZones[focusIdx].name;
-      frameBtn.textContent = '📐 ' + frames[rIdx].name;
-      gridBtn.textContent = gridLabels[grids[gIdx]];
-      formatBtn.textContent = '💾 ' + formats[fmtIdx];
-      evSlider.value = currentEV;
-      evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      rangeEl.style.display = isRangeOn ? 'block' : 'none';
-      rangeBtn.classList.toggle('active', isRangeOn);
+      if (filmBtn) filmBtn.textContent = '🎞️ ' + films[fIdx].name;
+      if (isoBtn) isoBtn.textContent = '⚡ ISO: ' + isoList[isoIdx];
+      if (focusBtn) focusBtn.textContent = '🔍 Фокус: ' + focusZones[focusIdx].name;
+      if (frameBtn) frameBtn.textContent = '📐 ' + frames[rIdx].name;
+      if (gridBtn) gridBtn.textContent = gridLabels[grids[gIdx]];
+      if (formatBtn) formatBtn.textContent = '💾 ' + formats[fmtIdx];
+      if (evSlider) evSlider.value = currentEV;
+      if (evLabel) evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      if (rangeEl) rangeEl.style.display = isRangeOn ? 'block' : 'none';
+      if (rangeBtn) rangeBtn.classList.toggle('active', isRangeOn);
     }
 
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+      
+      var constraints = {
+        video: { facingMode: { ideal: "environment" } },
         audio: false
-      }).then(function(stream) {
-        window.activeStream = stream;
-        v.srcObject = stream;
-        btnStart.style.display = 'none';
-        topBar.style.display = 'flex';
-        controlStrip.style.display = 'flex';
-        hud.style.display = 'flex';
-        applyFilm();
-        renderLayout();
-        applyHardwareSettings();
-      }).catch(function(err) {
-        btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка камери: " + err.message);
-      });
-    }
+      };
 
-    function snap(isSilent) {
-      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
-
-      var rawW = v.videoWidth || 1920;
-      var rawH = v.videoHeight || 1080;
-      var curFrame = frames[rIdx];
-
-      var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
-
-      if (curFrame.ratio) {
-        if (rawW / rawH > curFrame.ratio) {
-          cropW = rawH * curFrame.ratio;
-          cropX = (rawW - cropW) / 2;
-        } else {
-          cropW = rawW / curFrame.ratio;
-          cropX = 0;
-          cropY = (rawH - cropH) / 2;
-        }
-      }
-
-      c.width = Math.round(cropW);
-      c.height = Math.rou
+      navigator.mediaDevices.getUserMedia(constraints)
+        .catch(function() {
+          return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        })
+        .then(function(stream) {
+          window.activeStream = stream;
+          v.srcObject = stream;
+          btnStart.style.display = 'none';
+          topBar.style.disp
