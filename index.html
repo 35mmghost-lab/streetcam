@@ -222,37 +222,24 @@
 
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
-      
-      var constraints = {
-        video: {
-          facingMode: "environment",
-          width: { ideal: 4096 },
-          height: { ideal: 2160 }
-        },
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } },
         audio: false
-      };
-
-      navigator.mediaDevices.getUserMedia(constraints)
-        .catch(function() {
-          return navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
-            audio: false
-          });
-        })
-        .then(function(stream) {
-          activeStream = stream;
-          v.srcObject = stream;
-          btnStart.style.display = 'none';
-          topBar.style.display = 'flex';
-          controlStrip.style.display = 'flex';
-          hud.style.display = 'flex';
-          applyFilm();
-          renderLayout();
-        })
-        .catch(function(err) {
-          btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
-          alert("Помилка камери: " + err.message);
-        });
+      }).catch(function() {
+        return navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+      }).then(function(stream) {
+        activeStream = stream;
+        v.srcObject = stream;
+        btnStart.style.display = 'none';
+        topBar.style.display = 'flex';
+        controlStrip.style.display = 'flex';
+        hud.style.display = 'flex';
+        applyFilm();
+        renderLayout();
+      }).catch(function(err) {
+        btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
+        alert("Помилка камери: " + err.message);
+      });
     }
 
     function applyFilm() {
@@ -419,30 +406,37 @@
       var ctx = c.getContext('2d');
 
       var bFactor = Math.pow(2, currentEV);
-      var activeFilm = films[fIdx];
+      var curFilm = films[fIdx];
 
-      // Перевіряємо чи підтримується ctx.filter (Chrome/Android)
-      var filterSupported = typeof ctx.filter === 'string';
+      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
 
-      if (filterSupported && !activeFilm.isBW) {
-        ctx.filter = activeFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-      } else {
-        // Гарантований рендер для iOS Safari та ч/б плівок
-        ctx.filter = 'none';
-        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-
+      // Гарантована монохромна обробка для iPhone Safari та Android
+      if (curFilm.isBW) {
         var imgData = ctx.getImageData(0, 0, c.width, c.height);
         var d = imgData.data;
-        var contrast = activeFilm.contrast || 1.4;
-
+        var contrast = curFilm.contrast;
         for (var i = 0; i < d.length; i += 4) {
-          var r = d[i] * bFactor;
-          var g = d[i+1] * bFactor;
-          var b = d[i+2] * bFactor;
-
-          if (activeFilm.isBW) {
-            // Rec. 709 ч/б яскравість
-            var gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            var cVal = (gray - 128) * contrast + 128;
-       
+          var gray = (0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]) * bFactor;
+          gray = ((gray - 128) * contrast) + 128;
+          if (gray < 0) gray = 0;
+          if (gray > 255) gray = 255;
+          d[i] = gray;
+          d[i+1] = gray;
+          d[i+2] = gray;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } else {
+        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
+      }
+      
+      c.toBlob(function(blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 0.98);
+    }
+  </script>
+</body>
+</html>
