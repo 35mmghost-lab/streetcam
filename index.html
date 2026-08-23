@@ -197,11 +197,11 @@
     var focusIdx = 0;
 
     var frames = [
-      { name: 'Full', portraitRatio: null },
-      { name: '3:2 (35mm)', portraitRatio: 2/3 },
-      { name: '4:3 (645)', portraitRatio: 3/4 },
-      { name: '1:1 (6x6)', portraitRatio: 1.0 },
-      { name: '65:24 (XPan)', portraitRatio: 24/65 }
+      { name: 'Full', pRatio: 0 },
+      { name: '3:2 (35mm)', pRatio: 2/3 },
+      { name: '4:3 (645)', pRatio: 3/4 },
+      { name: '1:1 (6x6)', pRatio: 1.0 },
+      { name: '65:24 (XPan)', pRatio: 24/65 }
     ];
     var rIdx = 0;
 
@@ -219,15 +219,6 @@
     var isRangeOn = false;
     var formats = ['JPG', 'DNG / RAW'];
     var fmtIdx = 0;
-
-    function getActiveRatio(targetWidth, targetHeight) {
-      var cur = frames[rIdx];
-      if (!cur.portraitRatio) return null;
-      if (cur.portraitRatio === 1.0) return 1.0;
-      
-      var isLandscape = targetWidth >= targetHeight;
-      return isLandscape ? (1 / cur.portraitRatio) : cur.portraitRatio;
-    }
 
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
@@ -335,13 +326,10 @@
     }
 
     function renderLayout() {
-      var winW = window.innerWidth;
-      var winH = window.innerHeight;
-      var activeRatio = getActiveRatio(winW, winH);
-
+      var baseRatio = frames[rIdx].pRatio;
       frameline.style.display = 'block';
 
-      if (!activeRatio) {
+      if (!baseRatio) {
         frameBox.style.width = '100vw';
         frameBox.style.height = '100vh';
         frameBox.style.top = '0px';
@@ -351,15 +339,24 @@
       } else {
         frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
         frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
+        
+        var winW = window.innerWidth;
+        var winH = window.innerHeight;
+        var isLandscape = winW >= winH;
+        
+        // Автоматичне розгортання пропорцій при горизонтальній орієнтації
+        var targetRatio = (baseRatio === 1.0) ? 1.0 : (isLandscape ? (1 / baseRatio) : baseRatio);
         var screenRatio = winW / winH;
         var w, h;
-        if (screenRatio > activeRatio) {
+
+        if (screenRatio > targetRatio) {
           h = winH;
-          w = Math.round(h * activeRatio);
+          w = Math.round(h * targetRatio);
         } else {
           w = winW;
-          h = Math.round(w / activeRatio);
+          h = Math.round(w / targetRatio);
         }
+
         frameBox.style.width = w + 'px';
         frameBox.style.height = h + 'px';
         frameBox.style.top = Math.round((winH - h) / 2) + 'px';
@@ -368,9 +365,6 @@
       renderGrid();
     }
     window.addEventListener('resize', renderLayout);
-    window.addEventListener('orientationchange', function() {
-      setTimeout(renderLayout, 100);
-    });
 
     function renderGrid() {
       var mode = grids[gIdx];
@@ -401,16 +395,19 @@
 
       var rawW = v.videoWidth || 1920;
       var rawH = v.videoHeight || 1080;
-      var activeRatio = getActiveRatio(rawW, rawH);
+      var baseRatio = frames[rIdx].pRatio;
 
       var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
 
-      if (activeRatio) {
-        if (rawW / rawH > activeRatio) {
-          cropW = rawH * activeRatio;
+      if (baseRatio) {
+        var isLandscape = rawW >= rawH;
+        var targetRatio = (baseRatio === 1.0) ? 1.0 : (isLandscape ? (1 / baseRatio) : baseRatio);
+
+        if (rawW / rawH > targetRatio) {
+          cropW = rawH * targetRatio;
           cropX = (rawW - cropW) / 2;
         } else {
-          cropW = rawW / activeRatio;
+          cropW = rawW / targetRatio;
           cropX = 0;
           cropY = (rawH - cropH) / 2;
         }
@@ -440,4 +437,8 @@
         }
         ctx.putImageData(imgData, 0, 0);
       } else {
-        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100
+        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
+      }
+      
+    
