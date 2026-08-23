@@ -39,11 +39,11 @@
       position: fixed; top: 56px; left: 50%; transform: translateX(-50%);
       display: none; justify-content: center; align-items: center; gap: 8px; z-index: 998;
       background: rgba(0,0,0,0.7); padding: 5px 14px; border-radius: 20px;
-      border: 1px solid rgba(255,182,66,0.3); backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,182,66,0.3);
     }
-    .strip-label { font-size: 11px; color: #ddd; font-weight: bold; text-shadow: 0 1px 2px #000; }
+    .strip-label { font-size: 11px; color: #ddd; font-weight: bold; }
     #ev-slider { accent-color: #ffb642; width: 130px; height: 18px; cursor: pointer; }
-    #ev-label { font-size: 12px; color: #ffb642; min-width: 55px; text-align: right; font-weight: bold; text-shadow: 0 1px 2px #000; }
+    #ev-label { font-size: 12px; color: #ffb642; min-width: 55px; text-align: right; font-weight: bold; }
 
     #frameline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; display: none; }
     #frame-box {
@@ -153,6 +153,10 @@
   <canvas id="c"></canvas>
 
   <script>
+    window.onerror = function(msg, url, line) {
+      alert("JS Error: " + msg + " (Рядок: " + line + ")");
+    };
+
     var v = document.getElementById('v');
     var btnStart = document.getElementById('btn-start');
     var topBar = document.getElementById('top-bar');
@@ -179,7 +183,7 @@
       { name: 'Tri-X 400', mode: 'bw', contrast: 1.5, base: 'grayscale(100%) contrast(150%)' },
       { name: 'T-Max 3200', mode: 'bw', contrast: 1.9, base: 'grayscale(100%) contrast(190%)' },
       { name: 'HP5 Plus', mode: 'bw', contrast: 1.25, base: 'grayscale(100%) contrast(125%)' },
-      { name: 'Aerochrome (Color IR)', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(140%)' },
+      { name: 'Aerochrome (IR)', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(200%) contrast(130%)' },
       { name: 'Portra 400', mode: 'color', contrast: 1.1, base: 'saturate(85%) contrast(110%) sepia(15%)' },
       { name: 'Cinestill 800T', mode: 'color', contrast: 1.3, base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
     ];
@@ -235,7 +239,7 @@
         renderLayout();
       }).catch(function(err) {
         btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка камери: " + (err.message || err.name));
+        alert("Камера недоступна: " + (err.message || err.name));
       });
     }
 
@@ -317,8 +321,8 @@
       if (navigator.vibrate) navigator.vibrate([20, 20]);
     }
 
-    // Рамка завжди зберігає вертикальну орієнтацію
     function renderLayout() {
+      if (!activeStream) return;
       var cur = frames[rIdx];
       frameline.style.display = 'block';
 
@@ -352,9 +356,7 @@
       renderGrid();
     }
     window.addEventListener('resize', renderLayout);
-    window.addEventListener('orientationchange', renderLayout);
 
-    // Сітка адаптується до орієнтації горизонту (портрет / ландшафт)
     function renderGrid() {
       var mode = grids[gIdx];
       gridEl.innerHTML = '';
@@ -437,4 +439,7 @@
         }
         ctx.putImageData(imgData, 0, 0);
       } else if (curFilm.mode === 'aero') {
-        var imgData = ct
+        var imgData = ctx.getImageData(0, 0, c.width, c.height);
+        var d = imgData.data;
+        for (var i = 0; i < d.length; i += 4) {
+       
