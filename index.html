@@ -18,18 +18,18 @@
 
     #btn-start {
       position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%);
-      padding: 20px 32px; font-size: 17px; font-weight: bold; background: #ffb642;
-      border: 3px solid #fff; border-radius: 12px; color: #000; z-index: 10000; cursor: pointer;
+      padding: 18px 28px; font-size: 16px; font-weight: bold; background: #ffb642;
+      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 10000; cursor: pointer;
     }
     #debug-log {
-      position: fixed; top: 58%; left: 5%; width: 90%; color: #39ff14;
-      font-size: 12px; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 6px;
-      border: 1px solid #333; z-index: 10000; text-align: center;
+      position: fixed; top: 56%; left: 5%; width: 90%; color: #39ff14;
+      font-size: 11px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 6px;
+      border: 1px solid #333; z-index: 10000; text-align: left; pointer-events: none;
     }
 
     #top-bar {
       position: fixed; top: 10px; left: 0; width: 100%; display: none;
-      z-index: 999; background: rgba(0,0,0,0.8); padding: 8px 6px;
+      z-index: 999; background: rgba(0,0,0,0.75); padding: 8px 6px;
       overflow-x: auto; white-space: nowrap; gap: 6px;
     }
     #top-bar::-webkit-scrollbar { display: none; }
@@ -60,12 +60,12 @@
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.45); }
     .grid-v { top: 0; bottom: 0; width: 1px; }
     .grid-h { left: 0; right: 0; height: 1px; }
-    .grid-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; stroke: rgba(255,255,255,0.7); stroke-width: 1.5; fill: none; }
-    .grid-sub { stroke: rgba(255,255,255,0.35); stroke-width: 1; stroke-dasharray: 6,6; fill: none; }
-    .center-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; }
-    .center-cross::before, .center-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.8); }
-    .center-cross::before { top: 17px; left: 0; width: 36px; height: 1px; }
-    .center-cross::after { top: 0; left: 17px; width: 1px; height: 36px; }
+    .grid-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; stroke: rgba(255,255,255,0.65); stroke-width: 1.5; fill: none; }
+    .grid-sub { stroke: rgba(255,255,255,0.3); stroke-width: 1; stroke-dasharray: 6,6; fill: none; }
+    .center-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 32px; height: 32px; }
+    .center-cross::before, .center-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.7); }
+    .center-cross::before { top: 15px; left: 0; width: 32px; height: 1px; }
+    .center-cross::after { top: 0; left: 15px; width: 1px; height: 32px; }
 
     #rangefinder { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; display: none; }
     .rad-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 4px #39ff14); }
@@ -90,28 +90,28 @@
   <div id="frameline">
     <div id="frame-box">
       <div id="grid">
-        <!-- Третини -->
-        <div class="g-layer" id="grid-thirds">
+        <!-- 1. Третини -->
+        <div class="g-layer" id="layer-thirds">
           <div class="grid-v" style="left:33.33%;"></div>
           <div class="grid-v" style="left:66.66%;"></div>
           <div class="grid-h" style="top:33.33%;"></div>
           <div class="grid-h" style="top:66.66%;"></div>
         </div>
-        <!-- Золотий перетин -->
-        <div class="g-layer" id="grid-golden">
+        <!-- 2. Золотий перетин -->
+        <div class="g-layer" id="layer-golden">
           <div class="grid-v" style="left:38.2%;"></div>
           <div class="grid-v" style="left:61.8%;"></div>
           <div class="grid-h" style="top:38.2%;"></div>
           <div class="grid-h" style="top:61.8%;"></div>
         </div>
-        <!-- Центр -->
-        <div class="g-layer" id="grid-center">
+        <!-- 3. Центр -->
+        <div class="g-layer" id="layer-center">
           <div class="center-cross"></div>
           <div class="grid-v" style="left:50%;"></div>
           <div class="grid-h" style="top:50%;"></div>
         </div>
-        <!-- Діагоналі -->
-        <div class="g-layer" id="grid-diagonals">
+        <!-- 4. Діагоналі -->
+        <div class="g-layer" id="layer-diagonals">
           <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
             <line x1="0" y1="0" x2="1000" y2="1000"></line>
             <line x1="1000" y1="0" x2="0" y2="1000"></line>
@@ -121,8 +121,8 @@
             <line x1="1000" y1="0" x2="500" y2="1000" class="grid-sub"></line>
           </svg>
         </div>
-        <!-- Фібоначчі -->
-        <div class="g-layer" id="grid-fibonacci">
+        <!-- 5. Фібоначчі -->
+        <div class="g-layer" id="layer-fibonacci">
           <svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none">
             <path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764"></path>
             <line x1="0" y1="618" x2="618" y2="618" class="grid-sub"></line>
@@ -137,7 +137,7 @@
 
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <!-- 1.2m -->
+      <!-- 1.2m Silhouette & Marks -->
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3"></line>
       <line x1="160" y1="880" x2="240" y2="880" stroke="#39ff14" stroke-width="3"></line>
       <text x="100" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">1.2m</text>
@@ -147,7 +147,7 @@
       <line x1="200" y1="560" x2="150" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
       <line x1="200" y1="560" x2="250" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
 
-      <!-- 2.0m -->
+      <!-- 2.0m Silhouette & Marks -->
       <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="3"></line>
       <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="3"></line>
       <text x="545" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">2.0m</text>
@@ -157,7 +157,7 @@
       <line x1="500" y1="540" x2="470" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
       <line x1="500" y1="540" x2="530" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
 
-      <!-- 3.0m -->
+      <!-- 3.0m Silhouette & Marks -->
       <line x1="750" y1="340" x2="790" y2="340" stroke="#39ff14" stroke-width="3"></line>
       <line x1="750" y1="660" x2="790" y2="660" stroke="#39ff14" stroke-width="3"></line>
       <text x="805" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">3.0m</text>
@@ -170,19 +170,19 @@
   </div>
 
   <div id="stealth-overlay" onclick="snap(true)">
-    <button id="btn-stealth-exit" onclick="exitStealth(event)">EXIT</button>
+    <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
-  <div id="debug-log">Готово до запуску.</div>
+  <button id="btn-start" onclick="initCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <div id="debug-log">Готово до запуску. Натисніть кнопку.</div>
 
   <div id="top-bar">
-    <button class="t-btn" id="film-btn" onclick="nextFilm()">Tri-X 400</button>
-    <button class="t-btn" id="focus-btn" onclick="nextFocus()">Focus: Auto</button>
-    <button class="t-btn" id="frame-btn" onclick="nextFrame()">Full</button>
-    <button class="t-btn" id="grid-btn" onclick="nextGrid()">Grid: Off</button>
-    <button class="t-btn" id="range-btn" onclick="toggleRange()">Rangefinder</button>
-    <button class="t-btn" id="stealth-btn" onclick="enterStealth()">Stealth</button>
+    <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
+    <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Focus: Auto</button>
+    <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
+    <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
+    <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
+    <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
   </div>
 
   <div id="control-strip">
@@ -198,9 +198,13 @@
   <canvas id="c"></canvas>
 
   <script>
+    function printLog(text) {
+      var logBox = document.getElementById('debug-log');
+      if (logBox) logBox.innerText = text;
+    }
+
     var v = document.getElementById('v');
     var btnStart = document.getElementById('btn-start');
-    var debugBox = document.getElementById('debug-log');
     var topBar = document.getElementById('top-bar');
     var controlStrip = document.getElementById('control-strip');
     var evSlider = document.getElementById('ev-slider');
@@ -224,7 +228,7 @@
       { name: 'T-Max 3200', mode: 'bw', contrast: 1.9, base: 'grayscale(100%) contrast(190%)' },
       { name: 'HP5 Plus', mode: 'bw', contrast: 1.25, base: 'grayscale(100%) contrast(125%)' },
       { name: 'Neopan 100', mode: 'bw', contrast: 1.35, base: 'grayscale(100%) contrast(135%)' },
-      { name: 'Aerochrome', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(135%)' },
+      { name: 'Aerochrome (Color IR)', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(135%)' },
       { name: 'Portra 400', mode: 'color', contrast: 1.1, base: 'saturate(85%) contrast(110%) sepia(15%)' },
       { name: 'Cinestill 800T', mode: 'color', contrast: 1.3, base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
     ];
@@ -247,33 +251,45 @@
 
     var frames = [
       { name: 'Full', ratio: null },
-      { name: '3:2', ratio: 2/3 },
-      { name: '4:3', ratio: 3/4 },
-      { name: '1:1', ratio: 1.0 },
-      { name: '65:24', ratio: 24/65 }
+      { name: '3:2 (35mm)', ratio: 2/3 },
+      { name: '4:3 (645)', ratio: 3/4 },
+      { name: '1:1 (6x6)', ratio: 1.0 },
+      { name: '65:24 (XPan)', ratio: 24/65 }
     ];
     var rIdx = 0;
 
-    var gridKeys = ['none', 'grid-thirds', 'grid-golden', 'grid-diagonals', 'grid-fibonacci', 'grid-center'];
-    var gridLabels = ['Grid: Off', 'Grid: Thirds', 'Grid: Golden', 'Grid: Diagonals', 'Grid: Fibonacci', 'Grid: Center'];
+    var layerIds = ['none', 'layer-thirds', 'layer-golden', 'layer-diagonals', 'layer-fibonacci', 'layer-center'];
+    var gridLabels = [
+      '🌐 Сітка: Вимк',
+      '🌐 Третини',
+      '🌐 Золотий перетин',
+      '🌐 Діагоналі',
+      '🌐 Фібоначчі',
+      '🌐 Центр'
+    ];
     var gIdx = 0;
     var isRangeOn = false;
 
-    function startCamera() {
-      btnStart.innerText = 'Запуск камери...';
-      if (debugBox) debugBox.innerText = 'Запит доступу до сенсора...';
+    function initCamera() {
+      printLog('Запит дозволу на камеру...');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        printLog('❌ mediaDevices не підтримується цим браузером.');
+        return;
+      }
 
       navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
+        video: { facingMode: { ideal: "environment" } },
         audio: false
       }).catch(function() {
+        printLog('Спроба базового сенсора...');
         return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       }).then(function(stream) {
         activeStream = stream;
         v.srcObject = stream;
-
+        
         btnStart.style.display = 'none';
-        if (debugBox) debugBox.style.display = 'none';
+        document.getElementById('debug-log').style.display = 'none';
         topBar.style.display = 'flex';
         controlStrip.style.display = 'flex';
         hud.style.display = 'flex';
@@ -281,9 +297,7 @@
         applyFilm();
         renderLayout();
       }).catch(function(err) {
-        btnStart.innerText = '▶ УВІМКНУТИ КАМЕРУ';
-        if (debugBox) debugBox.innerText = 'Помилка: ' + err.name;
-        alert('Помилка доступу до камери: ' + (err.message || err.name));
+        printLog('❌ Помилка доступу: ' + err.name + ' - ' + err.message);
       });
     }
 
@@ -300,14 +314,15 @@
 
     function nextFilm() {
       fIdx = (fIdx + 1) % films.length;
-      filmBtn.textContent = films[fIdx].name;
+      filmBtn.textContent = '🎞️ ' + films[fIdx].name;
       applyFilm();
     }
 
     function nextFocus() {
       focusIdx = (focusIdx + 1) % focusZones.length;
       var zone = focusZones[focusIdx];
-      focusBtn.textContent = 'Focus: ' + (zone.name === 'INF' ? '∞' : zone.name);
+      var labelText = zone.name === 'INF' ? '∞' : zone.name;
+      focusBtn.textContent = '🔍 Focus: ' + labelText;
       if (activeStream) {
         var track = activeStream.getVideoTracks()[0];
         if (track && track.applyConstraints) {
@@ -322,20 +337,20 @@
 
     function nextFrame() {
       rIdx = (rIdx + 1) % frames.length;
-      frameBtn.textContent = frames[rIdx].name;
+      frameBtn.textContent = '📐 ' + frames[rIdx].name;
       renderLayout();
     }
 
     function nextGrid() {
-      gIdx = (gIdx + 1) % gridKeys.length;
+      gIdx = (gIdx + 1) % layerIds.length;
       gridBtn.textContent = gridLabels[gIdx];
 
-      for (var i = 1; i < gridKeys.length; i++) {
-        var el = document.getElementById(gridKeys[i]);
+      for (var i = 1; i < layerIds.length; i++) {
+        var el = document.getElementById(layerIds[i]);
         if (el) el.style.display = 'none';
       }
-      if (gridKeys[gIdx] !== 'none') {
-        var activeEl = document.getElementById(gridKeys[gIdx]);
+      if (layerIds[gIdx] !== 'none') {
+        var activeEl = document.getElementById(layerIds[gIdx]);
         if (activeEl) activeEl.style.display = 'block';
       }
     }
@@ -448,13 +463,4 @@
           d[i+2] = gray;
         }
         ctx.putImageData(imgData, 0, 0);
-      } else if (curFilm.mode === 'aero') {
-        var imgData = ctx.getImageData(0, 0, c.width, c.height);
-        var d = imgData.data;
-        for (var i = 0; i < d.length; i += 4) {
-          var r = d[i] * bFactor;
-          var g = d[i+1] * bFactor;
-          var b = d[i+2] * bFactor;
-
-          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 30);
-          var outG = 
+    
