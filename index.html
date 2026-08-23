@@ -339,30 +339,19 @@
       } else {
         frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
         frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
-        
-        var winW = window.innerWidth;
-        var winH = window.innerHeight;
-        var isLandscape = winW > winH;
-
-        // Безпечний розрахунок орієнтації
-        var r = cur.ratio;
-        if (cur.ratio !== 1.0 && isLandscape) {
-          r = 1 / cur.ratio;
-        }
-
-        var screenRatio = winW / winH;
+        var screenRatio = window.innerWidth / window.innerHeight;
         var w, h;
-        if (screenRatio > r) {
-          h = winH;
-          w = Math.round(h * r);
+        if (screenRatio > cur.ratio) {
+          h = window.innerHeight;
+          w = Math.round(h * cur.ratio);
         } else {
-          w = winW;
-          h = Math.round(w / r);
+          w = window.innerWidth;
+          h = Math.round(w / cur.ratio);
         }
         frameBox.style.width = w + 'px';
         frameBox.style.height = h + 'px';
-        frameBox.style.top = Math.round((winH - h) / 2) + 'px';
-        frameBox.style.left = Math.round((winW - w) / 2) + 'px';
+        frameBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
+        frameBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
       }
       renderGrid();
     }
@@ -402,17 +391,11 @@
       var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
 
       if (curFrame.ratio) {
-        var isLandscape = rawW > rawH;
-        var r = curFrame.ratio;
-        if (curFrame.ratio !== 1.0 && isLandscape) {
-          r = 1 / curFrame.ratio;
-        }
-
-        if (rawW / rawH > r) {
-          cropW = rawH * r;
+        if (rawW / rawH > curFrame.ratio) {
+          cropW = rawH * curFrame.ratio;
           cropX = (rawW - cropW) / 2;
         } else {
-          cropW = rawW / r;
+          cropW = rawW / curFrame.ratio;
           cropX = 0;
           cropY = (rawH - cropH) / 2;
         }
@@ -448,4 +431,11 @@
       
       c.toBlob(function(blob) {
         var a = document.createElement('a');
-   
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 0.98);
+    }
+  </script>
+</body>
+</html>
