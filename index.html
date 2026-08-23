@@ -215,22 +215,39 @@
 
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+      
+      // Запитуємо максимальну якість сенсора камери
+      var constraints = {
+        video: {
+          facingMode: "environment",
+          width: { ideal: 4096 },
+          height: { ideal: 2160 }
+        },
         audio: false
-      }).then(function(stream) {
-        activeStream = stream;
-        v.srcObject = stream;
-        btnStart.style.display = 'none';
-        topBar.style.display = 'flex';
-        controlStrip.style.display = 'flex';
-        hud.style.display = 'flex';
-        applyFilm();
-        renderLayout();
-      }).catch(function(err) {
-        btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка камери: " + err.message);
-      });
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .catch(function() {
+          // Запасний варіант, якщо запит 4K не підтримано
+          return navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: false
+          });
+        })
+        .then(function(stream) {
+          activeStream = stream;
+          v.srcObject = stream;
+          btnStart.style.display = 'none';
+          topBar.style.display = 'flex';
+          controlStrip.style.display = 'flex';
+          hud.style.display = 'flex';
+          applyFilm();
+          renderLayout();
+        })
+        .catch(function(err) {
+          btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
+          alert("Помилка камери: " + err.message);
+        });
     }
 
     function applyFilm() {
@@ -406,9 +423,8 @@
         a.href = URL.createObjectURL(blob);
         a.download = 'STREET_' + films[fIdx].name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
         a.click();
-      }, 'image/jpeg', 0.95);
+      }, 'image/jpeg', 0.98);
     }
   </script>
 </body>
-  </html>
-  
+</html>
