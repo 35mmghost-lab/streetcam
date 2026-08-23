@@ -388,50 +388,36 @@
       var rawH = v.videoHeight || 1080;
       var curFrame = frames[rIdx];
 
-      var cropW, cropH, cropX, cropY;
+      var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
 
-      if (!curFrame.ratio) {
-        cropW = rawW;
-        cropH = rawH;
-        cropX = 0;
-        cropY = 0;
-      } else {
-        var viewW = window.innerWidth;
-        var viewH = window.innerHeight;
-        var rect = frameBox.getBoundingClientRect();
-        
-        var streamRatio = rawW / rawH;
-        var viewRatio = viewW / viewH;
-        var dispW, dispH, dispX, dispY;
+      if (curFrame.ratio) {
+        var sensorRatio = rawW / rawH;
+        var targetRatio = curFrame.ratio;
 
-        if (streamRatio > viewRatio) {
-          dispH = viewH;
-          dispW = viewH * streamRatio;
-          dispX = (viewW - dispW) / 2;
-          dispY = 0;
+        if (sensorRatio > targetRatio) {
+          // Сенсор ширший за рамку: обрізаємо боки
+          cropH = rawH;
+          cropW = Math.round(rawH * targetRatio);
+          cropX = Math.round((rawW - cropW) / 2);
+          cropY = 0;
         } else {
-          dispW = viewW;
-          dispH = viewW / streamRatio;
-          dispX = 0;
-          dispY = (viewH - dispH) / 2;
+          // Сенсор вищий за рамку: обрізаємо верх і низ
+          cropW = rawW;
+          cropH = Math.round(rawW / targetRatio);
+          cropX = 0;
+          cropY = Math.round((rawH - cropH) / 2);
         }
-
-        var scale = rawW / dispW;
-
-        cropX = (rect.left - dispX) * scale;
-        cropY = (rect.top - dispY) * scale;
-        cropW = rect.width * scale;
-        cropH = rect.height * scale;
       }
 
-      c.width = Math.round(cropW);
-      c.height = Math.round(cropH);
+      c.width = cropW;
+      c.height = cropH;
       var ctx = c.getContext('2d');
 
       var bFactor = Math.pow(2, currentEV);
       var curFilm = films[fIdx];
 
-      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
+      // Малюємо точно вирізану ділянку з сенсора без розтягувань
+      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
       if (curFilm.isBW) {
         var imgData = ctx.getImageData(0, 0, c.width, c.height);
@@ -446,4 +432,11 @@
           d[i+1] = gray;
           d[i+2] = gray;
         }
-        ctx.putIma
+        ctx.putImageData(imgData, 0, 0);
+      } else {
+        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      }
+      
+      c.toBlob(function(blob) {
+        var a = document.c
