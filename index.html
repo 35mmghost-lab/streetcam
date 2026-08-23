@@ -224,21 +224,19 @@
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
       navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } },
+        video: { facingMode: { ideal: "environment" } },
         audio: false
-      }).catch(function() {
-        return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
       }).then(function(stream) {
         activeStream = stream;
         v.srcObject = stream;
-        v.onloadedmetadata = function() {
-          btnStart.style.display = 'none';
-          topBar.style.display = 'flex';
-          controlStrip.style.display = 'flex';
-          hud.style.display = 'flex';
-          applyFilm();
-          renderLayout();
-        };
+        
+        btnStart.style.display = 'none';
+        topBar.style.display = 'flex';
+        controlStrip.style.display = 'flex';
+        hud.style.display = 'flex';
+        
+        applyFilm();
+        renderLayout();
       }).catch(function(err) {
         btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
         alert("Помилка камери: " + (err.message || err.name));
@@ -425,7 +423,6 @@
         for (var i = 0; i < d.length; i += 4) {
           var gray;
           if (curFilm.isIR) {
-            // Емуляція IR: виражений червоний канал, подавлення синього
             gray = (0.75 * d[i] + 0.20 * d[i+1] + 0.05 * d[i+2]) * bFactor;
           } else {
             gray = (0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]) * bFactor;
@@ -444,4 +441,12 @@
       }
       
       c.toBlob(function(blob) {
-        var a = document.crea
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 0.98);
+    }
+  </script>
+</body>
+</html>
