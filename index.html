@@ -342,22 +342,22 @@
         
         var winW = window.innerWidth;
         var winH = window.innerHeight;
-        var isLandscape = winW >= winH;
-        
-        // Автоматична зміна орієнтації рамки
-        var effectiveRatio = cur.ratio;
+        var isLandscape = winW > winH;
+
+        // Безпечний розрахунок орієнтації
+        var r = cur.ratio;
         if (cur.ratio !== 1.0 && isLandscape) {
-          effectiveRatio = 1 / cur.ratio;
+          r = 1 / cur.ratio;
         }
 
         var screenRatio = winW / winH;
         var w, h;
-        if (screenRatio > effectiveRatio) {
+        if (screenRatio > r) {
           h = winH;
-          w = Math.round(h * effectiveRatio);
+          w = Math.round(h * r);
         } else {
           w = winW;
-          h = Math.round(w / effectiveRatio);
+          h = Math.round(w / r);
         }
         frameBox.style.width = w + 'px';
         frameBox.style.height = h + 'px';
@@ -402,17 +402,17 @@
       var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
 
       if (curFrame.ratio) {
-        var isLandscape = rawW >= rawH;
-        var effectiveRatio = curFrame.ratio;
+        var isLandscape = rawW > rawH;
+        var r = curFrame.ratio;
         if (curFrame.ratio !== 1.0 && isLandscape) {
-          effectiveRatio = 1 / curFrame.ratio;
+          r = 1 / curFrame.ratio;
         }
 
-        if (rawW / rawH > effectiveRatio) {
-          cropW = rawH * effectiveRatio;
+        if (rawW / rawH > r) {
+          cropW = rawH * r;
           cropX = (rawW - cropW) / 2;
         } else {
-          cropW = rawW / effectiveRatio;
+          cropW = rawW / r;
           cropX = 0;
           cropY = (rawH - cropH) / 2;
         }
@@ -443,4 +443,9 @@
         ctx.putImageData(imgData, 0, 0);
       } else {
         ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        ctx.drawImage(v, cropX,
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
+      }
+      
+      c.toBlob(function(blob) {
+        var a = document.createElement('a');
+   
