@@ -94,7 +94,6 @@
 
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <!-- 1.2m Silhouette -->
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3" />
       <line x1="160" y1="880" x2="240" y2="880" stroke="#39ff14" stroke-width="3" />
       <text x="100" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">1.2m</text>
@@ -104,7 +103,6 @@
       <line x1="200" y1="560" x2="150" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
       <line x1="200" y1="560" x2="250" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
-      <!-- 2.0m Silhouette -->
       <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="3" />
       <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="3" />
       <text x="545" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">2.0m</text>
@@ -114,7 +112,6 @@
       <line x1="500" y1="540" x2="470" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
       <line x1="500" y1="540" x2="530" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4" />
 
-      <!-- 3.0m Silhouette -->
       <line x1="750" y1="340" x2="790" y2="340" stroke="#39ff14" stroke-width="3" />
       <line x1="750" y1="660" x2="790" y2="660" stroke="#39ff14" stroke-width="3" />
       <text x="805" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">3.0m</text>
@@ -182,7 +179,6 @@
     var c = document.getElementById('c');
 
     var activeStream = null;
-    var imageCapturer = null;
 
     var films = [
       { name: 'Tri-X 400', mode: 'bw', contrast: 1.5, base: 'grayscale(100%) contrast(150%)' },
@@ -225,8 +221,13 @@
         return;
       }
 
+      // Запит якісного потоку з безпечним поверненням
       navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: { 
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
         audio: false
       }).catch(function() {
         printLog('Спроба базового сенсора...');
@@ -234,15 +235,6 @@
       }).then(function(stream) {
         activeStream = stream;
         v.srcObject = stream;
-
-        var videoTrack = stream.getVideoTracks()[0];
-        if (window.ImageCapture && videoTrack) {
-          try {
-            imageCapturer = new ImageCapture(videoTrack);
-          } catch(e) {
-            imageCapturer = null;
-          }
-        }
         
         btnStart.style.display = 'none';
         document.getElementById('debug-log').style.display = 'none';
@@ -360,9 +352,11 @@
       }
     }
 
-    function processAndSaveImage(sourceImage) {
-      var rawW = sourceImage.width || sourceImage.videoWidth;
-      var rawH = sourceImage.height || sourceImage.videoHeight;
+    function snap(isSilent) {
+      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
+
+      var rawW = v.videoWidth || 1920;
+      var rawH = v.videoHeight || 1080;
       var curFrame = frames[rIdx];
 
       var streamW = Math.min(rawW, rawH);
@@ -396,9 +390,9 @@
       var curFilm = films[fIdx];
 
       if (rawW > rawH) {
-        ctx.drawImage(sourceImage, (rawW - cropW) / 2, (rawH - cropH) / 2, cropW, cropH, 0, 0, cropW, cropH);
+        ctx.drawImage(v, (rawW - cropW) / 2, (rawH - cropH) / 2, cropW, cropH, 0, 0, cropW, cropH);
       } else {
-        ctx.drawImage(sourceImage, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
       }
 
       if (curFilm.mode === 'bw') {
@@ -434,10 +428,17 @@
         ctx.putImageData(imgData, 0, 0);
       } else {
         ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        ctx.drawImage(sourceImage, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
       }
 
       c.toBlob(function(blob) {
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = '
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 1.0);
+    }
+  </script>
+</body>
+        </html>
+  
