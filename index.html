@@ -23,8 +23,8 @@
     }
     #debug-log {
       position: fixed; top: 56%; left: 5%; width: 90%; color: #39ff14;
-      font-size: 11px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 6px;
-      border: 1px solid #333; z-index: 10000; text-align: left; pointer-events: none;
+      font-size: 12px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 6px;
+      border: 1px solid #333; z-index: 10000; text-align: center;
     }
 
     #top-bar {
@@ -125,19 +125,19 @@
   </div>
 
   <div id="stealth-overlay" onclick="snap(true)">
-    <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
+    <button id="btn-stealth-exit" onclick="exitStealth(event)">EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
-  <div id="debug-log">Готово до запуску. Натисніть кнопку.</div>
+  <button id="btn-start" onclick="startCamera()">START CAMERA</button>
+  <div id="debug-log">Готово до запуску.</div>
 
   <div id="top-bar">
-    <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Фокус: Auto</button>
-    <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
-    <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
-    <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
-    <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
+    <button class="t-btn" id="film-btn" onclick="nextFilm()">Tri-X 400</button>
+    <button class="t-btn" id="focus-btn" onclick="nextFocus()">Focus: Auto</button>
+    <button class="t-btn" id="frame-btn" onclick="nextFrame()">Full</button>
+    <button class="t-btn" id="grid-btn" onclick="nextGrid()">Grid: Off</button>
+    <button class="t-btn" id="range-btn" onclick="toggleRange()">Rangefinder</button>
+    <button class="t-btn" id="stealth-btn" onclick="enterStealth()">Stealth</button>
   </div>
 
   <div id="control-strip">
@@ -153,14 +153,10 @@
   <canvas id="c"></canvas>
 
   <script>
+    var logBox = document.getElementById('debug-log');
     function printLog(text) {
-      var logBox = document.getElementById('debug-log');
       if (logBox) logBox.innerText = text;
     }
-
-    window.onerror = function(msg, url, line) {
-      printLog('❌ Помилка: ' + msg + ' (Рядок: ' + line + ')');
-    };
 
     var v = document.getElementById('v');
     var btnStart = document.getElementById('btn-start');
@@ -188,7 +184,7 @@
       { name: 'T-Max 3200', mode: 'bw', contrast: 1.9, base: 'grayscale(100%) contrast(190%)' },
       { name: 'HP5 Plus', mode: 'bw', contrast: 1.25, base: 'grayscale(100%) contrast(125%)' },
       { name: 'Neopan 100', mode: 'bw', contrast: 1.35, base: 'grayscale(100%) contrast(135%)' },
-      { name: 'Aerochrome (Color IR)', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(135%)' },
+      { name: 'Aerochrome', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(135%)' },
       { name: 'Portra 400', mode: 'color', contrast: 1.1, base: 'saturate(85%) contrast(110%) sepia(15%)' },
       { name: 'Cinestill 800T', mode: 'color', contrast: 1.3, base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
     ];
@@ -220,18 +216,18 @@
 
     var grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
     var gridLabels = {
-      'off': '🌐 Сітка: Вимк',
-      'thirds': '🌐 Третини',
-      'golden': '🌐 Золотий перетин',
-      'fibonacci': '🌐 Фібоначчі',
-      'diagonals': '🌐 Діагоналі',
-      'center': '🌐 Центр'
+      'off': 'Grid: Off',
+      'thirds': 'Grid: Thirds',
+      'golden': 'Grid: Golden',
+      'fibonacci': 'Grid: Fibonacci',
+      'diagonals': 'Grid: Diagonals',
+      'center': 'Grid: Center'
     };
     var gIdx = 0;
     var isRangeOn = false;
 
     function startCamera() {
-      printLog('⏳ Запит доступу до сенсора...');
+      printLog('Connecting sensor...');
       
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
@@ -243,7 +239,7 @@
         v.srcObject = stream;
 
         btnStart.style.display = 'none';
-        document.getElementById('debug-log').style.display = 'none';
+        if (logBox) logBox.style.display = 'none';
         topBar.style.display = 'flex';
         controlStrip.style.display = 'flex';
         hud.style.display = 'flex';
@@ -251,7 +247,7 @@
         applyFilm();
         renderLayout();
       }).catch(function(err) {
-        printLog('Помилка: ' + (err.message || err.name));
+        printLog('Error: ' + (err.message || err.name));
       });
     }
 
@@ -268,15 +264,14 @@
 
     function nextFilm() {
       fIdx = (fIdx + 1) % films.length;
-      filmBtn.textContent = '🎞️ ' + films[fIdx].name;
+      filmBtn.textContent = films[fIdx].name;
       applyFilm();
     }
 
     function nextFocus() {
       focusIdx = (focusIdx + 1) % focusZones.length;
       var zone = focusZones[focusIdx];
-      var labelText = zone.name === 'INF' ? '∞' : zone.name;
-      focusBtn.textContent = '🔍 Фокус: ' + labelText;
+      focusBtn.textContent = 'Focus: ' + zone.name;
       if (activeStream) {
         var track = activeStream.getVideoTracks()[0];
         if (track && track.applyConstraints) {
@@ -291,7 +286,7 @@
 
     function nextFrame() {
       rIdx = (rIdx + 1) % frames.length;
-      frameBtn.textContent = '📐 ' + frames[rIdx].name;
+      frameBtn.textContent = frames[rIdx].name;
       renderLayout();
     }
 
@@ -400,7 +395,7 @@
           cropX = Math.round((streamW - cropW) / 2);
         } else {
           cropW = streamW;
-          cropH = Math.round(streamW / targetRatio);
+          cropH = Math.round(streamH / targetRatio);
           cropY = Math.round((streamH - cropH) / 2);
         }
       }
@@ -459,4 +454,8 @@
         a.href = URL.createObjectURL(blob);
         a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
         a.click();
-      }, 'image/jpeg', 1.
+      }, 'image/jpeg', 1.0);
+    }
+  </script>
+</body>
+</html>
