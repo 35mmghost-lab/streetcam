@@ -90,27 +90,27 @@
   <div id="frameline">
     <div id="frame-box">
       <div id="grid">
-        <!-- 1. Третини -->
+        <!-- Третини -->
         <div class="g-layer" id="grid-thirds">
           <div class="grid-v" style="left:33.33%;"></div>
           <div class="grid-v" style="left:66.66%;"></div>
           <div class="grid-h" style="top:33.33%;"></div>
           <div class="grid-h" style="top:66.66%;"></div>
         </div>
-        <!-- 2. Золотий перетин -->
+        <!-- Золотий перетин -->
         <div class="g-layer" id="grid-golden">
           <div class="grid-v" style="left:38.2%;"></div>
           <div class="grid-v" style="left:61.8%;"></div>
           <div class="grid-h" style="top:38.2%;"></div>
           <div class="grid-h" style="top:61.8%;"></div>
         </div>
-        <!-- 3. Центр -->
+        <!-- Центр -->
         <div class="g-layer" id="grid-center">
           <div class="center-cross"></div>
           <div class="grid-v" style="left:50%;"></div>
           <div class="grid-h" style="top:50%;"></div>
         </div>
-        <!-- 4. Діагоналі -->
+        <!-- Діагоналі -->
         <div class="g-layer" id="grid-diagonals">
           <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
             <line x1="0" y1="0" x2="1000" y2="1000"></line>
@@ -121,7 +121,7 @@
             <line x1="1000" y1="0" x2="500" y2="1000" class="grid-sub"></line>
           </svg>
         </div>
-        <!-- 5. Фібоначчі -->
+        <!-- Фібоначчі -->
         <div class="g-layer" id="grid-fibonacci">
           <svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none">
             <path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764"></path>
@@ -173,8 +173,8 @@
     <button id="btn-stealth-exit" onclick="exitStealth(event)">EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startCamera()">START CAMERA</button>
-  <div id="debug-log">Готово. Натисніть кнопку</div>
+  <button id="btn-start" onclick="startCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <div id="debug-log">Готово до запуску.</div>
 
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">Tri-X 400</button>
@@ -198,13 +198,9 @@
   <canvas id="c"></canvas>
 
   <script>
-    window.onerror = function(msg, url, line) {
-      var d = document.getElementById('debug-log');
-      if (d) d.innerText = 'Помилка: ' + msg;
-    };
-
     var v = document.getElementById('v');
     var btnStart = document.getElementById('btn-start');
+    var debugBox = document.getElementById('debug-log');
     var topBar = document.getElementById('top-bar');
     var controlStrip = document.getElementById('control-strip');
     var evSlider = document.getElementById('ev-slider');
@@ -264,15 +260,11 @@
     var isRangeOn = false;
 
     function startCamera() {
-      var d = document.getElementById('debug-log');
-      if (d) d.innerText = 'Запуск камери...';
+      btnStart.innerText = 'Запуск камери...';
+      if (debugBox) debugBox.innerText = 'Запит доступу до сенсора...';
 
       navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 }
-        },
+        video: { facingMode: { ideal: 'environment' } },
         audio: false
       }).catch(function() {
         return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -281,7 +273,7 @@
         v.srcObject = stream;
 
         btnStart.style.display = 'none';
-        if (d) d.style.display = 'none';
+        if (debugBox) debugBox.style.display = 'none';
         topBar.style.display = 'flex';
         controlStrip.style.display = 'flex';
         hud.style.display = 'flex';
@@ -289,8 +281,9 @@
         applyFilm();
         renderLayout();
       }).catch(function(err) {
-        var log = document.getElementById('debug-log');
-        if (log) log.innerText = 'Помилка: ' + (err.message || err.name);
+        btnStart.innerText = '▶ УВІМКНУТИ КАМЕРУ';
+        if (debugBox) debugBox.innerText = 'Помилка: ' + err.name;
+        alert('Помилка доступу до камери: ' + (err.message || err.name));
       });
     }
 
@@ -462,3 +455,6 @@
           var r = d[i] * bFactor;
           var g = d[i+1] * bFactor;
           var b = d[i+2] * bFactor;
+
+          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 30);
+          var outG = 
