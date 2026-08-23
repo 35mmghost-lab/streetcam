@@ -11,7 +11,9 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     body, html {
       width: 100%;
@@ -32,15 +34,16 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      padding: 20px 30px;
-      font-size: 16px;
+      padding: 22px 36px;
+      font-size: 18px;
       font-weight: bold;
       background: #ffb642;
       border: 3px solid #fff;
-      border-radius: 12px;
+      border-radius: 14px;
       color: #000;
-      z-index: 99999;
+      z-index: 999999;
       cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
     }
 
     #top-bar {
@@ -89,8 +92,6 @@
       padding: 6px 16px;
       border-radius: 20px;
       border: 1px solid rgba(255,182,66,0.35);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
     }
     .strip-label {
       font-size: 11px;
@@ -289,284 +290,270 @@
     </svg>
   </div>
 
-  <div id="stealth-overlay" onclick="snap(true)">
-    <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
+  <div id="stealth-overlay">
+    <button id="btn-stealth-exit">✕ EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startCam()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <button id="btn-start">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="top-bar">
-    <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="t-btn" id="iso-btn" onclick="nextISO()">⚡ ISO: Auto</button>
-    <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Фокус: Auto</button>
-    <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
-    <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
-    <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
-    <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
+    <button class="t-btn" id="film-btn">🎞️ Tri-X 400</button>
+    <button class="t-btn" id="iso-btn">⚡ ISO: Auto</button>
+    <button class="t-btn" id="focus-btn">🔍 Фокус: Auto</button>
+    <button class="t-btn" id="frame-btn">📐 Full</button>
+    <button class="t-btn" id="grid-btn">🌐 Сітка: Вимк</button>
+    <button class="t-btn" id="range-btn">🎯 Далекомір</button>
+    <button class="t-btn" id="stealth-btn">🕶️ Стелс</button>
   </div>
 
   <div id="control-strip">
     <span class="strip-label">EV:</span>
-    <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
+    <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0">
     <span id="ev-label">0.0 EV</span>
   </div>
 
   <div id="hud">
-    <button id="btn-snap" onclick="snap(false)"></button>
+    <button id="btn-snap"></button>
   </div>
 
   <canvas id="c"></canvas>
 
   <script>
-    var v = document.getElementById('v');
-    var btnStart = document.getElementById('btn-start');
-    var topBar = document.getElementById('top-bar');
-    var controlStrip = document.getElementById('control-strip');
-    var evSlider = document.getElementById('ev-slider');
-    var evLabel = document.getElementById('ev-label');
-    var hud = document.getElementById('hud');
-    var filmBtn = document.getElementById('film-btn');
-    var isoBtn = document.getElementById('iso-btn');
-    var focusBtn = document.getElementById('focus-btn');
-    var frameBtn = document.getElementById('frame-btn');
-    var gridBtn = document.getElementById('grid-btn');
-    var rangeBtn = document.getElementById('range-btn');
-    var frameline = document.getElementById('frameline');
-    var frameBox = document.getElementById('frame-box');
-    var gridEl = document.getElementById('grid');
-    var rangeEl = document.getElementById('rangefinder');
-    var stealthEl = document.getElementById('stealth-overlay');
-    var c = document.getElementById('c');
+    document.addEventListener('DOMContentLoaded', function() {
+      var v = document.getElementById('v');
+      var btnStart = document.getElementById('btn-start');
+      var topBar = document.getElementById('top-bar');
+      var controlStrip = document.getElementById('control-strip');
+      var evSlider = document.getElementById('ev-slider');
+      var evLabel = document.getElementById('ev-label');
+      var hud = document.getElementById('hud');
+      var filmBtn = document.getElementById('film-btn');
+      var isoBtn = document.getElementById('iso-btn');
+      var focusBtn = document.getElementById('focus-btn');
+      var frameBtn = document.getElementById('frame-btn');
+      var gridBtn = document.getElementById('grid-btn');
+      var rangeBtn = document.getElementById('range-btn');
+      var frameline = document.getElementById('frameline');
+      var frameBox = document.getElementById('frame-box');
+      var gridEl = document.getElementById('grid');
+      var rangeEl = document.getElementById('rangefinder');
+      var stealthEl = document.getElementById('stealth-overlay');
+      var btnStealthExit = document.getElementById('btn-stealth-exit');
+      var btnSnap = document.getElementById('btn-snap');
+      var c = document.getElementById('c');
 
-    var activeStream = null;
+      var activeStream = null;
 
-    var films = [
-      { name: 'Tri-X 400', mode: 'bw', contrast: 1.5, base: 'grayscale(100%) contrast(150%)' },
-      { name: 'T-Max 3200', mode: 'bw', contrast: 1.9, base: 'grayscale(100%) contrast(190%)' },
-      { name: 'HP5 Plus', mode: 'bw', contrast: 1.25, base: 'grayscale(100%) contrast(125%)' },
-      { name: 'Neopan 100', mode: 'bw', contrast: 1.35, base: 'grayscale(100%) contrast(135%)' },
-      { name: 'Aerochrome (Color IR)', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(135%)' },
-      { name: 'Portra 400', mode: 'color', contrast: 1.1, base: 'saturate(85%) contrast(110%) sepia(15%)' },
-      { name: 'Cinestill 800T', mode: 'color', contrast: 1.3, base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
-    ];
-    var fIdx = 0;
-    var currentEV = 0.0;
+      var films = [
+        { name: 'Tri-X 400', mode: 'bw', contrast: 1.5, base: 'grayscale(100%) contrast(150%)' },
+        { name: 'T-Max 3200', mode: 'bw', contrast: 1.9, base: 'grayscale(100%) contrast(190%)' },
+        { name: 'HP5 Plus', mode: 'bw', contrast: 1.25, base: 'grayscale(100%) contrast(125%)' },
+        { name: 'Neopan 100', mode: 'bw', contrast: 1.35, base: 'grayscale(100%) contrast(135%)' },
+        { name: 'Aerochrome (Color IR)', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(135%)' },
+        { name: 'Portra 400', mode: 'color', contrast: 1.1, base: 'saturate(85%) contrast(110%) sepia(15%)' },
+        { name: 'Cinestill 800T', mode: 'color', contrast: 1.3, base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
+      ];
+      var fIdx = 0;
+      var currentEV = 0.0;
 
-    var isoList = ['Auto', '100', '200', '400', '800', '1600'];
-    var isoIdx = 0;
+      var isoList = ['Auto', '100', '200', '400', '800', '1600'];
+      var isoIdx = 0;
 
-    var focusZones = [
-      { name: 'Auto', val: 'auto' },
-      { name: '1.2m', val: 1.2 },
-      { name: '2.0m', val: 2.0 },
-      { name: '3.0m', val: 3.0 },
-      { name: '∞ Нескінч', val: 100.0 }
-    ];
-    var focusIdx = 0;
+      var focusZones = [
+        { name: 'Auto', val: 'auto' },
+        { name: '1.2m', val: 1.2 },
+        { name: '2.0m', val: 2.0 },
+        { name: '3.0m', val: 3.0 },
+        { name: '∞ Нескінч', val: 100.0 }
+      ];
+      var focusIdx = 0;
 
-    var frames = [
-      { name: 'Full', ratio: null },
-      { name: '3:2 (35mm)', ratio: 2/3 },
-      { name: '4:3 (645)', ratio: 3/4 },
-      { name: '1:1 (6x6)', ratio: 1.0 },
-      { name: '65:24 (XPan)', ratio: 24/65 }
-    ];
-    var rIdx = 0;
+      var frames = [
+        { name: 'Full', ratio: null },
+        { name: '3:2 (35mm)', ratio: 2/3 },
+        { name: '4:3 (645)', ratio: 3/4 },
+        { name: '1:1 (6x6)', ratio: 1.0 },
+        { name: '65:24 (XPan)', ratio: 24/65 }
+      ];
+      var rIdx = 0;
 
-    var grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
-    var gridLabels = {
-      'off': '🌐 Сітка: Вимк',
-      'thirds': '🌐 Третини',
-      'golden': '🌐 Золотий перетин',
-      'fibonacci': '🌐 Фібоначчі',
-      'diagonals': '🌐 Діагоналі',
-      'center': '🌐 Центр'
-    };
-    var gIdx = 0;
-    var isRangeOn = false;
+      var grids = ['off', 'thirds', 'golden', 'fibonacci', 'diagonals', 'center'];
+      var gridLabels = {
+        'off': '🌐 Сітка: Вимк',
+        'thirds': '🌐 Третини',
+        'golden': '🌐 Золотий перетин',
+        'fibonacci': '🌐 Фібоначчі',
+        'diagonals': '🌐 Діагоналі',
+        'center': '🌐 Центр'
+      };
+      var gIdx = 0;
+      var isRangeOn = false;
 
-    function startCam() {
-      btnStart.innerText = "⏳ Запуск...";
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: false
-      }).then(function(stream) {
-        activeStream = stream;
-        v.srcObject = stream;
-        v.play().catch(function(){});
+      function startCam() {
+        btnStart.innerText = "⏳ Запуск...";
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        }).then(function(stream) {
+          activeStream = stream;
+          v.srcObject = stream;
+          v.play().catch(function(){});
 
-        btnStart.style.display = 'none';
-        topBar.style.display = 'flex';
-        controlStrip.style.display = 'flex';
-        hud.style.display = 'flex';
+          btnStart.style.display = 'none';
+          topBar.style.display = 'flex';
+          controlStrip.style.display = 'flex';
+          hud.style.display = 'flex';
 
-        applyFilm();
-        renderLayout();
-      }).catch(function(err) {
-        btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка камери: " + (err.message || err.name));
+          applyFilm();
+          renderLayout();
+        }).catch(function(err) {
+          btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
+          alert("Помилка камери: " + (err.message || err.name));
+        });
+      }
+
+      // Слухаємо клік та тач без затримок
+      btnStart.addEventListener('pointerdown', function(e) {
+        e.preventDefault();
+        startCam();
       });
-    }
 
-    function applyFilm() {
-      var bFactor = Math.pow(2, currentEV);
-      v.style.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
-    }
+      function applyFilm() {
+        var bFactor = Math.pow(2, currentEV);
+        v.style.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
+      }
 
-    function setEV(val) {
-      currentEV = parseFloat(val);
-      evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-      applyFilm();
-    }
+      evSlider.addEventListener('input', function() {
+        currentEV = parseFloat(this.value);
+        evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+        applyFilm();
+      });
 
-    function nextFilm() {
-      fIdx = (fIdx + 1) % films.length;
-      filmBtn.textContent = '🎞️ ' + films[fIdx].name;
-      applyFilm();
-    }
+      filmBtn.addEventListener('click', function() {
+        fIdx = (fIdx + 1) % films.length;
+        filmBtn.textContent = '🎞️ ' + films[fIdx].name;
+        applyFilm();
+      });
 
-    function nextISO() {
-      isoIdx = (isoIdx + 1) % isoList.length;
-      var curISO = isoList[isoIdx];
-      isoBtn.textContent = '⚡ ISO: ' + curISO;
-      if (activeStream) {
-        var track = activeStream.getVideoTracks()[0];
-        if (track && track.applyConstraints) {
-          if (curISO === 'Auto') {
-            track.applyConstraints({ advanced: [{ exposureMode: 'continuous' }] }).catch(function(){});
-          } else {
-            track.applyConstraints({ advanced: [{ iso: parseInt(curISO) }] }).catch(function(){});
+      isoBtn.addEventListener('click', function() {
+        isoIdx = (isoIdx + 1) % isoList.length;
+        var curISO = isoList[isoIdx];
+        isoBtn.textContent = '⚡ ISO: ' + curISO;
+        if (activeStream) {
+          var track = activeStream.getVideoTracks()[0];
+          if (track && track.applyConstraints) {
+            if (curISO === 'Auto') {
+              track.applyConstraints({ advanced: [{ exposureMode: 'continuous' }] }).catch(function(){});
+            } else {
+              track.applyConstraints({ advanced: [{ iso: parseInt(curISO) }] }).catch(function(){});
+            }
           }
         }
-      }
-    }
+      });
 
-    function nextFocus() {
-      focusIdx = (focusIdx + 1) % focusZones.length;
-      var zone = focusZones[focusIdx];
-      focusBtn.textContent = '🔍 Фокус: ' + zone.name;
-      if (activeStream) {
-        var track = activeStream.getVideoTracks()[0];
-        if (track && track.applyConstraints) {
-          if (zone.val === 'auto') {
-            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function(){});
-          } else {
-            track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: zone.val }] }).catch(function(){});
+      focusBtn.addEventListener('click', function() {
+        focusIdx = (focusIdx + 1) % focusZones.length;
+        var zone = focusZones[focusIdx];
+        focusBtn.textContent = '🔍 Фокус: ' + zone.name;
+        if (activeStream) {
+          var track = activeStream.getVideoTracks()[0];
+          if (track && track.applyConstraints) {
+            if (zone.val === 'auto') {
+              track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function(){});
+            } else {
+              track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: zone.val }] }).catch(function(){});
+            }
           }
         }
-      }
-    }
+      });
 
-    function nextFrame() {
-      rIdx = (rIdx + 1) % frames.length;
-      frameBtn.textContent = '📐 ' + frames[rIdx].name;
-      renderLayout();
-    }
+      frameBtn.addEventListener('click', function() {
+        rIdx = (rIdx + 1) % frames.length;
+        frameBtn.textContent = '📐 ' + frames[rIdx].name;
+        renderLayout();
+      });
 
-    function nextGrid() {
-      gIdx = (gIdx + 1) % grids.length;
-      gridBtn.textContent = gridLabels[grids[gIdx]];
-      renderGrid();
-    }
+      gridBtn.addEventListener('click', function() {
+        gIdx = (gIdx + 1) % grids.length;
+        gridBtn.textContent = gridLabels[grids[gIdx]];
+        renderGrid();
+      });
 
-    function toggleRange() {
-      isRangeOn = !isRangeOn;
-      rangeEl.style.display = isRangeOn ? 'block' : 'none';
-      rangeBtn.classList.toggle('active', isRangeOn);
-    }
+      rangeBtn.addEventListener('click', function() {
+        isRangeOn = !isRangeOn;
+        rangeEl.style.display = isRangeOn ? 'block' : 'none';
+        rangeBtn.classList.toggle('active', isRangeOn);
+      });
 
-    function enterStealth() {
-      stealthEl.style.display = 'block';
-      if (navigator.vibrate) navigator.vibrate(40);
-    }
+      document.getElementById('stealth-btn').addEventListener('click', function() {
+        stealthEl.style.display = 'block';
+        if (navigator.vibrate) navigator.vibrate(40);
+      });
 
-    function exitStealth(e) {
-      if (e) e.stopPropagation();
-      stealthEl.style.display = 'none';
-      if (navigator.vibrate) navigator.vibrate([20, 20]);
-    }
+      btnStealthExit.addEventListener('click', function(e) {
+        e.stopPropagation();
+        stealthEl.style.display = 'none';
+        if (navigator.vibrate) navigator.vibrate([20, 20]);
+      });
 
-    function renderLayout() {
-      var cur = frames[rIdx];
-      frameline.style.display = 'block';
+      stealthEl.addEventListener('click', function() {
+        snap(true);
+      });
 
-      if (!cur.ratio) {
-        frameBox.style.width = '100vw';
-        frameBox.style.height = '100vh';
-        frameBox.style.top = '0px';
-        frameBox.style.left = '0px';
-        frameBox.style.boxShadow = 'none';
-        frameBox.style.border = 'none';
-      } else {
-        frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
-        frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
-        var winW = window.innerWidth;
-        var winH = window.innerHeight;
-        var targetH = winH;
-        var targetW = Math.round(targetH * cur.ratio);
+      btnSnap.addEventListener('click', function() {
+        snap(false);
+      });
 
-        if (targetW > winW) {
-          targetW = winW;
-          targetH = Math.round(targetW / cur.ratio);
-        }
+      function renderLayout() {
+        var cur = frames[rIdx];
+        frameline.style.display = 'block';
 
-        frameBox.style.width = targetW + 'px';
-        frameBox.style.height = targetH + 'px';
-        frameBox.style.top = Math.round((winH - targetH) / 2) + 'px';
-        frameBox.style.left = Math.round((winW - targetW) / 2) + 'px';
-      }
-      renderGrid();
-    }
-    window.addEventListener('resize', renderLayout);
-
-    function renderGrid() {
-      var mode = grids[gIdx];
-      gridEl.innerHTML = '';
-      if (mode === 'off') return;
-
-      var isLandscape = window.innerWidth > window.innerHeight;
-
-      if (mode === 'thirds') {
-        gridEl.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
-      } else if (mode === 'golden') {
-        gridEl.innerHTML = '<div class="grid-v" style="left:38.2%;"></div><div class="grid-v" style="left:61.8%;"></div><div class="grid-h" style="top:38.2%;"></div><div class="grid-h" style="top:61.8%;"></div>';
-      } else if (mode === 'center') {
-        gridEl.innerHTML = '<div class="center-cross"></div><div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
-      } else if (mode === 'diagonals') {
-        gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /><line x1="0" y1="500" x2="500" y2="0" class="grid-sub" /><line x1="500" y1="1000" x2="1000" y2="500" class="grid-sub" /><line x1="0" y1="500" x2="500" y2="1000" class="grid-sub" /><line x1="500" y1="0" x2="1000" y2="500" class="grid-sub" /></svg>';
-      } else if (mode === 'fibonacci') {
-        if (!isLandscape) {
-          gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none"><path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764 A 34,34 0 0,1 146,730" /><line x1="0" y1="618" x2="618" y2="618" class="grid-sub" /><line x1="236" y1="618" x2="236" y2="1000" class="grid-sub" /><line x1="0" y1="764" x2="236" y2="764" class="grid-sub" /><line x1="146" y1="618" x2="146" y2="764" class="grid-sub" /></svg>';
+        if (!cur.ratio) {
+          frameBox.style.width = '100vw';
+          frameBox.style.height = '100vh';
+          frameBox.style.top = '0px';
+          frameBox.style.left = '0px';
+          frameBox.style.boxShadow = 'none';
+          frameBox.style.border = 'none';
         } else {
-          gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" /><line x1="618" y1="0" x2="618" y2="618" class="grid-sub" /><line x1="618" y1="382" x2="1000" y2="382" class="grid-sub" /><line x1="764" y1="382" x2="764" y2="618" class="grid-sub" /><line x1="618" y1="472" x2="764" y2="472" class="grid-sub" /></svg>';
+          frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
+          frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
+          var winW = window.innerWidth;
+          var winH = window.innerHeight;
+          var targetH = winH;
+          var targetW = Math.round(targetH * cur.ratio);
+
+          if (targetW > winW) {
+            targetW = winW;
+            targetH = Math.round(targetW / cur.ratio);
+          }
+
+          frameBox.style.width = targetW + 'px';
+          frameBox.style.height = targetH + 'px';
+          frameBox.style.top = Math.round((winH - targetH) / 2) + 'px';
+          frameBox.style.left = Math.round((winW - targetW) / 2) + 'px';
         }
+        renderGrid();
       }
-    }
+      window.addEventListener('resize', renderLayout);
 
-    function snap(isSilent) {
-      if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
+      function renderGrid() {
+        var mode = grids[gIdx];
+        gridEl.innerHTML = '';
+        if (mode === 'off') return;
 
-      var rawW = v.videoWidth || 1920;
-      var rawH = v.videoHeight || 1080;
-      var curFrame = frames[rIdx];
+        var isLandscape = window.innerWidth > window.innerHeight;
 
-      var streamW = Math.min(rawW, rawH);
-      var streamH = Math.max(rawW, rawH);
-
-      var cropW = streamW;
-      var cropH = streamH;
-      var cropX = 0;
-      var cropY = 0;
-
-      if (curFrame.ratio) {
-        var targetRatio = curFrame.ratio;
-        var currentStreamRatio = streamW / streamH;
-
-        if (currentStreamRatio > targetRatio) {
-          cropH = streamH;
-          cropW = Math.round(streamH * targetRatio);
-          cropX = Math.round((streamW - cropW) / 2);
-        } else {
-          cropW = streamW;
-          cropH = Math.round(streamW / targetRatio);
-          crop
+        if (mode === 'thirds') {
+          gridEl.innerHTML = '<div class="grid-v" style="left:33.33%;"></div><div class="grid-v" style="left:66.66%;"></div><div class="grid-h" style="top:33.33%;"></div><div class="grid-h" style="top:66.66%;"></div>';
+        } else if (mode === 'golden') {
+          gridEl.innerHTML = '<div class="grid-v" style="left:38.2%;"></div><div class="grid-v" style="left:61.8%;"></div><div class="grid-h" style="top:38.2%;"></div><div class="grid-h" style="top:61.8%;"></div>';
+        } else if (mode === 'center') {
+          gridEl.innerHTML = '<div class="center-cross"></div><div class="grid-v" style="left:50%;"></div><div class="grid-h" style="top:50%;"></div>';
+        } else if (mode === 'diagonals') {
+          gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><line x1="0" y1="0" x2="1000" y2="1000" /><line x1="1000" y1="0" x2="0" y2="1000" /><line x1="0" y1="500" x2="500" y2="0" class="grid-sub" /><line x1="500" y1="1000" x2="1000" y2="500" class="grid-sub" /><line x1="0" y1="500" x2="500" y2="1000" class="grid-sub" /><line x1="500" y1="0" x2="1000" y2="500" class="grid-sub" /></svg>';
+        } else if (mode === 'fibonacci') {
+          if (!isLandscape) {
+            gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none"><path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764 A 34,34 0 0,1 146,730" /><line x1="0" y1="618" x2="618" y2="618" class="grid-sub" /><line x1="236" y1="618" x2="236" y2="1000" class="grid-sub" /><line x1="0" y1="764" x2="236" y2="764" class="grid-sub" /><line x1="146" y1="618" x2="146" y2="764" class="grid-sub" /></svg>';
+          } else {
+            gridEl.innerHTML = '<svg class="grid-svg" viewBox="0 0 1000 618" preserveAspectRatio="none"><path d="M 0,618 A 618,618 0 0,1 618,0 A 382,382 0 0,1 1000,382 A 236,236 0 0,1 764,618 A 146,146 0 0,1 618,472 A 90,90 0 0,1 708,382 A 56,56 0 0,1 764,438 A 34,34 0 0,1 730,472" /><line x1="618" y1="0" x2="618" y2="618" class="grid-sub" /><line x1="618" y1="382" x2="1000" y2="382" class="grid-sub" /><line x1="764"
