@@ -197,11 +197,11 @@
     var focusIdx = 0;
 
     var frames = [
-      { name: 'Full', pRatio: 0 },
-      { name: '3:2 (35mm)', pRatio: 2/3 },
-      { name: '4:3 (645)', pRatio: 3/4 },
-      { name: '1:1 (6x6)', pRatio: 1.0 },
-      { name: '65:24 (XPan)', pRatio: 24/65 }
+      { name: 'Full', ratio: null },
+      { name: '3:2 (35mm)', ratio: 2/3 },
+      { name: '4:3 (645)', ratio: 3/4 },
+      { name: '1:1 (6x6)', ratio: 1.0 },
+      { name: '65:24 (XPan)', ratio: 24/65 }
     ];
     var rIdx = 0;
 
@@ -326,10 +326,10 @@
     }
 
     function renderLayout() {
-      var baseRatio = frames[rIdx].pRatio;
+      var cur = frames[rIdx];
       frameline.style.display = 'block';
 
-      if (!baseRatio) {
+      if (!cur.ratio) {
         frameBox.style.width = '100vw';
         frameBox.style.height = '100vh';
         frameBox.style.top = '0px';
@@ -339,28 +339,19 @@
       } else {
         frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
         frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
-        
-        var winW = window.innerWidth;
-        var winH = window.innerHeight;
-        var isLandscape = winW >= winH;
-        
-        // Автоматичне розгортання пропорцій при горизонтальній орієнтації
-        var targetRatio = (baseRatio === 1.0) ? 1.0 : (isLandscape ? (1 / baseRatio) : baseRatio);
-        var screenRatio = winW / winH;
+        var screenRatio = window.innerWidth / window.innerHeight;
         var w, h;
-
-        if (screenRatio > targetRatio) {
-          h = winH;
-          w = Math.round(h * targetRatio);
+        if (screenRatio > cur.ratio) {
+          h = window.innerHeight;
+          w = Math.round(h * cur.ratio);
         } else {
-          w = winW;
-          h = Math.round(w / targetRatio);
+          w = window.innerWidth;
+          h = Math.round(w / cur.ratio);
         }
-
         frameBox.style.width = w + 'px';
         frameBox.style.height = h + 'px';
-        frameBox.style.top = Math.round((winH - h) / 2) + 'px';
-        frameBox.style.left = Math.round((winW - w) / 2) + 'px';
+        frameBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
+        frameBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
       }
       renderGrid();
     }
@@ -395,19 +386,16 @@
 
       var rawW = v.videoWidth || 1920;
       var rawH = v.videoHeight || 1080;
-      var baseRatio = frames[rIdx].pRatio;
+      var curFrame = frames[rIdx];
 
       var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
 
-      if (baseRatio) {
-        var isLandscape = rawW >= rawH;
-        var targetRatio = (baseRatio === 1.0) ? 1.0 : (isLandscape ? (1 / baseRatio) : baseRatio);
-
-        if (rawW / rawH > targetRatio) {
-          cropW = rawH * targetRatio;
+      if (curFrame.ratio) {
+        if (rawW / rawH > curFrame.ratio) {
+          cropW = rawH * curFrame.ratio;
           cropX = (rawW - cropW) / 2;
         } else {
-          cropW = rawW / targetRatio;
+          cropW = rawW / curFrame.ratio;
           cropX = 0;
           cropY = (rawH - cropH) / 2;
         }
@@ -441,4 +429,13 @@
         ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
       }
       
-    
+      c.toBlob(function(blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 0.98);
+    }
+  </script>
+</body>
+</html>
