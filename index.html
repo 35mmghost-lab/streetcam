@@ -197,11 +197,11 @@
     var focusIdx = 0;
 
     var frames = [
-      { name: 'Full', ratio: null },
-      { name: '3:2 (35mm)', ratio: 2/3 },
-      { name: '4:3 (645)', ratio: 3/4 },
-      { name: '1:1 (6x6)', ratio: 1.0 },
-      { name: '65:24 (XPan)', ratio: 24/65 }
+      { name: 'Full', portraitRatio: null },
+      { name: '3:2 (35mm)', portraitRatio: 2/3 },
+      { name: '4:3 (645)', portraitRatio: 3/4 },
+      { name: '1:1 (6x6)', portraitRatio: 1.0 },
+      { name: '65:24 (XPan)', portraitRatio: 24/65 }
     ];
     var rIdx = 0;
 
@@ -219,6 +219,15 @@
     var isRangeOn = false;
     var formats = ['JPG', 'DNG / RAW'];
     var fmtIdx = 0;
+
+    function getActiveRatio(targetWidth, targetHeight) {
+      var cur = frames[rIdx];
+      if (!cur.portraitRatio) return null;
+      if (cur.portraitRatio === 1.0) return 1.0;
+      
+      var isLandscape = targetWidth >= targetHeight;
+      return isLandscape ? (1 / cur.portraitRatio) : cur.portraitRatio;
+    }
 
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
@@ -326,10 +335,13 @@
     }
 
     function renderLayout() {
-      var cur = frames[rIdx];
+      var winW = window.innerWidth;
+      var winH = window.innerHeight;
+      var activeRatio = getActiveRatio(winW, winH);
+
       frameline.style.display = 'block';
 
-      if (!cur.ratio) {
+      if (!activeRatio) {
         frameBox.style.width = '100vw';
         frameBox.style.height = '100vh';
         frameBox.style.top = '0px';
@@ -339,23 +351,26 @@
       } else {
         frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
         frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
-        var screenRatio = window.innerWidth / window.innerHeight;
+        var screenRatio = winW / winH;
         var w, h;
-        if (screenRatio > cur.ratio) {
-          h = window.innerHeight;
-          w = Math.round(h * cur.ratio);
+        if (screenRatio > activeRatio) {
+          h = winH;
+          w = Math.round(h * activeRatio);
         } else {
-          w = window.innerWidth;
-          h = Math.round(w / cur.ratio);
+          w = winW;
+          h = Math.round(w / activeRatio);
         }
         frameBox.style.width = w + 'px';
         frameBox.style.height = h + 'px';
-        frameBox.style.top = Math.round((window.innerHeight - h) / 2) + 'px';
-        frameBox.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
+        frameBox.style.top = Math.round((winH - h) / 2) + 'px';
+        frameBox.style.left = Math.round((winW - w) / 2) + 'px';
       }
       renderGrid();
     }
     window.addEventListener('resize', renderLayout);
+    window.addEventListener('orientationchange', function() {
+      setTimeout(renderLayout, 100);
+    });
 
     function renderGrid() {
       var mode = grids[gIdx];
@@ -386,16 +401,16 @@
 
       var rawW = v.videoWidth || 1920;
       var rawH = v.videoHeight || 1080;
-      var curFrame = frames[rIdx];
+      var activeRatio = getActiveRatio(rawW, rawH);
 
       var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
 
-      if (curFrame.ratio) {
-        if (rawW / rawH > curFrame.ratio) {
-          cropW = rawH * curFrame.ratio;
+      if (activeRatio) {
+        if (rawW / rawH > activeRatio) {
+          cropW = rawH * activeRatio;
           cropX = (rawW - cropW) / 2;
         } else {
-          cropW = rawW / curFrame.ratio;
+          cropW = rawW / activeRatio;
           cropX = 0;
           cropY = (rawH - cropH) / 2;
         }
@@ -410,7 +425,6 @@
 
       ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
 
-      // Гарантована монохромна обробка для iPhone Safari та Android
       if (curFilm.isBW) {
         var imgData = ctx.getImageData(0, 0, c.width, c.height);
         var d = imgData.data;
@@ -426,17 +440,4 @@
         }
         ctx.putImageData(imgData, 0, 0);
       } else {
-        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-      }
-      
-      c.toBlob(function(blob) {
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
-        a.click();
-      }, 'image/jpeg', 0.98);
-    }
-  </script>
-</body>
-</html>
+        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100
