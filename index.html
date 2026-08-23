@@ -5,14 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>StreetCam Pro</title>
   <style>
-    * { 
-      box-sizing: border-box; 
-      margin: 0; 
-      padding: 0; 
-      user-select: none; 
-      -webkit-user-select: none; 
-      -webkit-tap-highlight-color: transparent; 
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body, html { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: monospace; }
     #v { width: 100vw; height: 100vh; object-fit: cover; }
 
@@ -148,6 +141,29 @@
   <canvas id="c"></canvas>
 
   <script>
+    var v = document.getElementById('v');
+    var btnStart = document.getElementById('btn-start');
+    var topBar = document.getElementById('top-bar');
+    var controlStrip = document.getElementById('control-strip');
+    var evSlider = document.getElementById('ev-slider');
+    var evLabel = document.getElementById('ev-label');
+    var hud = document.getElementById('hud');
+    var filmBtn = document.getElementById('film-btn');
+    var isoBtn = document.getElementById('iso-btn');
+    var focusBtn = document.getElementById('focus-btn');
+    var frameBtn = document.getElementById('frame-btn');
+    var gridBtn = document.getElementById('grid-btn');
+    var rangeBtn = document.getElementById('range-btn');
+    var formatBtn = document.getElementById('format-btn');
+    var frameline = document.getElementById('frameline');
+    var frameBox = document.getElementById('frame-box');
+    var gridEl = document.getElementById('grid');
+    var rangeEl = document.getElementById('rangefinder');
+    var stealthEl = document.getElementById('stealth-overlay');
+    var c = document.getElementById('c');
+
+    var activeStream = null;
+
     var films = [
       { name: 'Tri-X 400', base: 'grayscale(100%) contrast(150%)' },
       { name: 'T-Max 3200', base: 'grayscale(100%) contrast(190%)' },
@@ -196,54 +212,9 @@
     var isRangeOn = false;
     var formats = ['JPG', 'DNG / RAW'];
     var fmtIdx = 0;
-    var activeStream = null;
-
-    function saveVisualState() {
-      try {
-        localStorage.setItem('sc_film', String(fIdx));
-        localStorage.setItem('sc_frame', String(rIdx));
-        localStorage.setItem('sc_grid', String(gIdx));
-        localStorage.setItem('sc_ev', String(currentEV));
-      } catch (e) {}
-    }
-
-    function loadVisualState() {
-      try {
-        var sf = parseInt(localStorage.getItem('sc_film'), 10);
-        if (!isNaN(sf) && sf >= 0 && sf < films.length) fIdx = sf;
-
-        var sr = parseInt(localStorage.getItem('sc_frame'), 10);
-        if (!isNaN(sr) && sr >= 0 && sr < frames.length) rIdx = sr;
-
-        var sg = parseInt(localStorage.getItem('sc_grid'), 10);
-        if (!isNaN(sg) && sg >= 0 && sg < grids.length) gIdx = sg;
-
-        var sev = parseFloat(localStorage.getItem('sc_ev'));
-        if (!isNaN(sev) && sev >= -2.0 && sev <= 2.0) currentEV = sev;
-      } catch (e) {}
-
-      var filmBtn = document.getElementById('film-btn');
-      var frameBtn = document.getElementById('frame-btn');
-      var gridBtn = document.getElementById('grid-btn');
-      var evSlider = document.getElementById('ev-slider');
-      var evLabel = document.getElementById('ev-label');
-
-      if (filmBtn) filmBtn.textContent = '🎞️ ' + films[fIdx].name;
-      if (frameBtn) frameBtn.textContent = '📐 ' + frames[rIdx].name;
-      if (gridBtn) gridBtn.textContent = gridLabels[grids[gIdx]];
-      if (evSlider) evSlider.value = currentEV;
-      if (evLabel) evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
-    }
 
     function startCam() {
-      var btnStart = document.getElementById('btn-start');
-      var v = document.getElementById('v');
-      var topBar = document.getElementById('top-bar');
-      var controlStrip = document.getElementById('control-strip');
-      var hud = document.getElementById('hud');
-
       btnStart.innerText = "⏳ Запуск...";
-
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
         audio: false
@@ -254,8 +225,6 @@
         topBar.style.display = 'flex';
         controlStrip.style.display = 'flex';
         hud.style.display = 'flex';
-
-        loadVisualState();
         applyFilm();
         renderLayout();
       }).catch(function(err) {
@@ -265,32 +234,26 @@
     }
 
     function applyFilm() {
-      var v = document.getElementById('v');
       var bFactor = Math.pow(2, currentEV);
       v.style.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
     }
 
     function setEV(val) {
       currentEV = parseFloat(val);
-      var evLabel = document.getElementById('ev-label');
-      if (evLabel) evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
+      evLabel.textContent = (currentEV > 0 ? '+' : '') + currentEV.toFixed(1) + ' EV';
       applyFilm();
-      saveVisualState();
     }
 
     function nextFilm() {
       fIdx = (fIdx + 1) % films.length;
-      var filmBtn = document.getElementById('film-btn');
-      if (filmBtn) filmBtn.textContent = '🎞️ ' + films[fIdx].name;
+      filmBtn.textContent = '🎞️ ' + films[fIdx].name;
       applyFilm();
-      saveVisualState();
     }
 
     function nextISO() {
       isoIdx = (isoIdx + 1) % isoList.length;
       var curISO = isoList[isoIdx];
-      var isoBtn = document.getElementById('iso-btn');
-      if (isoBtn) isoBtn.textContent = '⚡ ISO: ' + curISO;
+      isoBtn.textContent = '⚡ ISO: ' + curISO;
       if (activeStream) {
         var track = activeStream.getVideoTracks()[0];
         if (track && track.applyConstraints) {
@@ -306,8 +269,7 @@
     function nextFocus() {
       focusIdx = (focusIdx + 1) % focusZones.length;
       var zone = focusZones[focusIdx];
-      var focusBtn = document.getElementById('focus-btn');
-      if (focusBtn) focusBtn.textContent = '🔍 Фокус: ' + zone.name;
+      focusBtn.textContent = '🔍 Фокус: ' + zone.name;
       if (activeStream) {
         var track = activeStream.getVideoTracks()[0];
         if (track && track.applyConstraints) {
@@ -322,50 +284,39 @@
 
     function nextFrame() {
       rIdx = (rIdx + 1) % frames.length;
-      var frameBtn = document.getElementById('frame-btn');
-      if (frameBtn) frameBtn.textContent = '📐 ' + frames[rIdx].name;
+      frameBtn.textContent = '📐 ' + frames[rIdx].name;
       renderLayout();
-      saveVisualState();
     }
 
     function nextGrid() {
       gIdx = (gIdx + 1) % grids.length;
-      var gridBtn = document.getElementById('grid-btn');
-      if (gridBtn) gridBtn.textContent = gridLabels[grids[gIdx]];
+      gridBtn.textContent = gridLabels[grids[gIdx]];
       renderGrid();
-      saveVisualState();
     }
 
     function toggleRange() {
       isRangeOn = !isRangeOn;
-      var rangeEl = document.getElementById('rangefinder');
-      var rangeBtn = document.getElementById('range-btn');
-      if (rangeEl) rangeEl.style.display = isRangeOn ? 'block' : 'none';
-      if (rangeBtn) rangeBtn.classList.toggle('active', isRangeOn);
+      rangeEl.style.display = isRangeOn ? 'block' : 'none';
+      rangeBtn.classList.toggle('active', isRangeOn);
     }
 
     function enterStealth() {
-      var stealthEl = document.getElementById('stealth-overlay');
-      if (stealthEl) stealthEl.style.display = 'block';
+      stealthEl.style.display = 'block';
       if (navigator.vibrate) navigator.vibrate(40);
     }
 
     function exitStealth(e) {
       if (e) e.stopPropagation();
-      var stealthEl = document.getElementById('stealth-overlay');
-      if (stealthEl) stealthEl.style.display = 'none';
+      stealthEl.style.display = 'none';
       if (navigator.vibrate) navigator.vibrate([20, 20]);
     }
 
     function nextFormat() {
       fmtIdx = (fmtIdx + 1) % formats.length;
-      var formatBtn = document.getElementById('format-btn');
-      if (formatBtn) formatBtn.textContent = '💾 ' + formats[fmtIdx];
+      formatBtn.textContent = '💾 ' + formats[fmtIdx];
     }
 
     function renderLayout() {
-      var frameline = document.getElementById('frameline');
-      var frameBox = document.getElementById('frame-box');
       var cur = frames[rIdx];
       frameline.style.display = 'block';
 
@@ -398,8 +349,6 @@
     window.addEventListener('resize', renderLayout);
 
     function renderGrid() {
-      var gridEl = document.getElementById('grid');
-      var frameBox = document.getElementById('frame-box');
       var mode = grids[gIdx];
       gridEl.innerHTML = '';
       if (mode === 'off') return;
@@ -426,10 +375,40 @@
     function snap(isSilent) {
       if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
 
-      var v = document.getElementById('v');
-      var c = document.getElementById('c');
       var rawW = v.videoWidth || 1920;
       var rawH = v.videoHeight || 1080;
       var curFrame = frames[rIdx];
 
       var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
+
+      if (curFrame.ratio) {
+        if (rawW / rawH > curFrame.ratio) {
+          cropW = rawH * curFrame.ratio;
+          cropX = (rawW - cropW) / 2;
+        } else {
+          cropW = rawW / curFrame.ratio;
+          cropX = 0;
+          cropY = (rawH - cropH) / 2;
+        }
+      }
+
+      c.width = Math.round(cropW);
+      c.height = Math.round(cropH);
+      var ctx = c.getContext('2d');
+      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
+
+      var bFactor = Math.pow(2, currentEV);
+      ctx.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
+      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
+      
+      c.toBlob(function(blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + films[fIdx].name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 0.95);
+    }
+  </script>
+</body>
+  </html>
+  
