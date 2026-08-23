@@ -169,22 +169,25 @@
 
     function startCam() {
       btnStart.innerText = "⏳ Запуск...";
-      
       navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } },
         audio: false
+      }).catch(function() {
+        return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
       }).then(function(stream) {
         activeStream = stream;
         v.srcObject = stream;
-        btnStart.style.display = 'none';
-        topBar.style.display = 'flex';
-        controlStrip.style.display = 'flex';
-        hud.style.display = 'flex';
-        applyFilm();
-        renderLayout();
+        v.onloadedmetadata = function() {
+          btnStart.style.display = 'none';
+          topBar.style.display = 'flex';
+          controlStrip.style.display = 'flex';
+          hud.style.display = 'flex';
+          applyFilm();
+          renderLayout();
+        };
       }).catch(function(err) {
         btnStart.innerText = "▶ УВІМКНУТИ КАМЕРУ";
-        alert("Помилка доступу до камери: " + err.name + " — " + err.message);
+        alert("Помилка камери: " + (err.message || err.name));
       });
     }
 
@@ -315,24 +318,31 @@
     function snap(isSilent) {
       if (navigator.vibrate) navigator.vibrate(isSilent ? 35 : 25);
 
-      var rawW = v.videoWidth || 1920;
-      var rawH = v.videoHeight || 1080;
+      var vw = v.videoWidth || 1920;
+      var vh = v.videoHeight || 1080;
       var curFrame = frames[rIdx];
 
-      var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
+      // Визначаємо реальну орієнтацію сенсора
+      var streamW = Math.min(vw, vh);
+      var streamH = Math.max(vw, vh);
+
+      var cropW = streamW;
+      var cropH = streamH;
+      var cropX = 0;
+      var cropY = 0;
 
       if (curFrame.ratio) {
-        var streamRatio = rawW / rawH;
         var targetRatio = curFrame.ratio;
+        var currentStreamRatio = streamW / streamH;
 
-        if (streamRatio > targetRatio) {
-          cropH = rawH;
-          cropW = Math.round(rawH * targetRatio);
-          cropX = Math.round((rawW - cropW) / 2);
+        if (currentStreamRatio > targetRatio) {
+          cropH = streamH;
+          cropW = Math.round(streamH * targetRatio);
+          cropX = Math.round((streamW - cropW) / 2);
         } else {
-          cropW = rawW;
-          cropH = Math.round(rawW / targetRatio);
-          cropY = Math.round((rawH - cropH) / 2);
+          cropW = streamW;
+          cropH = Math.round(streamW / targetRatio);
+          cropY = Math.round((streamH - cropH) / 2);
         }
       }
 
@@ -343,7 +353,12 @@
       var bFactor = Math.pow(2, currentEV);
       var curFilm = films[fIdx];
 
-      ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      // Якщо браузер повернув координати горизонтально, коректно зчитуємо з центру
+      if (vw > vh) {
+        ctx.drawImage(v, (vw - cropW) / 2, (vh - cropH) / 2, cropW, cropH, 0, 0, cropW, cropH);
+      } else {
+        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      }
 
       if (curFilm.isBW) {
         var imgData = ctx.getImageData(0, 0, c.width, c.height);
@@ -361,7 +376,7 @@
         ctx.putImageData(imgData, 0, 0);
       } else {
         ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
+        ctx.drawImage(c, 0, 0);
       }
       
       c.toBlob(function(blob) {
