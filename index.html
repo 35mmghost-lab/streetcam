@@ -388,17 +388,40 @@
       var rawH = v.videoHeight || 1080;
       var curFrame = frames[rIdx];
 
-      var cropW = rawW, cropH = rawH, cropX = 0, cropY = 0;
+      var cropW, cropH, cropX, cropY;
 
-      if (curFrame.ratio) {
-        if (rawW / rawH > curFrame.ratio) {
-          cropW = rawH * curFrame.ratio;
-          cropX = (rawW - cropW) / 2;
+      if (!curFrame.ratio) {
+        cropW = rawW;
+        cropH = rawH;
+        cropX = 0;
+        cropY = 0;
+      } else {
+        var viewW = window.innerWidth;
+        var viewH = window.innerHeight;
+        var rect = frameBox.getBoundingClientRect();
+        
+        var streamRatio = rawW / rawH;
+        var viewRatio = viewW / viewH;
+        var dispW, dispH, dispX, dispY;
+
+        if (streamRatio > viewRatio) {
+          dispH = viewH;
+          dispW = viewH * streamRatio;
+          dispX = (viewW - dispW) / 2;
+          dispY = 0;
         } else {
-          cropW = rawW / curFrame.ratio;
-          cropX = 0;
-          cropY = (rawH - cropH) / 2;
+          dispW = viewW;
+          dispH = viewW / streamRatio;
+          dispX = 0;
+          dispY = (viewH - dispH) / 2;
         }
+
+        var scale = rawW / dispW;
+
+        cropX = (rect.left - dispX) * scale;
+        cropY = (rect.top - dispY) * scale;
+        cropW = rect.width * scale;
+        cropH = rect.height * scale;
       }
 
       c.width = Math.round(cropW);
@@ -423,19 +446,4 @@
           d[i+1] = gray;
           d[i+2] = gray;
         }
-        ctx.putImageData(imgData, 0, 0);
-      } else {
-        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, c.width, c.height);
-      }
-      
-      c.toBlob(function(blob) {
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
-        a.click();
-      }, 'image/jpeg', 0.98);
-    }
-  </script>
-</body>
-</html>
+        ctx.putIma
