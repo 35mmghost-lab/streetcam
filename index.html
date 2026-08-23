@@ -58,10 +58,14 @@
     var c = document.getElementById('c');
 
     function initCam() {
-      debugLog.innerText = 'Запит доступу до сенсора...';
+      debugLog.innerText = 'Запит сенсора у високій якості...';
 
       navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
+        video: { 
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 3840 },
+          height: { ideal: 2160 }
+        },
         audio: false
       })
       .then(function(stream) {
@@ -87,14 +91,16 @@
       c.height = h;
 
       var ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(v, 0, 0, w, h);
 
       c.toBlob(function(blob) {
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'SNAP_' + Date.now() + '.jpg';
+        a.download = 'SNAP_' + w + 'x' + h + '_' + Date.now() + '.jpg';
         a.click();
-      }, 'image/jpeg', 0.95);
+      }, 'image/jpeg', 1.0);
     }
   </script>
 </body>
