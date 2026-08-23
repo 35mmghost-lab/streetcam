@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>StreetCam Pro</title>
+  <title>StreetCam Pro v2</title>
   <style>
     * { 
       box-sizing: border-box; 
@@ -18,18 +18,18 @@
 
     #btn-start {
       position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%);
-      padding: 18px 28px; font-size: 16px; font-weight: bold; background: #ffb642;
-      border: 2px solid #fff; border-radius: 10px; color: #000; z-index: 10000; cursor: pointer;
+      padding: 20px 32px; font-size: 18px; font-weight: bold; background: #ffb642;
+      border: 3px solid #fff; border-radius: 12px; color: #000; z-index: 10000; cursor: pointer;
     }
     #debug-log {
-      position: fixed; top: 56%; left: 5%; width: 90%; color: #39ff14;
-      font-size: 11px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 6px;
-      border: 1px solid #333; z-index: 10000; text-align: left; pointer-events: none;
+      position: fixed; top: 58%; left: 5%; width: 90%; color: #39ff14;
+      font-size: 12px; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 6px;
+      border: 1px solid #333; z-index: 10000; text-align: center;
     }
 
     #top-bar {
       position: fixed; top: 10px; left: 0; width: 100%; display: none;
-      z-index: 999; background: rgba(0,0,0,0.75); padding: 8px 6px;
+      z-index: 999; background: rgba(0,0,0,0.8); padding: 8px 6px;
       overflow-x: auto; white-space: nowrap; gap: 6px;
     }
     #top-bar::-webkit-scrollbar { display: none; }
@@ -127,8 +127,8 @@
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="initCamera()">▶ УВІМКНУТИ КАМЕРУ</button>
-  <div id="debug-log">Готово до запуску. Натисніть кнопку.</div>
+  <button id="btn-start" onclick="initCamNow()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <div id="debug-log">ВЕРСІЯ 2.0: Готово. Натисніть кнопку</div>
 
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
@@ -152,13 +152,9 @@
   <canvas id="c"></canvas>
 
   <script>
-    function printLog(text) {
-      var logBox = document.getElementById('debug-log');
-      if (logBox) logBox.innerText = text;
-    }
-
     var v = document.getElementById('v');
     var btnStart = document.getElementById('btn-start');
+    var debugLog = document.getElementById('debug-log');
     var topBar = document.getElementById('top-bar');
     var controlStrip = document.getElementById('control-strip');
     var evSlider = document.getElementById('ev-slider');
@@ -225,9 +221,9 @@
     var gIdx = 0;
     var isRangeOn = false;
 
-    function initCamera() {
-      printLog('Запит дозволу на камеру...');
-
+    function initCamNow() {
+      if (debugLog) debugLog.innerText = "⏳ Запуск сенсора...";
+      
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
@@ -236,9 +232,9 @@
       }).then(function(stream) {
         activeStream = stream;
         v.srcObject = stream;
-        
+
         btnStart.style.display = 'none';
-        document.getElementById('debug-log').style.display = 'none';
+        if (debugLog) debugLog.style.display = 'none';
         topBar.style.display = 'flex';
         controlStrip.style.display = 'flex';
         hud.style.display = 'flex';
@@ -246,7 +242,7 @@
         applyFilm();
         renderLayout();
       }).catch(function(err) {
-        printLog('Помилка: ' + (err.message || err.name));
+        if (debugLog) debugLog.innerText = "Помилка: " + (err.message || err.name);
       });
     }
 
@@ -439,4 +435,6 @@
           var outG = Math.min(255, (r * 0.4 + b * 0.5) * curFilm.contrast - 20);
           var outB = Math.min(255, (b * 0.7 + g * 0.4) * curFilm.contrast);
 
-        
+          d[i] = Math.max(0, outR);
+          d[i+1] = Math.max(0, outG);
+    
