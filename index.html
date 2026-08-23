@@ -176,13 +176,12 @@
     var activeStream = null;
 
     var films = [
-      { name: 'Tri-X 400', isBW: true, isIR: false, contrast: 1.5, base: 'grayscale(100%) contrast(150%)' },
-      { name: 'T-Max 3200', isBW: true, isIR: false, contrast: 1.9, base: 'grayscale(100%) contrast(190%)' },
-      { name: 'HP5 Plus', isBW: true, isIR: false, contrast: 1.25, base: 'grayscale(100%) contrast(125%)' },
-      { name: 'Neopan 100', isBW: true, isIR: false, contrast: 1.35, base: 'grayscale(100%) contrast(135%)' },
-      { name: 'Infrared (IR)', isBW: true, isIR: true, contrast: 2.2, base: 'grayscale(100%) contrast(220%)' },
-      { name: 'Portra 400', isBW: false, isIR: false, contrast: 1.1, base: 'saturate(85%) contrast(110%) sepia(15%)' },
-      { name: 'Cinestill 800T', isBW: false, isIR: false, contrast: 1.3, base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
+      { name: 'Tri-X 400', mode: 'bw', contrast: 1.5, base: 'grayscale(100%) contrast(150%)' },
+      { name: 'T-Max 3200', mode: 'bw', contrast: 1.9, base: 'grayscale(100%) contrast(190%)' },
+      { name: 'HP5 Plus', mode: 'bw', contrast: 1.25, base: 'grayscale(100%) contrast(125%)' },
+      { name: 'Aerochrome (Color IR)', mode: 'aero', contrast: 1.4, base: 'hue-rotate(180deg) saturate(220%) contrast(140%)' },
+      { name: 'Portra 400', mode: 'color', contrast: 1.1, base: 'saturate(85%) contrast(110%) sepia(15%)' },
+      { name: 'Cinestill 800T', mode: 'color', contrast: 1.3, base: 'saturate(120%) contrast(130%) hue-rotate(190deg)' }
     ];
     var fIdx = 0;
     var currentEV = 0.0;
@@ -416,17 +415,12 @@
         ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
       }
 
-      if (curFilm.isBW) {
+      if (curFilm.mode === 'bw') {
         var imgData = ctx.getImageData(0, 0, c.width, c.height);
         var d = imgData.data;
         var contrast = curFilm.contrast;
         for (var i = 0; i < d.length; i += 4) {
-          var gray;
-          if (curFilm.isIR) {
-            gray = (0.75 * d[i] + 0.20 * d[i+1] + 0.05 * d[i+2]) * bFactor;
-          } else {
-            gray = (0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]) * bFactor;
-          }
+          var gray = (0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2]) * bFactor;
           gray = ((gray - 128) * contrast) + 128;
           if (gray < 0) gray = 0;
           if (gray > 255) gray = 255;
@@ -435,18 +429,22 @@
           d[i+2] = gray;
         }
         ctx.putImageData(imgData, 0, 0);
-      } else {
-        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        ctx.drawImage(c, 0, 0);
-      }
-      
-      c.toBlob(function(blob) {
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
-        a.click();
-      }, 'image/jpeg', 0.98);
-    }
-  </script>
-</body>
-</html>
+      } else if (curFilm.mode === 'aero') {
+        // Поканальний зсув для Aerochrome False-Color IR
+        var imgData = ctx.getImageData(0, 0, c.width, c.height);
+        var d = imgData.data;
+        for (var i = 0; i < d.length; i += 4) {
+          var r = d[i] * bFactor;
+          var g = d[i+1] * bFactor;
+          var b = d[i+2] * bFactor;
+
+          // Зелений перетворюється на рожево-червоний, синє небо стає бірюзово-глибоким
+          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 30);
+          var outG = Math.min(255, (r * 0.4 + b * 0.5) * curFilm.contrast - 20);
+          var outB = Math.min(255, (b * 0.7 + g * 0.4) * curFilm.contrast);
+
+          d[i] = Math.max(0, outR);
+          d[i+1] = Math.max(0, outG);
+          d[i+2] = Math.max(0, outB);
+        }
+        ctx.putI
