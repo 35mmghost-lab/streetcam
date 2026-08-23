@@ -49,17 +49,15 @@
     #ev-slider { accent-color: #ffb642; width: 140px; height: 20px; }
     #ev-label { font-size: 12px; color: #ffb642; min-width: 55px; text-align: right; font-weight: bold; }
 
-    /* Рамка кадрування та затемнення */
-    #frameline-container {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      pointer-events: none; z-index: 40; display: none;
-    }
+    /* Рамка кадрування */
     #frame-box {
-      position: absolute; border: 1.5px solid rgba(255, 182, 66, 0.85);
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55); overflow: hidden;
+      position: fixed; pointer-events: none; z-index: 40; display: none;
+      border: 1.5px solid rgba(255, 182, 66, 0.85);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
     }
 
-    #grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    /* Сітки */
+    #grid { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50; }
     .g-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.45); }
     .grid-v { top: 0; bottom: 0; width: 1px; }
@@ -91,54 +89,52 @@
 <body>
   <video id="v" autoplay playsinline muted></video>
 
-  <!-- Рамка кадру та сітки всередині неї -->
-  <div id="frameline-container">
-    <div id="frame-box">
-      <div id="grid">
-        <div class="g-layer" id="layer-thirds">
-          <div class="grid-v" style="left:33.33%;"></div>
-          <div class="grid-v" style="left:66.66%;"></div>
-          <div class="grid-h" style="top:33.33%;"></div>
-          <div class="grid-h" style="top:66.66%;"></div>
-        </div>
-        <div class="g-layer" id="layer-golden">
-          <div class="grid-v" style="left:38.2%;"></div>
-          <div class="grid-v" style="left:61.8%;"></div>
-          <div class="grid-h" style="top:38.2%;"></div>
-          <div class="grid-h" style="top:61.8%;"></div>
-        </div>
-        <div class="g-layer" id="layer-center">
-          <div class="center-cross"></div>
-          <div class="grid-v" style="left:50%;"></div>
-          <div class="grid-h" style="top:50%;"></div>
-        </div>
-        <div class="g-layer" id="layer-diagonals">
-          <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-            <line x1="0" y1="0" x2="1000" y2="1000"></line>
-            <line x1="1000" y1="0" x2="0" y2="1000"></line>
-            <line x1="0" y1="1000" x2="500" y2="0" class="grid-sub"></line>
-            <line x1="1000" y1="1000" x2="500" y2="0" class="grid-sub"></line>
-            <line x1="0" y1="0" x2="500" y2="1000" class="grid-sub"></line>
-            <line x1="1000" y1="0" x2="500" y2="1000" class="grid-sub"></line>
-          </svg>
-        </div>
-        <div class="g-layer" id="layer-fibonacci">
-          <svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none">
-            <path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764"></path>
-            <line x1="0" y1="618" x2="618" y2="618" class="grid-sub"></line>
-            <line x1="236" y1="618" x2="236" y2="1000" class="grid-sub"></line>
-            <line x1="0" y1="764" x2="236" y2="764" class="grid-sub"></line>
-            <line x1="146" y1="618" x2="146" y2="764" class="grid-sub"></line>
-          </svg>
-        </div>
-      </div>
+  <!-- Окремий шар рамки кадру -->
+  <div id="frame-box"></div>
+
+  <!-- Сітки -->
+  <div id="grid">
+    <div class="g-layer" id="layer-thirds">
+      <div class="grid-v" style="left:33.33%;"></div>
+      <div class="grid-v" style="left:66.66%;"></div>
+      <div class="grid-h" style="top:33.33%;"></div>
+      <div class="grid-h" style="top:66.66%;"></div>
+    </div>
+    <div class="g-layer" id="layer-golden">
+      <div class="grid-v" style="left:38.2%;"></div>
+      <div class="grid-v" style="left:61.8%;"></div>
+      <div class="grid-h" style="top:38.2%;"></div>
+      <div class="grid-h" style="top:61.8%;"></div>
+    </div>
+    <div class="g-layer" id="layer-center">
+      <div class="center-cross"></div>
+      <div class="grid-v" style="left:50%;"></div>
+      <div class="grid-h" style="top:50%;"></div>
+    </div>
+    <div class="g-layer" id="layer-diagonals">
+      <svg class="grid-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+        <line x1="0" y1="0" x2="1000" y2="1000"></line>
+        <line x1="1000" y1="0" x2="0" y2="1000"></line>
+        <line x1="0" y1="1000" x2="500" y2="0" class="grid-sub"></line>
+        <line x1="1000" y1="1000" x2="500" y2="0" class="grid-sub"></line>
+        <line x1="0" y1="0" x2="500" y2="1000" class="grid-sub"></line>
+        <line x1="1000" y1="0" x2="500" y2="1000" class="grid-sub"></line>
+      </svg>
+    </div>
+    <div class="g-layer" id="layer-fibonacci">
+      <svg class="grid-svg" viewBox="0 0 618 1000" preserveAspectRatio="none">
+        <path d="M 0,0 A 618,618 0 0,1 618,618 A 382,382 0 0,1 236,1000 A 236,236 0 0,1 0,764 A 146,146 0 0,1 146,618 A 90,90 0 0,1 236,708 A 56,56 0 0,1 180,764"></path>
+        <line x1="0" y1="618" x2="618" y2="618" class="grid-sub"></line>
+        <line x1="236" y1="618" x2="236" y2="1000" class="grid-sub"></line>
+        <line x1="0" y1="764" x2="236" y2="764" class="grid-sub"></line>
+        <line x1="146" y1="618" x2="146" y2="764" class="grid-sub"></line>
+      </svg>
     </div>
   </div>
 
   <!-- Далекомір -->
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-      <!-- 1.2m -->
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3"></line>
       <line x1="160" y1="880" x2="240" y2="880" stroke="#39ff14" stroke-width="3"></line>
       <text x="100" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">1.2m</text>
@@ -148,7 +144,6 @@
       <line x1="200" y1="560" x2="150" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
       <line x1="200" y1="560" x2="250" y2="880" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
 
-      <!-- 2.0m -->
       <line x1="470" y1="260" x2="530" y2="260" stroke="#39ff14" stroke-width="3"></line>
       <line x1="470" y1="740" x2="530" y2="740" stroke="#39ff14" stroke-width="3"></line>
       <text x="545" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">2.0m</text>
@@ -158,7 +153,6 @@
       <line x1="500" y1="540" x2="470" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
       <line x1="500" y1="540" x2="530" y2="740" stroke="#39ff14" stroke-width="1.5" stroke-dasharray="4,4"></line>
 
-      <!-- 3.0m -->
       <line x1="750" y1="340" x2="790" y2="340" stroke="#39ff14" stroke-width="3"></line>
       <line x1="750" y1="660" x2="790" y2="660" stroke="#39ff14" stroke-width="3"></line>
       <text x="805" y="505" fill="#39ff14" font-size="16" font-weight="bold" font-family="monospace">3.0m</text>
@@ -170,7 +164,6 @@
     </svg>
   </div>
 
-  <!-- Стелс екран -->
   <div id="stealth-overlay" onclick="takeSnapshot(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
@@ -178,7 +171,6 @@
   <button id="btn-start" onclick="initCam()">▶ УВІМКНУТИ КАМЕРУ</button>
   <div id="debug-log">Готово до запуску.</div>
 
-  <!-- Верхня панель інструментів -->
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
     <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
@@ -188,14 +180,12 @@
     <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
   </div>
 
-  <!-- Смуга експозиції (EV) -->
   <div id="control-strip">
     <span class="strip-label">EV:</span>
     <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
     <span id="ev-label">0.0 EV</span>
   </div>
 
-  <!-- Кнопка спуску -->
   <div id="hud">
     <button id="btn-snap" onclick="takeSnapshot(false)"></button>
   </div>
@@ -215,7 +205,6 @@
     var focusBtn = document.getElementById('focus-btn');
     var gridBtn = document.getElementById('grid-btn');
     var rangeBtn = document.getElementById('range-btn');
-    var framelineContainer = document.getElementById('frameline-container');
     var frameBox = document.getElementById('frame-box');
     var rangeEl = document.getElementById('rangefinder');
     var stealthEl = document.getElementById('stealth-overlay');
@@ -295,7 +284,7 @@
         hud.style.display = 'flex';
 
         applyFilm();
-        renderLayout();
+        updateFrame();
       })
       .catch(function(err) {
         debugLog.innerText = 'Помилка: ' + (err.message || err.name);
@@ -322,8 +311,33 @@
     function nextFrame() {
       rIdx = (rIdx + 1) % frames.length;
       frameBtn.textContent = '📐 ' + frames[rIdx].name;
-      renderLayout();
+      updateFrame();
     }
+
+    function updateFrame() {
+      var cur = frames[rIdx];
+      if (!cur.ratio) {
+        frameBox.style.display = 'none';
+        return;
+      }
+
+      frameBox.style.display = 'block';
+      var winW = window.innerWidth;
+      var winH = window.innerHeight;
+      var targetH = winH;
+      var targetW = Math.round(targetH * cur.ratio);
+
+      if (targetW > winW) {
+        targetW = winW;
+        targetH = Math.round(targetW / cur.ratio);
+      }
+
+      frameBox.style.width = targetW + 'px';
+      frameBox.style.height = targetH + 'px';
+      frameBox.style.top = Math.round((winH - targetH) / 2) + 'px';
+      frameBox.style.left = Math.round((winW - targetW) / 2) + 'px';
+    }
+    window.addEventListener('resize', updateFrame);
 
     function nextFocus() {
       focusIdx = (focusIdx + 1) % focusZones.length;
@@ -372,38 +386,6 @@
       stealthEl.style.display = 'none';
       if (navigator.vibrate) navigator.vibrate([20, 20]);
     }
-
-    function renderLayout() {
-      var cur = frames[rIdx];
-      framelineContainer.style.display = 'block';
-
-      if (!cur.ratio) {
-        frameBox.style.width = '100vw';
-        frameBox.style.height = '100vh';
-        frameBox.style.top = '0px';
-        frameBox.style.left = '0px';
-        frameBox.style.boxShadow = 'none';
-        frameBox.style.border = 'none';
-      } else {
-        frameBox.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.55)';
-        frameBox.style.border = '1.5px solid rgba(255, 182, 66, 0.85)';
-        var winW = window.innerWidth;
-        var winH = window.innerHeight;
-        var targetH = winH;
-        var targetW = Math.round(targetH * cur.ratio);
-
-        if (targetW > winW) {
-          targetW = winW;
-          targetH = Math.round(targetW / cur.ratio);
-        }
-
-        frameBox.style.width = targetW + 'px';
-        frameBox.style.height = targetH + 'px';
-        frameBox.style.top = Math.round((winH - targetH) / 2) + 'px';
-        frameBox.style.left = Math.round((winW - targetW) / 2) + 'px';
-      }
-    }
-    window.addEventListener('resize', renderLayout);
 
     function takeSnapshot(isSilent) {
       if (navigator.vibrate) navigator.vibrate(isSilent ? 40 : 30);
@@ -471,4 +453,27 @@
         for (var i = 0; i < d.length; i += 4) {
           var r = d[i] * bFactor;
           var g = d[i+1] * bFactor;
-          var b = 
+          var b = d[i+2] * bFactor;
+
+          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 30);
+          var outG = Math.min(255, (r * 0.4 + b * 0.5) * curFilm.contrast - 20);
+          var outB = Math.min(255, (b * 0.7 + g * 0.4) * curFilm.contrast);
+
+          d[i] = Math.max(0, outR);
+          d[i+1] = Math.max(0, outG);
+          d[i+2] = Math.max(0, outB);
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } else {
+        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
+        if (rawW > rawH) {
+          ctx.drawImage(v, (rawW - cropW) / 2, (rawH - cropH) / 2, cropW, cropH, 0, 0, cropW, cropH);
+        } else {
+          ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+        }
+      }
+
+      c.toBlob(function(blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, 
