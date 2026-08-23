@@ -11,6 +11,7 @@
       padding: 0; 
       user-select: none; 
       -webkit-user-select: none; 
+      -webkit-touch-callout: none;
       -webkit-tap-highlight-color: transparent; 
     }
     body, html { 
@@ -31,15 +32,16 @@
       top: 50%; 
       left: 50%; 
       transform: translate(-50%, -50%);
-      padding: 18px 28px; 
+      padding: 20px 32px; 
       font-size: 16px; 
       font-weight: bold; 
       background: #ffb642;
-      border: 2px solid #fff; 
-      border-radius: 10px; 
+      border: 3px solid #fff; 
+      border-radius: 12px; 
       color: #000; 
-      z-index: 10000; 
+      z-index: 999999; 
       cursor: pointer;
+      touch-action: manipulation;
     }
 
     #top-bar {
@@ -48,7 +50,7 @@
       left: 0; 
       width: 100%; 
       display: none;
-      z-index: 999; 
+      z-index: 9999; 
       background: rgba(0,0,0,0.8); 
       padding: 8px 6px;
       overflow-x: auto; 
@@ -66,6 +68,7 @@
       border-radius: 4px; 
       font-size: 11px; 
       cursor: pointer;
+      touch-action: manipulation;
     }
     .t-btn.active { 
       background: #39ff14; 
@@ -83,7 +86,7 @@
       justify-content: center; 
       align-items: center; 
       gap: 8px; 
-      z-index: 998;
+      z-index: 9998;
       background: rgba(0,0,0,0.75); 
       padding: 6px 16px; 
       border-radius: 20px;
@@ -127,6 +130,7 @@
       border: 1.5px solid rgba(255, 182, 66, 0.85);
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55); 
       overflow: hidden;
+      pointer-events: none;
     }
 
     #grid { 
@@ -149,6 +153,7 @@
       stroke: rgba(255,255,255,0.55); 
       stroke-width: 1.5; 
       fill: none; 
+      pointer-events: none;
     }
     .grid-sub { 
       stroke: rgba(255,255,255,0.25); 
@@ -162,6 +167,7 @@
       transform: translate(-50%, -50%); 
       width: 32px; 
       height: 32px; 
+      pointer-events: none;
     }
     .center-cross::before, .center-cross::after { 
       content: ''; 
@@ -185,6 +191,7 @@
       width: 100%; 
       height: 100%; 
       filter: drop-shadow(0 0 4px #39ff14); 
+      pointer-events: none;
     }
 
     #stealth-overlay { 
@@ -194,7 +201,7 @@
       width: 100vw; 
       height: 100vh; 
       background: #000; 
-      z-index: 2000; 
+      z-index: 20000; 
       display: none; 
       cursor: pointer; 
     }
@@ -218,7 +225,7 @@
       width: 100%; 
       display: none;
       justify-content: center; 
-      z-index: 999;
+      z-index: 9999;
     }
     #btn-snap {
       width: 70px; 
@@ -229,6 +236,7 @@
       box-shadow: 0 0 0 3px rgba(0,0,0,0.65), 0 4px 12px rgba(0,0,0,0.5); 
       cursor: pointer; 
       position: relative;
+      touch-action: manipulation;
     }
     #btn-snap::after {
       content: ''; 
@@ -288,7 +296,7 @@
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
 
-  <button id="btn-start" onclick="startCam()">▶ УВІМКНУТИ КАМЕРУ</button>
+  <button id="btn-start" onclick="startCam()" ontouchend="startCam()">▶ УВІМКНУТИ КАМЕРУ</button>
 
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
@@ -380,7 +388,10 @@
     var gIdx = 0;
     var isRangeOn = false;
 
-    function startCam() {
+    function startCam(e) {
+      if (e) e.preventDefault();
+      if (activeStream) return;
+
       btnStart.innerText = "⏳ Запуск...";
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
@@ -478,7 +489,6 @@
       if (navigator.vibrate) navigator.vibrate([20, 20]);
     }
 
-    // Рамка завжди зберігає стабільний вертикальний формат
     function renderLayout() {
       var cur = frames[rIdx];
       frameline.style.display = 'block';
@@ -512,7 +522,6 @@
     }
     window.addEventListener('resize', renderLayout);
 
-    // Сітка автоматично розгортається під орієнтацію смартфона
     function renderGrid() {
       var mode = grids[gIdx];
       gridEl.innerHTML = '';
@@ -554,10 +563,4 @@
 
       if (curFrame.ratio) {
         var targetRatio = curFrame.ratio;
-        var currentStreamRatio = streamW / streamH;
-
-        if (currentStreamRatio > targetRatio) {
-          cropH = streamH;
-          cropW = Math.round(streamH * targetRatio);
-          cropX = Math.round((streamW - cropW) / 2);
-   
+        var curr
