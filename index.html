@@ -264,6 +264,7 @@
     var isRangeOn = false;
 
     function initCam() {
+      alert("Тест: Клік на кнопку працює!");
       debugLog.innerText = 'Запит сенсора у високій якості...';
 
       navigator.mediaDevices.getUserMedia({
@@ -471,4 +472,4 @@
       } else {
         ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
         if (rawW > rawH) {
-          ctx.drawImage(v, (rawW - cropW) / 2, (rawH - cropH) / 2, cropW, cropH, 0, 0, crop
+          ctx.drawImage(v, (rawW - cropW) / 2,
