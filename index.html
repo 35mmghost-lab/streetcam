@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -14,15 +16,7 @@
       -webkit-tap-highlight-color: transparent; 
     }
     body, html { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: monospace; }
-    
-    #viewfinder { position: fixed; inset: 0; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; }
-    #v { width: 100%; height: 100%; object-fit: cover; display: none; }
-
-    /* Рамки форматів кадру */
-    .aspect-mask {
-      position: absolute; inset: 0; pointer-events: none; z-index: 40; display: none;
-      border: 0 solid rgba(0,0,0,0.85);
-    }
+    #v { width: 100vw; height: 100vh; object-fit: cover; display: none; }
 
     #btn-start {
       position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%);
@@ -87,11 +81,9 @@
   </style>
 </head>
 <body>
-  <div id="viewfinder">
-    <video id="v" autoplay playsinline muted></video>
-    <div id="aspect-mask" class="aspect-mask"></div>
-  </div>
+  <video id="v" autoplay playsinline muted></video>
 
+  <!-- Сітки композиції -->
   <div id="grid">
     <div class="g-layer" id="layer-thirds">
       <div class="grid-v" style="left:33.33%;"></div>
@@ -131,6 +123,7 @@
     </div>
   </div>
 
+  <!-- Далекомір -->
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3"></line>
@@ -162,6 +155,7 @@
     </svg>
   </div>
 
+  <!-- Стелс екран -->
   <div id="stealth-overlay" onclick="takeSnapshot(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
@@ -169,21 +163,23 @@
   <button id="btn-start" onclick="initCam()">▶ УВІМКНУТИ КАМЕРУ</button>
   <div id="debug-log">Готово до запуску.</div>
 
+  <!-- Верхня панель інструментів -->
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="t-btn" id="aspect-btn" onclick="nextAspect()">📐 3:2</button>
     <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Фокус: Auto</button>
     <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
     <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
     <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
   </div>
 
+  <!-- Смуга експозиції (EV) -->
   <div id="control-strip">
     <span class="strip-label">EV:</span>
     <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
     <span id="ev-label">0.0 EV</span>
   </div>
 
+  <!-- Кнопка спуску -->
   <div id="hud">
     <button id="btn-snap" onclick="takeSnapshot(false)"></button>
   </div>
@@ -199,13 +195,11 @@
     var evSlider = document.getElementById('ev-slider');
     var evLabel = document.getElementById('ev-label');
     var filmBtn = document.getElementById('film-btn');
-    var aspectBtn = document.getElementById('aspect-btn');
     var focusBtn = document.getElementById('focus-btn');
     var gridBtn = document.getElementById('grid-btn');
     var rangeBtn = document.getElementById('range-btn');
     var rangeEl = document.getElementById('rangefinder');
     var stealthEl = document.getElementById('stealth-overlay');
-    var aspectMask = document.getElementById('aspect-mask');
     var hud = document.getElementById('hud');
     var c = document.getElementById('c');
 
@@ -222,15 +216,6 @@
     ];
     var fIdx = 0;
     var currentEV = 0.0;
-
-    var aspects = [
-      { name: '3:2', ratio: 3/2, type: 'h' },
-      { name: '4:3', ratio: 4/3, type: 'h' },
-      { name: '1:1', ratio: 1, type: 'square' },
-      { name: '16:9', ratio: 16/9, type: 'h' },
-      { name: 'Full', ratio: 0, type: 'none' }
-    ];
-    var aspIdx = 0;
 
     var focusZones = [
       { name: 'Auto', val: 'auto' },
@@ -282,7 +267,6 @@
         hud.style.display = 'flex';
 
         applyFilm();
-        applyAspect();
       })
       .catch(function(err) {
         debugLog.innerText = 'Помилка: ' + (err.message || err.name);
@@ -304,60 +288,6 @@
       fIdx = (fIdx + 1) % films.length;
       filmBtn.textContent = '🎞️ ' + films[fIdx].name;
       applyFilm();
-    }
-
-    function nextAspect() {
-      aspIdx = (aspIdx + 1) % aspects.length;
-      aspectBtn.textContent = '📐 ' + aspects[aspIdx].name;
-      applyAspect();
-    }
-
-    function applyAspect() {
-      var asp = aspects[aspIdx];
-      if (asp.type === 'none') {
-        aspectMask.style.display = 'none';
-        return;
-      }
-
-      aspectMask.style.display = 'block';
-      var screenW = window.innerWidth;
-      var screenH = window.innerHeight;
-      var screenRatio = screenW / screenH;
-
-      aspectMask.style.borderWidth = '0px';
-      aspectMask.style.borderStyle = 'solid';
-
-      if (asp.ratio === 1) {
-        if (screenW < screenH) {
-          var diff = (screenH - screenW) / 2;
-          aspectMask.style.borderTopWidth = diff + 'px';
-          aspectMask.style.borderBottomWidth = diff + 'px';
-          aspectMask.style.borderLeftWidth = '0px';
-          aspectMask.style.borderRightWidth = '0px';
-        } else {
-          var diff = (screenW - screenH) / 2;
-          aspectMask.style.borderLeftWidth = diff + 'px';
-          aspectMask.style.borderRightWidth = diff + 'px';
-          aspectMask.style.borderTopWidth = '0px';
-          aspectMask.style.borderBottomWidth = '0px';
-        }
-      } else {
-        if (screenRatio > asp.ratio) {
-          var targetW = screenH * asp.ratio;
-          var diff = (screenW - targetW) / 2;
-          aspectMask.style.borderLeftWidth = diff + 'px';
-          aspectMask.style.borderRightWidth = diff + 'px';
-          aspectMask.style.borderTopWidth = '0px';
-          aspectMask.style.borderBottomWidth = '0px';
-        } else {
-          var targetH = screenW / asp.ratio;
-          var diff = (screenH - targetH) / 2;
-          aspectMask.style.borderTopWidth = diff + 'px';
-          aspectMask.style.borderBottomWidth = diff + 'px';
-          aspectMask.style.borderLeftWidth = '0px';
-          aspectMask.style.borderRightWidth = diff + 'px';
-        }
-      }
     }
 
     function nextFocus() {
@@ -411,28 +341,10 @@
     function takeSnapshot(isSilent) {
       if (navigator.vibrate) navigator.vibrate(isSilent ? 40 : 30);
 
-      var vw = v.videoWidth || 1920;
-      var vh = v.videoHeight || 1080;
-      
-      var srcX = 0, srcY = 0, srcW = vw, srcH = vh;
-      var asp = aspects[aspIdx];
-
-      if (asp.type !== 'none') {
-        var videoRatio = vw / vh;
-        if (asp.ratio === 1) {
-          if (vw > vh) { srcW = vh; srcX = (vw - vh) / 2; }
-          else { srcH = vw; srcY = (vh - vw) / 2; }
-        } else {
-          if (videoRatio > asp.ratio) {
-            srcW = vh * asp.ratio; srcX = (vw - srcW) / 2;
-          } else {
-            srcH = vw / asp.ratio; srcY = (vh - srcH) / 2;
-          }
-        }
-      }
-
-      c.width = srcW;
-      c.height = srcH;
+      var w = v.videoWidth || 1920;
+      var h = v.videoHeight || 1080;
+      c.width = w;
+      c.height = h;
 
       var ctx = c.getContext('2d');
       ctx.imageSmoothingEnabled = true;
@@ -441,10 +353,10 @@
       var bFactor = Math.pow(2, currentEV);
       var curFilm = films[fIdx];
 
-      ctx.drawImage(v, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+      ctx.drawImage(v, 0, 0, w, h);
 
       if (curFilm.mode === 'bw') {
-        var imgData = ctx.getImageData(0, 0, srcW, srcH);
+        var imgData = ctx.getImageData(0, 0, w, h);
         var d = imgData.data;
         var contrast = curFilm.contrast;
         for (var i = 0; i < d.length; i += 4) {
@@ -452,15 +364,40 @@
           gray = ((gray - 128) * contrast) + 128;
           if (gray < 0) gray = 0;
           if (gray > 255) gray = 255;
-          d[i] = gray; d[i+1] = gray; d[i+2] = gray;
+          d[i] = gray;
+          d[i+1] = gray;
+          d[i+2] = gray;
         }
         ctx.putImageData(imgData, 0, 0);
-      } else if (core = curFilm.mode === 'aero') {
-        var imgData = ctx.getImageData(0, 0, srcW, srcH);
+      } else if (curFilm.mode === 'aero') {
+        var imgData = ctx.getImageData(0, 0, w, h);
         var d = imgData.data;
         for (var i = 0; i < d.length; i += 4) {
           var r = d[i] * bFactor;
           var g = d[i+1] * bFactor;
           var b = d[i+2] * bFactor;
 
-          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 3
+          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 30);
+          var outG = Math.min(255, (r * 0.4 + b * 0.5) * curFilm.contrast - 20);
+          var outB = Math.min(255, (b * 0.7 + g * 0.4) * curFilm.contrast);
+
+          d[i] = Math.max(0, outR);
+          d[i+1] = Math.max(0, outG);
+          d[i+2] = Math.max(0, outB);
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } else {
+        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
+        ctx.drawImage(v, 0, 0, w, h);
+      }
+
+      c.toBlob(function(blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 1.0);
+    }
+  </script>
+</body>
+</html>
