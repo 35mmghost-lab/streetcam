@@ -19,12 +19,12 @@
     #btn-start {
       position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%);
       padding: 20px 32px; font-size: 17px; font-weight: bold; background: #ffb642;
-      border: 3px solid #fff; border-radius: 12px; color: #000; z-index: 99999; cursor: pointer;
+      border: 3px solid #fff; border-radius: 12px; color: #000; z-index: 10000; cursor: pointer;
     }
     #debug-log {
       position: fixed; top: 58%; left: 5%; width: 90%; color: #39ff14;
       font-size: 13px; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 6px;
-      border: 1px solid #333; z-index: 99999; text-align: center;
+      border: 1px solid #333; z-index: 10000; text-align: center;
     }
 
     #top-bar {
@@ -49,7 +49,7 @@
     #ev-slider { accent-color: #ffb642; width: 140px; height: 20px; }
     #ev-label { font-size: 12px; color: #ffb642; min-width: 55px; text-align: right; font-weight: bold; }
 
-    /* Рамка кадрування абсолютно пасивна для кліків */
+    /* Безпечна рамка кадрування */
     #frame-box {
       position: fixed; pointer-events: none; z-index: 40; display: none;
       border: 1.5px solid rgba(255, 182, 66, 0.85);
@@ -241,7 +241,7 @@
       { name: '3:2 (35mm)', ratio: 2/3 },
       { name: '4:3 (645)', ratio: 3/4 },
       { name: '1:1 (6x6)', ratio: 1.0 },
-      { name: '65:24 (XPan)', ratio: 65/24 }
+      { name: '65:24 (XPan)', ratio: 24/65 }
     ];
     var rIdx = 0;
 
@@ -302,10 +302,6 @@
       });
     }
 
-    // Подвійний зв'язок для надійного виклику без кешу
-    window.initCam = initCam;
-    btnStart.addEventListener('click', initCam);
-
     function applyFilm() {
       var bFactor = Math.pow(2, currentEV);
       v.style.filter = films[fIdx].base + ' brightness(' + (bFactor * 100) + '%)';
@@ -339,28 +335,16 @@
 
       var winW = window.innerWidth;
       var winH = window.innerHeight;
-      var isLandscape = winW > winH;
+      var targetH = winH * 0.75;
+      var targetW = Math.round(targetH * cur.ratio);
 
-      var targetW, targetH;
-
-      if (!isLandscape) {
-        targetH = winH * 0.75;
-        targetW = targetH * (cur.ratio < 1 ? cur.ratio : 1 / cur.ratio);
-        if (targetW > winW * 0.9) {
-          targetW = winW * 0.9;
-          targetH = targetW / (cur.ratio < 1 ? cur.ratio : 1 / cur.ratio);
-        }
-      } else {
-        targetW = winW * 0.7;
-        targetH = targetW / cur.ratio;
-        if (targetH > winH * 0.85) {
-          targetH = winH * 0.85;
-          targetW = targetH * cur.ratio;
-        }
+      if (targetW > winW * 0.9) {
+        targetW = winW * 0.9;
+        targetH = Math.round(targetW / cur.ratio);
       }
 
-      frameBox.style.width = Math.round(targetW) + 'px';
-      frameBox.style.height = Math.round(targetH) + 'px';
+      frameBox.style.width = targetW + 'px';
+      frameBox.style.height = targetH + 'px';
       frameBox.style.top = Math.round((winH - targetH) / 2) + 'px';
       frameBox.style.left = Math.round((winW - targetW) / 2) + 'px';
     }
@@ -478,4 +462,17 @@
       } else if (curFilm.mode === 'aero') {
         var imgData = ctx.getImageData(0, 0, cropW, cropH);
         var d = imgData.data;
-  
+        for (var i = 0; i < d.length; i += 4) {
+          var r = d[i] * bFactor;
+          var g = d[i+1] * bFactor;
+          var b = d[i+2] * bFactor;
+
+          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 30);
+          var outG = Math.min(255, (r * 0.4 + b * 0.5) * curFilm.contrast - 20);
+          var outB = Math.min(255, (b * 0.7 + g * 0.4) * curFilm.contrast);
+
+          d[i] = Math.max(0, outR);
+          d[i+1] = Math.max(0, outG);
+          d[i+2] = Math.max(0, outB);
+        }
+        ctx.putImag
