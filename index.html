@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -49,13 +51,6 @@
     #ev-slider { accent-color: #ffb642; width: 140px; height: 20px; }
     #ev-label { font-size: 12px; color: #ffb642; min-width: 55px; text-align: right; font-weight: bold; }
 
-    /* Рамка кадрування з абсолютною пасивністю для кліків */
-    #frame-box {
-      position: fixed; pointer-events: none; z-index: 40; display: none;
-      border: 1.5px solid rgba(255, 182, 66, 0.85);
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-    }
-
     #grid { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50; }
     .g-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
     .grid-v, .grid-h { position: absolute; background: rgba(255, 255, 255, 0.45); }
@@ -87,9 +82,6 @@
 </head>
 <body>
   <video id="v" autoplay playsinline muted></video>
-
-  <!-- Рамка кадрування -->
-  <div id="frame-box"></div>
 
   <!-- Сітки композиції -->
   <div id="grid">
@@ -174,7 +166,6 @@
   <!-- Верхня панель інструментів -->
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
-    <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
     <button class="t-btn" id="focus-btn" onclick="nextFocus()">🔍 Фокус: Auto</button>
     <button class="t-btn" id="grid-btn" onclick="nextGrid()">🌐 Сітка: Вимк</button>
     <button class="t-btn" id="range-btn" onclick="toggleRange()">🎯 Далекомір</button>
@@ -204,11 +195,9 @@
     var evSlider = document.getElementById('ev-slider');
     var evLabel = document.getElementById('ev-label');
     var filmBtn = document.getElementById('film-btn');
-    var frameBtn = document.getElementById('frame-btn');
     var focusBtn = document.getElementById('focus-btn');
     var gridBtn = document.getElementById('grid-btn');
     var rangeBtn = document.getElementById('range-btn');
-    var frameBox = document.getElementById('frame-box');
     var rangeEl = document.getElementById('rangefinder');
     var stealthEl = document.getElementById('stealth-overlay');
     var hud = document.getElementById('hud');
@@ -227,15 +216,6 @@
     ];
     var fIdx = 0;
     var currentEV = 0.0;
-
-    var frames = [
-      { name: 'Full', ratio: null },
-      { name: '3:2 (35mm)', ratio: 2/3 },
-      { name: '4:3 (645)', ratio: 3/4 },
-      { name: '1:1 (6x6)', ratio: 1.0 },
-      { name: '65:24 (XPan)', ratio: 24/65 }
-    ];
-    var rIdx = 0;
 
     var focusZones = [
       { name: 'Auto', val: 'auto' },
@@ -264,10 +244,14 @@
     var isRangeOn = false;
 
     function initCam() {
-      debugLog.innerText = 'Запуск камери...';
+      debugLog.innerText = 'Запит сенсора у високій якості...';
 
       navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
+        video: { 
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 3840 },
+          height: { ideal: 2160 }
+        },
         audio: false
       })
       .then(function(stream) {
@@ -283,7 +267,6 @@
         hud.style.display = 'flex';
 
         applyFilm();
-        renderLayout();
       })
       .catch(function(err) {
         debugLog.innerText = 'Помилка: ' + (err.message || err.name);
@@ -306,38 +289,6 @@
       filmBtn.textContent = '🎞️ ' + films[fIdx].name;
       applyFilm();
     }
-
-    function nextFrame() {
-      rIdx = (rIdx + 1) % frames.length;
-      frameBtn.textContent = '📐 ' + frames[rIdx].name;
-      renderLayout();
-    }
-
-    function renderLayout() {
-      var cur = frames[rIdx];
-      if (!cur.ratio) {
-        frameBox.style.display = 'none';
-        return;
-      }
-      frameBox.style.display = 'block';
-
-      var winW = window.innerWidth;
-      var winH = window.innerHeight;
-      var targetH = winH * 0.75;
-      var targetW = Math.round(targetH * cur.ratio);
-
-      if (targetW > winW * 0.9) {
-        targetW = winW * 0.9;
-        targetH = Math.round(targetW / cur.ratio);
-      }
-
-      frameBox.style.width = targetW + 'px';
-      frameBox.style.height = targetH + 'px';
-      frameBox.style.top = Math.round((winH - targetH) / 2) + 'px';
-      frameBox.style.left = Math.round((winW - targetW) / 2) + 'px';
-    }
-
-    window.addEventListener('resize', renderLayout);
 
     function nextFocus() {
       focusIdx = (focusIdx + 1) % focusZones.length;
@@ -390,35 +341,10 @@
     function takeSnapshot(isSilent) {
       if (navigator.vibrate) navigator.vibrate(isSilent ? 40 : 30);
 
-      var rawW = v.videoWidth || 1920;
-      var rawH = v.videoHeight || 1080;
-      var curFrame = frames[rIdx];
-
-      var streamW = Math.min(rawW, rawH);
-      var streamH = Math.max(rawW, rawH);
-
-      var cropW = streamW;
-      var cropH = streamH;
-      var cropX = 0;
-      var cropY = 0;
-
-      if (curFrame.ratio) {
-        var targetRatio = curFrame.ratio;
-        var currentStreamRatio = streamW / streamH;
-
-        if (currentStreamRatio > targetRatio) {
-          cropH = streamH;
-          cropW = Math.round(streamH * targetRatio);
-          cropX = Math.round((streamW - cropW) / 2);
-        } else {
-          cropW = streamW;
-          cropH = Math.round(streamW / targetRatio);
-          cropY = Math.round((streamH - cropH) / 2);
-        }
-      }
-
-      c.width = cropW;
-      c.height = cropH;
+      var w = v.videoWidth || 1920;
+      var h = v.videoHeight || 1080;
+      c.width = w;
+      c.height = h;
 
       var ctx = c.getContext('2d');
       ctx.imageSmoothingEnabled = true;
@@ -427,14 +353,10 @@
       var bFactor = Math.pow(2, currentEV);
       var curFilm = films[fIdx];
 
-      if (rawW > rawH) {
-        ctx.drawImage(v, (rawW - cropW) / 2, (rawH - cropH) / 2, cropW, cropH, 0, 0, cropW, cropH);
-      } else {
-        ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-      }
+      ctx.drawImage(v, 0, 0, w, h);
 
       if (curFilm.mode === 'bw') {
-        var imgData = ctx.getImageData(0, 0, cropW, cropH);
+        var imgData = ctx.getImageData(0, 0, w, h);
         var d = imgData.data;
         var contrast = curFilm.contrast;
         for (var i = 0; i < d.length; i += 4) {
@@ -448,7 +370,7 @@
         }
         ctx.putImageData(imgData, 0, 0);
       } else if (curFilm.mode === 'aero') {
-        var imgData = ctx.getImageData(0, 0, cropW, cropH);
+        var imgData = ctx.getImageData(0, 0, w, h);
         var d = imgData.data;
         for (var i = 0; i < d.length; i += 4) {
           var r = d[i] * bFactor;
@@ -466,14 +388,17 @@
         ctx.putImageData(imgData, 0, 0);
       } else {
         ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
-        if (rawW > rawH) {
-          ctx.drawImage(v, (rawW - cropW) / 2, (rawH - cropH) / 2, cropW, cropH, 0, 0, cropW, cropH);
-        } else {
-          ctx.drawImage(v, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-        }
+        ctx.drawImage(v, 0, 0, w, h);
       }
 
       c.toBlob(function(blob) {
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-    
+        a.download = 'STREET_' + curFilm.name.replace(/ /g, '') + '_' + Date.now() + '.jpg';
+        a.click();
+      }, 'image/jpeg', 1.0);
+    }
+  </script>
+</body>
+  </html>
+  
