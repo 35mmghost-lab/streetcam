@@ -18,7 +18,7 @@
     #viewfinder { position: fixed; inset: 0; width: 100vw; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; }
     #v { width: 100%; height: 100%; object-fit: cover; display: none; }
 
-    /* Рамки форматів кадру (Matte masks) */
+    /* Рамки форматів кадру */
     .aspect-mask {
       position: absolute; inset: 0; pointer-events: none; z-index: 40; display: none;
       border: 0 solid rgba(0,0,0,0.85);
@@ -92,7 +92,6 @@
     <div id="aspect-mask" class="aspect-mask"></div>
   </div>
 
-  <!-- Сітки композиції -->
   <div id="grid">
     <div class="g-layer" id="layer-thirds">
       <div class="grid-v" style="left:33.33%;"></div>
@@ -132,7 +131,6 @@
     </div>
   </div>
 
-  <!-- Далекомір -->
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3"></line>
@@ -164,7 +162,6 @@
     </svg>
   </div>
 
-  <!-- Стелс екран -->
   <div id="stealth-overlay" onclick="takeSnapshot(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
@@ -172,7 +169,6 @@
   <button id="btn-start" onclick="initCam()">▶ УВІМКНУТИ КАМЕРУ</button>
   <div id="debug-log">Готово до запуску.</div>
 
-  <!-- Верхня панель інструментів -->
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
     <button class="t-btn" id="aspect-btn" onclick="nextAspect()">📐 3:2</button>
@@ -182,14 +178,12 @@
     <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
   </div>
 
-  <!-- Смуга експозиції (EV) -->
   <div id="control-strip">
     <span class="strip-label">EV:</span>
     <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
     <span id="ev-label">0.0 EV</span>
   </div>
 
-  <!-- Кнопка спуску -->
   <div id="hud">
     <button id="btn-snap" onclick="takeSnapshot(false)"></button>
   </div>
@@ -229,7 +223,6 @@
     var fIdx = 0;
     var currentEV = 0.0;
 
-    // Формати кадру
     var aspects = [
       { name: '3:2', ratio: 3/2, type: 'h' },
       { name: '4:3', ratio: 4/3, type: 'h' },
@@ -362,7 +355,7 @@
           aspectMask.style.borderTopWidth = diff + 'px';
           aspectMask.style.borderBottomWidth = diff + 'px';
           aspectMask.style.borderLeftWidth = '0px';
-          aspectMask.style.borderRightWidth = '0px';
+          aspectMask.style.borderRightWidth = diff + 'px';
         }
       }
     }
@@ -462,7 +455,12 @@
           d[i] = gray; d[i+1] = gray; d[i+2] = gray;
         }
         ctx.putImageData(imgData, 0, 0);
-      } else if (curFilm.mode === 'aero') {
+      } else if (core = curFilm.mode === 'aero') {
         var imgData = ctx.getImageData(0, 0, srcW, srcH);
         var d = imgData.data;
-        for (var i = 0; i < d.length; i +=
+        for (var i = 0; i < d.length; i += 4) {
+          var r = d[i] * bFactor;
+          var g = d[i+1] * bFactor;
+          var b = d[i+2] * bFactor;
+
+          var outR = Math.min(255, (g * 1.5 + r * 0.3) * curFilm.contrast - 3
