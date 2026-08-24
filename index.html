@@ -19,12 +19,12 @@
     #btn-start {
       position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%);
       padding: 20px 32px; font-size: 17px; font-weight: bold; background: #ffb642;
-      border: 3px solid #fff; border-radius: 12px; color: #000; z-index: 10000; cursor: pointer;
+      border: 3px solid #fff; border-radius: 12px; color: #000; z-index: 20000; cursor: pointer;
     }
     #debug-log {
       position: fixed; top: 58%; left: 5%; width: 90%; color: #39ff14;
       font-size: 13px; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 6px;
-      border: 1px solid #333; z-index: 10000; text-align: center;
+      border: 1px solid #333; z-index: 20000; text-align: center;
     }
 
     #top-bar {
@@ -49,7 +49,7 @@
     #ev-slider { accent-color: #ffb642; width: 140px; height: 20px; }
     #ev-label { font-size: 12px; color: #ffb642; min-width: 55px; text-align: right; font-weight: bold; }
 
-    /* Рамка кадрування без зайвих блокувань */
+    /* Рамка кадрування прихована за замовчуванням */
     #frame-box {
       position: fixed; pointer-events: none; z-index: 40; display: none;
       border: 1.5px solid rgba(255, 182, 66, 0.85);
@@ -477,4 +477,4 @@
         for (var i = 0; i < d.length; i += 4) {
           var r = d[i] * bFactor;
           var g = d[i+1] * bFactor;
-          var b = d[i+2] * b
+          var b = d[i+
