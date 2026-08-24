@@ -49,7 +49,6 @@
     #ev-slider { accent-color: #ffb642; width: 140px; height: 20px; }
     #ev-label { font-size: 12px; color: #ffb642; min-width: 55px; text-align: right; font-weight: bold; }
 
-    /* Безпечна рамка кадрування */
     #frame-box {
       position: fixed; pointer-events: none; z-index: 40; display: none;
       border: 1.5px solid rgba(255, 182, 66, 0.85);
@@ -96,10 +95,8 @@
 <body>
   <video id="v" autoplay playsinline muted></video>
 
-  <!-- Рамка кадрування -->
   <div id="frame-box"></div>
 
-  <!-- Сітки композиції -->
   <div id="grid">
     <div class="g-layer" id="layer-thirds">
       <div class="grid-v" style="left:33.33%;"></div>
@@ -139,7 +136,6 @@
     </div>
   </div>
 
-  <!-- Далекомір -->
   <div id="rangefinder">
     <svg class="rad-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
       <line x1="160" y1="120" x2="240" y2="120" stroke="#39ff14" stroke-width="3"></line>
@@ -171,7 +167,6 @@
     </svg>
   </div>
 
-  <!-- Стелс екран -->
   <div id="stealth-overlay" onclick="takeSnapshot(true)">
     <button id="btn-stealth-exit" onclick="exitStealth(event)">✕ EXIT</button>
   </div>
@@ -179,7 +174,6 @@
   <button id="btn-start" onclick="initCam()">▶ УВІМКНУТИ КАМЕРУ</button>
   <div id="debug-log">Готово до запуску.</div>
 
-  <!-- Верхня панель інструментів -->
   <div id="top-bar">
     <button class="t-btn" id="film-btn" onclick="nextFilm()">🎞️ Tri-X 400</button>
     <button class="t-btn" id="frame-btn" onclick="nextFrame()">📐 Full</button>
@@ -189,14 +183,12 @@
     <button class="t-btn" id="stealth-btn" onclick="enterStealth()">🕶️ Стелс</button>
   </div>
 
-  <!-- Смуга експозиції (EV) -->
   <div id="control-strip">
     <span class="strip-label">EV:</span>
     <input type="range" id="ev-slider" min="-2.0" max="2.0" step="0.2" value="0.0" oninput="setEV(this.value)">
     <span id="ev-label">0.0 EV</span>
   </div>
 
-  <!-- Кнопка спуску -->
   <div id="hud">
     <button id="btn-snap" onclick="takeSnapshot(false)"></button>
   </div>
@@ -475,4 +467,8 @@
           d[i+1] = Math.max(0, outG);
           d[i+2] = Math.max(0, outB);
         }
-        ctx.putImag
+        ctx.putImageData(imgData, 0, 0);
+      } else {
+        ctx.filter = curFilm.base + ' brightness(' + (bFactor * 100) + '%)';
+        if (rawW > rawH) {
+          ctx.drawImage(v, (rawW - cropW) / 2, (rawH - cropH) / 2, cropW, cropH, 0, 0, crop
